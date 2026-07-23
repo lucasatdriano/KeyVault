@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum DeviceType {
+  WEB
+  MOBILE
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE_CREDENTIAL
+  UPDATE_CREDENTIAL
+  DELETE_CREDENTIAL
+  COPY_PASSWORD
+  EXPORT_DATA
+  CHANGE_MASTER_PASSWORD
+}
+
+model User {
+  id                 String         @id @default(cuid())
+  name               String
+  email              String         @unique
+  passwordHash       String         @db.Text
+  emailVerified      Boolean        @default(false)
+  emailVerifiedAt    DateTime?
+  role               UserRole       @default(USER)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  credentials        Credential[]
+  categories         Category[]
+  sessions           Session[]
+  devices            Device[]
+  auditLogs          AuditLog[]
+  recovery           Recovery?
+}
+
+model Credential {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId  String?
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  cipherText  String       @db.Text
+  iv          String
+  favorite    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Category {
+  id                 String          @id @default(cuid())
+  userId             String
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  encryptedName      String
+  color              String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  credentials        Credential[]
+}
+
+model Session {
+  id                 String        @id @default(cuid())
+  userId             String
+  deviceId           String?
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device             Device?       @relation(fields: [deviceId], references: [id])
+  token              String        @unique
+  lastAccessAt       DateTime      @default(now())
+  revokedAt          DateTime?
+  expiresAt          DateTime
+  createdAt          DateTime      @default(now())
+}
+
+model Device {
+  id                 String        @id @default(cuid())
+  userId             String
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String        @db.VarChar(100)
+  type               DeviceType
+  browser            String?       @db.VarChar(100)
+  os                 String?       @db.VarChar(100)
+  ip                 String?       @db.VarChar(45)
+  lastAccess         DateTime
+  createdAt          DateTime      @default(now())
+
+  sessions             Session[]
+}
+
+model AuditLog {
+  id                 String          @id @default(cuid())
+  userId             String
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action             AuditAction
+  description        String?
+  ip                 String?
+  createdAt          DateTime        @default(now())
+}
+
+model Recovery {
+  id                     String        @id @default(cuid())
+  userId                 String        @unique
+  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled                Boolean       @default(false)
+  encryptedVaultKey      String?
+  recoverySalt           String?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+}
