@@ -1,16 +1,10 @@
 import { cookies } from 'next/headers';
-
-const SESSION_COOKIE_NAME = 'session';
-
-const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 dias
-const REMEMBER_DURATION = 60 * 60 * 24 * 30; // 30 dias
-
-const COOKIE_OPTIONS = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
-    path: '/',
-};
+import {
+    COOKIE_OPTIONS,
+    REMEMBER_DURATION,
+    SESSION_COOKIE_NAME,
+    SESSION_DURATION,
+} from '../constants/cookies';
 
 export async function getSessionCookie(): Promise<string | undefined> {
     const cookieStore = await cookies();

@@ -12,7 +12,13 @@ export async function getSession(token: string) {
             token,
         },
         include: {
-            user: true,
+            user: {
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                },
+            },
         },
     });
 }

@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
@@ -12,117 +9,157 @@ datasource db {
   provider = "postgresql"
 }
 
-
-enum UserRole {
-  USER
-  ADMIN
-}
-
-enum DeviceType {
-  WEB
-  MOBILE
-}
-
 enum AuditAction {
+  REGISTER
+  VERIFY_EMAIL
+
   LOGIN
   LOGOUT
+
   CREATE_CREDENTIAL
   UPDATE_CREDENTIAL
   DELETE_CREDENTIAL
   COPY_PASSWORD
-  EXPORT_DATA
+
   CHANGE_MASTER_PASSWORD
+
+  EXPORT_DATA
+  IMPORT_DATA
+
+  RESET_PASSWORD
+  RECOVERY
 }
 
-model User {
-  id                 String         @id @default(cuid())
-  name               String
-  email              String         @unique
-  passwordHash       String         @db.Text
-  emailVerified      Boolean        @default(false)
-  emailVerifiedAt    DateTime?
-  role               UserRole       @default(USER)
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+enum RecoveryType {
+  EMAIL
+  GOOGLE
+  QUESTIONS
+}
 
-  credentials        Credential[]
-  categories         Category[]
-  sessions           Session[]
-  devices            Device[]
-  auditLogs          AuditLog[]
-  recovery           Recovery?
+
+model User {
+  id                  String   @id @default(cuid())
+  name                String
+  email               String   @unique
+  passwordHash        String   @db.Text
+
+  encryptedVaultKey   String   @db.Text
+  isRecoverable       Boolean  @default(false)
+
+  emailVerified       Boolean  @default(false)
+  emailVerifiedAt     DateTime?
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  credentials         Credential[]
+  categories          Category[]
+  sessions            Session[]
+  auditLogs           AuditLog[]
+  recoveryMethods     RecoveryMethod[]
 }
 
 model Credential {
-  id          String       @id @default(cuid())
+  id          String   @id @default(cuid())
+
   userId      String
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   categoryId  String?
-  category    Category?    @relation(fields: [categoryId], references: [id])
-  cipherText  String       @db.Text
-  iv          String
-  favorite    Boolean      @default(false)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  cipherText  String   @db.Text
+
+  iv          String   @db.Text
+  salt        String   @db.Text
+
+  version     Int      @default(1)
+
+  favorite    Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  auditLogs   AuditLog[]
+
+  @@index([userId])
+  @@index([categoryId])
+  @@index([favorite])
 }
 
 model Category {
-  id                 String          @id @default(cuid())
-  userId             String
-  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  encryptedName      String
-  color              String?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  id          String   @id @default(cuid())
 
-  credentials        Credential[]
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  cipherText  String   @db.Text
+  color       String?  @db.VarChar(20)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  credentials Credential[]
+
+  @@index([userId])
 }
 
 model Session {
-  id                 String        @id @default(cuid())
-  userId             String
-  deviceId           String?
-  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  device             Device?       @relation(fields: [deviceId], references: [id])
-  token              String        @unique
-  lastAccessAt       DateTime      @default(now())
-  revokedAt          DateTime?
-  expiresAt          DateTime
-  createdAt          DateTime      @default(now())
-}
+  id            String   @id @default(cuid())
 
-model Device {
-  id                 String        @id @default(cuid())
-  userId             String
-  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name               String        @db.VarChar(100)
-  type               DeviceType
-  browser            String?       @db.VarChar(100)
-  os                 String?       @db.VarChar(100)
-  ip                 String?       @db.VarChar(45)
-  lastAccess         DateTime
-  createdAt          DateTime      @default(now())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  sessions             Session[]
+  tokenHash     String   @unique
+
+  userAgent     String?
+
+  lastAccessAt  DateTime @default(now())
+  expiresAt     DateTime
+  revokedAt     DateTime?
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model AuditLog {
-  id                 String          @id @default(cuid())
-  userId             String
-  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action             AuditAction
-  description        String?
-  ip                 String?
-  createdAt          DateTime        @default(now())
+  id             String   @id @default(cuid())
+
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  credentialId   String?
+  credential     Credential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
+
+  action         AuditAction
+
+  browser        String?  @db.VarChar(100)
+  os             String?  @db.VarChar(100)
+
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([credentialId])
+  @@index([createdAt])
 }
 
-model Recovery {
-  id                     String        @id @default(cuid())
-  userId                 String        @unique
-  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  enabled                Boolean       @default(false)
-  encryptedVaultKey      String?
-  recoverySalt           String?
-  createdAt              DateTime      @default(now())
-  updatedAt              DateTime      @updatedAt
+model RecoveryMethod {
+  id                String   @id @default(cuid())
+
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type              RecoveryType
+  enabled           Boolean  @default(true)
+
+  encryptedVaultKey String?  @db.Text
+  recoverySalt      String?  @db.Text
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, type])
+  @@index([userId])
 }

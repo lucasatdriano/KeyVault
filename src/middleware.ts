@@ -12,11 +12,11 @@ export async function middleware(request: NextRequest) {
     }
 
     if (hasSession && isAuthRoute(pathname)) {
-        return NextResponse.redirect(new URL('/vault', request.url));
+        return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     if (hasSession && pathname === '/') {
-        return NextResponse.redirect(new URL('/vault', request.url));
+        return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
     return NextResponse.next();
