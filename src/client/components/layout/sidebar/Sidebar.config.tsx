@@ -1,4 +1,4 @@
-import { SidebarSection } from '@/src/client/types/sidebar';
+import { SidebarSection } from '@/src/client/types/layout/sidebar';
 import {
     ActivityIcon,
     FingerprintIcon,

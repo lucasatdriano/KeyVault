@@ -39,7 +39,7 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
     ],
 }) => {
     return (
-        <div className="px-4 py-4 border-b border-white/10 bg-background/50">
+        <div className="px-4 pt-0 pb-4 sm:pt-4 border-b border-white/10 bg-background/50">
             <div className="max-w-7xl mx-auto">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">

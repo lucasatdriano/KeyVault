@@ -8,7 +8,7 @@ import {
     ShieldIcon,
     SettingsIcon,
 } from 'lucide-react';
-import { HeaderConfig, HeaderVariant } from '@/src/client/types/header';
+import { HeaderConfig, HeaderVariant } from '@/src/client/types/layout/header';
 
 export const headerVariants: Record<HeaderVariant, HeaderConfig> = {
     search: {

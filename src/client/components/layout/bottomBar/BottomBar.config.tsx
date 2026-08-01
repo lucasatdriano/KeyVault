@@ -1,4 +1,4 @@
-import { BottomBarItem } from '@/src/client/types/bottomBar';
+import { BottomBarItem } from '@/src/client/types/layout/bottomBar';
 import { KeyIcon, StarIcon, UserIcon, SettingsIcon } from 'lucide-react';
 
 export const bottomBarItems: BottomBarItem[] = [

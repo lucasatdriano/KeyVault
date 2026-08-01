@@ -1,6 +1,6 @@
 'use client';
 
-import { HeaderVariant } from '@/src/client/types/header';
+import { HeaderVariant } from '@/src/client/types/layout/header';
 import { headerVariants } from './Header.config';
 import HeaderMobile from './HeaderMobile';
 import HeaderSearch from './HeaderSearch';

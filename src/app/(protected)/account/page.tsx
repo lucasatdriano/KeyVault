@@ -10,10 +10,8 @@ import {
     Clock,
     Key,
     Database,
-    AlertTriangle,
     ChevronRight,
     Download,
-    Trash2,
 } from 'lucide-react';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
@@ -276,90 +274,6 @@ export default function AccountPage() {
                     </div>
                 </div>
             </div>
-
-            <div className="bg-error/5 border border-error/20 rounded-2xl p-6 mx-4">
-                <div className="flex items-center gap-2 mb-4">
-                    <AlertTriangle className="w-5 h-5 text-error" />
-                    <h2 className="text-sm font-semibold text-error uppercase tracking-wider">
-                        Zona de Perigo
-                    </h2>
-                </div>
-                <p className="text-xs text-foreground/40 mb-4">
-                    Ações irreversíveis. Proceda com cuidado.
-                </p>
-
-                <div className="flex items-center justify-between p-3 rounded-xl bg-error/5 border border-error/10 hover:bg-error/10 transition-all">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center">
-                            <Trash2 className="w-5 h-5 text-error" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-medium text-error">
-                                Excluir conta
-                            </p>
-                            <p className="text-xs text-foreground/40">
-                                Todos os seus dados serão permanentemente
-                                deletados.
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setShowDeleteModal(true)}
-                        className="text-sm text-error font-medium hover:underline flex items-center gap-1"
-                    >
-                        Excluir
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
-
-            {showDeleteModal && (
-                <>
-                    <div
-                        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-                        onClick={() => setShowDeleteModal(false)}
-                    />
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="relative w-full max-w-md bg-background/95 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-300">
-                            <div className="flex justify-center mb-4">
-                                <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center border-2 border-error/20">
-                                    <AlertTriangle className="w-8 h-8 text-error" />
-                                </div>
-                            </div>
-
-                            <h2 className="text-xl font-bold text-foreground text-center mb-2">
-                                Excluir conta?
-                            </h2>
-                            <p className="text-foreground/60 text-sm text-center mb-6">
-                                Esta ação é{' '}
-                                <span className="text-error font-medium">
-                                    irreversível
-                                </span>
-                                . Todos os seus dados serão permanentemente
-                                deletados.
-                            </p>
-
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <Button
-                                    onClick={() => setShowDeleteModal(false)}
-                                    variant="secondary"
-                                    fullWidth
-                                >
-                                    Cancelar
-                                </Button>
-                                <Button
-                                    onClick={handleDeleteAccount}
-                                    variant="error"
-                                    fullWidth
-                                    leftIcon={<Trash2 className="w-5 h-5" />}
-                                >
-                                    Excluir conta
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
         </div>
     );
 }

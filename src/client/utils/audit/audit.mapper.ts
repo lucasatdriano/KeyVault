@@ -1,12 +1,12 @@
-import { AuditAction, AuditLog } from '@/src/generated/prisma/client';
-import { AuditLog as AuditCardLog } from '../components/ui/cards/AuditCard';
+import { AuditAction } from '@/src/generated/prisma/enums';
+import { AuditLog, AuditLogResponse } from '@/src/client/types/audit';
 
 const actionMap: Record<
     AuditAction,
     {
-        type: AuditCardLog['type'];
+        type: AuditLog['type'];
         event: (resource?: string | null) => string;
-        details: (log: AuditLog) => string | undefined;
+        details: () => string;
     }
 > = {
     REGISTER: {
@@ -91,26 +91,26 @@ const actionMap: Record<
     },
 };
 
-export function mapAuditLog(log: AuditLog): AuditCardLog {
+export function mapAuditLog(log: AuditLogResponse): AuditLog {
     const config = actionMap[log.action];
-
-    const date = new Date(log.createdAt);
 
     return {
         id: log.id,
 
-        date: date.toLocaleDateString('sv-SE'),
+        date: log.createdAt.toLocaleDateString('sv-SE'),
 
-        time: date.toLocaleTimeString('pt-BR', {
+        time: log.createdAt.toLocaleTimeString('pt-BR', {
             hour: '2-digit',
             minute: '2-digit',
         }),
 
-        event: config.event(undefined),
+        event: config.event(),
 
-        details: config.details(log),
+        details: config.details(),
 
         type: config.type,
+
+        os: log.os ?? '--',
 
         device:
             [log.browser, log.os, log.device].filter(Boolean).join(' • ') ||

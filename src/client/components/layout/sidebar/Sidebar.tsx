@@ -3,10 +3,14 @@
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOutIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
+
 import Logo from '../logo/Logo';
+
 import { useAuth } from '@/src/client/hooks/useAuth';
 import { useSidebar } from '@/src/client/hooks/useSidebar';
+
 import { sidebarSections } from './Sidebar.config';
+import { logoutAction } from '@/src/server/actions/auth/logout.action';
 
 interface SidebarProps {
     mobile?: boolean;
@@ -15,12 +19,16 @@ interface SidebarProps {
 export default function Sidebar({ mobile = false }: SidebarProps) {
     const { close } = useSidebar();
     const { user } = useAuth();
+
     const router = useRouter();
     const pathname = usePathname();
+
     const [expandedSections, setExpandedSections] = useState<string[]>([
         'CREDENCIAIS',
         'CONTA',
     ]);
+
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const toggleSection = (title: string) => {
         setExpandedSections((prev) =>
@@ -38,27 +46,53 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
         }
     };
 
+    const handleLogout = async () => {
+        if (isLoggingOut) {
+            return;
+        }
+
+        setIsLoggingOut(true);
+
+        try {
+            const result = await logoutAction();
+
+            if (!result.success) {
+                console.error(result.error);
+                return;
+            }
+
+            router.replace('/login');
+            router.refresh();
+        } finally {
+            setIsLoggingOut(false);
+        }
+    };
+
     const isActive = (href: string) => pathname === href;
 
     return (
         <aside
-            className={`bg-background/50 backdrop-blur-xl border-r border-white/10 flex flex-col ${mobile ? 'w-full h-full' : 'w-64 min-h-screen sticky z-50 top-0'}`}
+            className={`bg-background/50 backdrop-blur-xl border-r border-white/10 flex flex-col ${
+                mobile ? 'w-full h-full' : 'w-64 min-h-screen sticky z-50 top-0'
+            }`}
         >
-            <div className="p-6 border-b border-white/10">
-                <Logo variant="horizontal" size="sm"></Logo>
+            <div className="border-b border-white/10 p-6">
+                <Logo variant="horizontal" size="sm" />
             </div>
-            <nav className="flex-1 overflow-y-auto p-4 space-y-6">
+
+            <nav className="flex-1 space-y-6 overflow-y-auto p-4">
                 {sidebarSections.map((section) => (
                     <div key={section.title}>
                         <button
                             onClick={() => toggleSection(section.title)}
-                            className="flex items-center justify-between w-full text-foreground/40 text-xs font-semibold uppercase tracking-wider hover:text-foreground/60 transition-colors mb-2"
+                            className="mb-2 flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wider text-foreground/40 transition-colors hover:text-foreground/60"
                         >
                             {section.title}
+
                             {expandedSections.includes(section.title) ? (
-                                <ChevronDownIcon className="cursor-pointer w-4 h-4" />
+                                <ChevronDownIcon className="h-4 w-4 cursor-pointer" />
                             ) : (
-                                <ChevronRightIcon className="cursor-pointer w-4 h-4" />
+                                <ChevronRightIcon className="h-4 w-4 cursor-pointer" />
                             )}
                         </button>
 
@@ -70,32 +104,27 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
                                         onClick={() =>
                                             handleNavigation(item.href)
                                         }
-                                        className={`
-                                            w-full flex items-center justify-between px-3 py-2.5 rounded-xl
-                                            cursor-pointer transition-all duration-200
-                                            ${
-                                                isActive(item.href)
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : 'text-foreground/70 hover:bg-white/5 hover:text-foreground'
-                                            }
-                                        `}
+                                        className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 transition-all duration-200 cursor-pointer ${
+                                            isActive(item.href)
+                                                ? 'bg-primary/10 text-primary'
+                                                : 'text-foreground/70 hover:bg-white/5 hover:text-foreground'
+                                        }`}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <item.icon className="w-5 h-5" />
+                                            <item.icon className="h-5 w-5" />
+
                                             <span className="text-sm font-medium">
                                                 {item.label}
                                             </span>
                                         </div>
+
                                         {item.count !== undefined && (
                                             <span
-                                                className={`
-                                                text-xs font-medium px-2 py-0.5 rounded-full
-                                                ${
+                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                                     isActive(item.href)
                                                         ? 'bg-primary/20 text-primary'
                                                         : 'bg-white/5 text-foreground/40'
-                                                }
-                                            `}
+                                                }`}
                                             >
                                                 {item.count}
                                             </span>
@@ -107,29 +136,34 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
                     </div>
                 ))}
             </nav>
+
             {user && (
-                <div className="p-4 border-t border-white/10">
+                <div className="border-t border-white/10 p-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-linear-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-sm">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br from-primary to-secondary text-sm font-bold text-white">
                             {user.name
                                 ?.split(' ')
-                                .map((n) => n[0])
+                                .map((name) => name[0])
                                 .join('')
                                 .toUpperCase() || 'U'}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
+
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-foreground">
                                 {user.name || 'Usuário'}
                             </p>
-                            <p className="text-xs text-foreground/40 truncate">
+
+                            <p className="truncate text-xs text-foreground/40">
                                 {user.email || 'usuario@email.com'}
                             </p>
                         </div>
+
                         <button
-                            onClick={() => console.log('Logout')}
-                            className="cursor-pointer p-1.5 rounded-lg hover:bg-error/5 text-error/40 hover:text-error/70 transition-colors"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className="cursor-pointer rounded-lg p-1.5 text-error/40 transition-colors hover:bg-error/5 hover:text-error/70 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            <LogOutIcon className="w-4 h-4" />
+                            <LogOutIcon className="h-4 w-4" />
                         </button>
                     </div>
                 </div>

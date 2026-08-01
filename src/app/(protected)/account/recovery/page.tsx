@@ -15,10 +15,12 @@ import {
     AlertCircle,
     Check,
     Globe,
+    HelpCircleIcon,
 } from 'lucide-react';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Header from '@/src/client/components/layout/header/Header';
+import InfoCard from '@/src/client/components/ui/cards/InfoCard';
 
 const recoveryMethods = [
     {
@@ -328,26 +330,20 @@ export default function RecoveryPage() {
                 </div>
             </div>
 
-            <div className="bg-primary/5 rounded-2xl border border-primary/10 p-6 mx-4 mb-4">
-                <div className="flex items-start gap-3">
-                    <HelpCircle className="w-5 h-5 text-primary/60 shrink-0 mt-0.5" />
-                    <div>
-                        <h3 className="text-sm font-semibold text-foreground">
-                            Como funciona a recuperação?
-                        </h3>
-                        <p className="text-sm text-foreground/60 mt-1 leading-relaxed">
-                            Se você esquecer sua senha mestre, os métodos ativos
-                            acima permitirão verificar sua identidade e criar
-                            uma nova senha.
-                            <span className="text-foreground/40">
-                                {' '}
-                                Recomendamos ativar ao menos 2 métodos
-                                independentes.
-                            </span>
-                        </p>
-                    </div>
-                </div>
-            </div>
+            <InfoCard
+                icon={HelpCircleIcon}
+                title="Como funciona a recuperação?"
+                variant="primary"
+            >
+                <>
+                    Se você esquecer sua senha mestre, os métodos ativos acima
+                    permitirão verificar sua identidade e criar uma nova senha.
+                    <span className="text-foreground/40">
+                        {' '}
+                        Recomendamos ativar ao menos 2 métodos independentes.
+                    </span>
+                </>
+            </InfoCard>
 
             {showRecoveryKey && (
                 <>

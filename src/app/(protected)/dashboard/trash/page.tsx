@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, AlertCircle } from 'lucide-react';
+import { Trash2, AlertCircle, AlertCircleIcon } from 'lucide-react';
 import { Credential } from '@/src/shared/types/credential';
 import Header from '@/src/client/components/layout/header/Header';
 import Button from '@/src/client/components/ui/buttons/Button';
 import DeletedCredentialCard from '@/src/client/components/ui/cards/DeletedCredentialCard';
+import InfoCard from '@/src/client/components/ui/cards/InfoCard';
 
 const trashData: Credential[] = [
     {
@@ -181,28 +182,26 @@ export default function TrashPage() {
             )}
 
             {trashItems.length > 0 && (
-                <div className="mx-4 bg-white/5 rounded-xl p-4 border border-white/5">
-                    <div className="flex items-start gap-3 px">
-                        <AlertCircle className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
-                        <div>
-                            <p className="text-sm text-foreground/60">
-                                <span className="font-medium text-foreground/80">
-                                    Retenção de 30 dias:
-                                </span>{' '}
-                                Credenciais excluídas permanecem na lixeira por
-                                30 dias antes de serem permanentemente
-                                removidas.
-                            </p>
-                            <p className="text-xs text-foreground/30 mt-1">
-                                {trashItems.length}{' '}
-                                {trashItems.length === 1
-                                    ? 'credencial'
-                                    : 'credenciais'}{' '}
-                                na lixeira
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <InfoCard
+                    icon={AlertCircleIcon}
+                    footer={
+                        <>
+                            {trashItems.length}{' '}
+                            {trashItems.length === 1
+                                ? 'credencial'
+                                : 'credenciais'}{' '}
+                            na lixeira
+                        </>
+                    }
+                >
+                    <>
+                        <span className="font-medium text-foreground/80">
+                            Retenção de 30 dias:
+                        </span>{' '}
+                        Credenciais excluídas permanecem na lixeira por 30 dias
+                        antes de serem permanentemente removidas.
+                    </>
+                </InfoCard>
             )}
         </div>
     );
