@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Logo from '@/src/components/layout/logo/Logo';
+import Logo from '@/src/client/components/layout/logo/Logo';
 
 interface SplashScreenProps {
     onGetStarted?: () => void;

@@ -54,7 +54,6 @@ model User {
 
   credentials         Credential[]
   categories          Category[]
-  sessions            Session[]
   auditLogs           AuditLog[]
   recoveryMethods     RecoveryMethod[]
 }
@@ -74,6 +73,7 @@ model Credential {
   salt        String   @db.Text
 
   version     Int      @default(1)
+  algorithm   String   @default("AES-256-GCM")
 
   favorite    Boolean  @default(false)
 
@@ -104,44 +104,30 @@ model Category {
   @@index([userId])
 }
 
-model Session {
-  id            String   @id @default(cuid())
+model AuditLog {model AuditLog {
+  id                 String        @id @default(cuid())
 
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  tokenHash     String   @unique
+  credentialId       String?
+  credential         Credential?   @relation(fields: [credentialId], references: [id], onDelete: SetNull)
 
-  userAgent     String?
+  action             AuditAction
 
-  lastAccessAt  DateTime @default(now())
-  expiresAt     DateTime
-  revokedAt     DateTime?
+  resourceSearchHash String? @db.Char(64)
 
-  createdAt     DateTime @default(now())
+  browser            String?
+  os                 String?
+  device             String?
+  ip                 String?
 
-  @@index([userId])
-  @@index([expiresAt])
-}
-
-model AuditLog {
-  id             String   @id @default(cuid())
-
-  userId         String
-  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  credentialId   String?
-  credential     Credential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
-
-  action         AuditAction
-
-  browser        String?  @db.VarChar(100)
-  os             String?  @db.VarChar(100)
-
-  createdAt      DateTime @default(now())
+  createdAt          DateTime @default(now())
 
   @@index([userId])
   @@index([credentialId])
+  @@index([action])
+  @@index([resourceSearchHash])
   @@index([createdAt])
 }
 

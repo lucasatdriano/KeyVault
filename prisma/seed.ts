@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@/src/generated/prisma/client';
+import { PrismaClient } from '@/src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import argon2 from 'argon2';
 
@@ -17,11 +17,10 @@ async function main() {
         },
         update: {},
         create: {
-            name: 'Administrador',
+            name: 'Admin',
             email: 'admin@keyvault.com',
             passwordHash: adminPassword,
             emailVerified: true,
-            role: UserRole.ADMIN,
         },
     });
 

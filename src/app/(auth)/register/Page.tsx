@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Key, Lock, CheckCircle } from 'lucide-react';
-import Button from '@/src/components/ui/buttons/Button';
-import InputTextForm from '@/src/components/ui/inputs/InputTextForm';
-import Logo from '@/src/components/layout/logo/Logo';
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import Logo from '@/src/client/components/layout/logo/Logo';
+import { registerAction } from '@/src/server/actions/auth/register.action';
+import { toast } from 'sonner';
+import { validateRegisterForm } from '@/src/client/validators/auth.validator';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -17,35 +20,58 @@ export default function RegisterPage() {
         confirmPassword: '',
     });
     const [acceptTerms, setAcceptTerms] = useState(false);
-    const [errors, setErrors] = useState<Record<string, string>>({});
-
-    const validateForm = () => {
-        const newErrors: Record<string, string> = {};
-
-        if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório';
-        if (!formData.email.trim()) newErrors.email = 'E-mail é obrigatório';
-        else if (!/\S+@\S+\.\S+/.test(formData.email))
-            newErrors.email = 'E-mail inválido';
-        if (!formData.password) newErrors.password = 'Senha é obrigatória';
-        else if (formData.password.length < 6)
-            newErrors.password = 'Senha deve ter pelo menos 6 caracteres';
-        if (formData.password !== formData.confirmPassword)
-            newErrors.confirmPassword = 'As senhas não coincidem';
-        if (!acceptTerms)
-            newErrors.terms = 'Você precisa aceitar os termos de uso';
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
+    const [errors, setErrors] = useState({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        terms: '',
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm()) return;
+
+        const validationErrors = validateRegisterForm(
+            {
+                ...formData,
+            },
+            acceptTerms,
+        );
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors({
+                name: validationErrors.name ?? '',
+                email: validationErrors.email ?? '',
+                password: validationErrors.password ?? '',
+                confirmPassword: validationErrors.confirmPassword ?? '',
+                terms: validationErrors.terms ?? '',
+            });
+
+            return;
+        }
+
+        setErrors({
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            terms: '',
+        });
 
         setIsLoading(true);
         try {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            console.log('Registrando:', formData);
+            const result = await registerAction({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+            });
+
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+
+            toast.success(result.success);
             router.push('/login');
         } finally {
             setIsLoading(false);
@@ -57,7 +83,7 @@ export default function RegisterPage() {
             <div className="absolute -top-25 -right-25 w-64 h-64 bg-primary/20 rounded-full opacity-20 blur-3xl"></div>
             <div className="absolute -bottom-25 -left-25 w-80 h-80 bg-secondary/20 rounded-full opacity-20 blur-3xl"></div>
 
-            <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10 max-h-[90vh] overflow-y-auto">
+            <div className="relative z-10 my-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
                 <div className="flex justify-center mb-6">
                     <Logo variant="icon" size="lg"></Logo>
                 </div>

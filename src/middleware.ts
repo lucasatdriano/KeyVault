@@ -1,14 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAuthRoute, isProtectedRoute } from './lib/auth/routes';
+import { isAuthRoute, isProtectedRoute } from './server/auth/routes';
+import { ACCESS_TOKEN_COOKIE_NAME } from './shared/constants/auth/cookies.constants';
+import { verifyEdgeToken } from './server/auth/verify-edge-token';
 
-const SESSION_COOKIE_NAME = 'session';
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
+    const token = request.cookies.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
+    let hasSession = false;
 
-    const hasSession = Boolean(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+    if (token) {
+        try {
+            await verifyEdgeToken(token);
+            hasSession = true;
+        } catch {
+            hasSession = false;
+        }
+    }
 
     if (!hasSession && isProtectedRoute(pathname)) {
-        return NextResponse.redirect(new URL('/login', request.url));
+        const response = NextResponse.redirect(new URL('/login', request.url));
+
+        response.cookies.delete(ACCESS_TOKEN_COOKIE_NAME);
+
+        return response;
     }
 
     if (hasSession && isAuthRoute(pathname)) {

@@ -3,23 +3,59 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Key, LogIn } from 'lucide-react';
-import Button from '@/src/components/ui/buttons/Button';
-import InputTextForm from '@/src/components/ui/inputs/InputTextForm';
-import Logo from '@/src/components/layout/logo/Logo';
+import { toast } from 'sonner';
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import Logo from '@/src/client/components/layout/logo/Logo';
+import { loginAction } from '@/src/server/actions/auth/login.action';
+import { validateLoginForm } from '@/src/client/validators/auth.validator';
 
 export default function LoginPage() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [errors, setErrors] = useState({
+        email: '',
+        password: '',
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        try {
-            await new Promise((resolve) => setTimeout(resolve, 1500));
-            console.log('Login com:', { email, password });
 
+        const validationErrors = validateLoginForm({
+            email,
+            password,
+        });
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors({
+                email: validationErrors.email ?? '',
+                password: validationErrors.password ?? '',
+            });
+
+            return;
+        }
+
+        setErrors({
+            email: '',
+            password: '',
+        });
+
+        setIsLoading(true);
+
+        try {
+            const result = await loginAction({
+                email,
+                password,
+            });
+
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+
+            toast.success(result.message);
             router.push('/dashboard');
         } finally {
             setIsLoading(false);
@@ -47,19 +83,23 @@ export default function LoginPage() {
                     <InputTextForm
                         label="E-mail"
                         placeholder="seu@email.com"
-                        type="email"
+                        type="text"
+                        name="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         leftIcon={<Mail className="w-5 h-5" />}
+                        error={errors.email}
                     />
 
                     <InputTextForm
                         label="Senha"
                         placeholder="********"
                         type="password"
+                        name="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         leftIcon={<Key className="w-5 h-5" />}
+                        error={errors.password}
                     />
 
                     <div className="flex items-center justify-end">

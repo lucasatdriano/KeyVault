@@ -3,9 +3,9 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, ArrowLeft, Send } from 'lucide-react';
-import Button from '@/src/components/ui/buttons/Button';
-import InputTextForm from '@/src/components/ui/inputs/InputTextForm';
-import Logo from '@/src/components/layout/logo/Logo';
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import Logo from '@/src/client/components/layout/logo/Logo';
 
 export default function ForgotPasswordPage() {
     const router = useRouter();

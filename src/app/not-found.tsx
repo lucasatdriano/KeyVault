@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { Home, ArrowLeft } from 'lucide-react';
-import Button from '@/src/components/ui/buttons/Button';
-import Logo from '../components/layout/logo/Logo';
+import Button from '@/src/client/components/ui/buttons/Button';
+import Logo from '../client/components/layout/logo/Logo';
 
 export default function NotFound() {
     const router = useRouter();
