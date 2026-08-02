@@ -12,6 +12,7 @@ interface HeaderSearchProps {
     title: string;
     subtitle: string;
     onSearch?: (query: string) => void;
+    onFilterChange?: (value: string) => void;
     onNewCredential?: () => void;
     showNewButton?: boolean;
     showFilter?: boolean;
@@ -26,6 +27,7 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
     title,
     subtitle,
     onSearch,
+    onFilterChange,
     onNewCredential,
     showNewButton = true,
     showFilter = true,
@@ -87,6 +89,7 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
                     {showFilter && (
                         <select
                             className="cursor-pointer bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all sm:w-40"
+                            onChange={(e) => onFilterChange?.(e.target.value)}
                             defaultValue=""
                         >
                             {filterOptions.map((option) => (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ShieldIcon } from 'lucide-react';
 
 import Header from '@/src/client/components/layout/header/Header';
@@ -11,11 +11,13 @@ import { mapAuditLog } from '@/src/client/utils/audit/audit.mapper';
 
 import { getUserLogsAction } from '@/src/server/actions/audit/get-user-logs.action';
 import InfoCard from '@/src/client/components/ui/cards/InfoCard';
+import { AuditAction } from '@/src/generated/prisma/enums';
 
 export default function AuditPage() {
     const [logs, setLogs] = useState<AuditLog[]>([]);
+    const [search, setSearch] = useState('');
+    const [action, setAction] = useState('');
     const [loading, setLoading] = useState(true);
-    const initialLoadDone = useRef(false);
 
     const loadLogs = useCallback(async () => {
         setLoading(true);
@@ -23,6 +25,8 @@ export default function AuditPage() {
         const result = await getUserLogsAction({
             page: 1,
             limit: 20,
+            action: action ? (action as AuditAction) : undefined,
+            search: search || undefined,
         });
 
         if (result.success && result.data) {
@@ -30,13 +34,14 @@ export default function AuditPage() {
         }
 
         setLoading(false);
-    }, []);
+    }, [search, action]);
 
     useEffect(() => {
-        if (!initialLoadDone.current) {
-            initialLoadDone.current = true;
+        const timer = setTimeout(() => {
             loadLogs();
-        }
+        }, 500);
+
+        return () => clearTimeout(timer);
     }, [loadLogs]);
 
     if (loading) {
@@ -53,7 +58,11 @@ export default function AuditPage() {
 
     return (
         <div className="space-y-6">
-            <Header variant="audit" />
+            <Header
+                variant="audit"
+                onSearch={setSearch}
+                onFilterChange={setAction}
+            />
 
             <AuditCard
                 logs={logs}

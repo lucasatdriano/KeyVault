@@ -2,20 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAuthRoute, isProtectedRoute } from './server/auth/routes';
 import { ACCESS_TOKEN_COOKIE_NAME } from './shared/constants/auth/cookies.constants';
 import { verifyEdgeToken } from './server/auth/verify-edge-token';
+import { handleExpiredSession } from './server/auth/logout-expired';
 
 export async function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
-    const token = request.cookies.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
-    let hasSession = false;
 
-    if (token) {
-        try {
-            await verifyEdgeToken(token);
-            hasSession = true;
-        } catch {
-            hasSession = false;
-        }
+    const token = request.cookies.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
+
+    const session = token ? await verifyEdgeToken(token) : null;
+
+    if (session?.expired && session.payload) {
+        return handleExpiredSession(request, session.payload.sub);
     }
+
+    const hasSession = session?.valid ?? false;
 
     if (!hasSession && isProtectedRoute(pathname)) {
         const response = NextResponse.redirect(new URL('/login', request.url));

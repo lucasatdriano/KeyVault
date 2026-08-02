@@ -157,16 +157,29 @@ export class AuthService {
     async logout(audit?: AuditContext): Promise<void> {
         const user = await this.getCurrentUser();
 
-        if (user) {
-            await this.auditService.createLog({
-                userId: user.id,
-                action: AuditAction.LOGOUT,
-                browser: audit?.browser,
-                os: audit?.os,
-                device: audit?.device,
-                ip: audit?.ip,
-            });
+        if (!user) {
+            await deleteAccessToken();
+            return;
         }
+
+        await this.logoutByUserId(user.id, audit);
+    }
+
+    async logoutByUserId(userId: string, audit?: AuditContext): Promise<void> {
+        const user = await this.authRepository.findUserById(userId);
+
+        if (!user) {
+            return;
+        }
+
+        await this.auditService.createLog({
+            userId,
+            action: AuditAction.LOGOUT,
+            browser: audit?.browser,
+            os: audit?.os,
+            device: audit?.device,
+            ip: audit?.ip,
+        });
 
         await deleteAccessToken();
     }

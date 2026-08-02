@@ -41,11 +41,9 @@ export default function SettingsPage() {
     ];
 
     const sessionTimeoutOptions = [
-        { value: '15', label: '15 minutos' },
         { value: '30', label: '30 minutos' },
         { value: '60', label: '1 hora' },
         { value: '120', label: '2 horas' },
-        { value: 'never', label: 'Nunca' },
     ];
 
     const handleSettingChange = (key: keyof typeof settings, value: any) => {

@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Key, LogIn } from 'lucide-react';
 import { toast } from 'sonner';
 import Button from '@/src/client/components/ui/buttons/Button';
@@ -12,6 +12,7 @@ import { validateLoginForm } from '@/src/client/validators/auth.validator';
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +20,19 @@ export default function LoginPage() {
         email: '',
         password: '',
     });
+    const logoutExecuted = useRef(false);
+
+    useEffect(() => {
+        if (logoutExecuted.current) return;
+
+        if (!searchParams.get('expired')) return;
+
+        logoutExecuted.current = true;
+
+        toast.info('Sua sessão expirou. Faça login novamente.');
+
+        router.replace('/login');
+    }, [router, searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -10,6 +10,7 @@ interface HeaderProps {
     variant: HeaderVariant;
     credentialCount?: number;
     onSearch?: (query: string) => void;
+    onFilterChange?: (value: string) => void;
     onNewCredential?: () => void;
     hideMobile?: boolean;
     filterOptions?: { value: string; label: string }[];
@@ -19,6 +20,7 @@ export default function Header({
     variant,
     credentialCount = 0,
     onSearch,
+    onFilterChange,
     onNewCredential,
     hideMobile = false,
     filterOptions,
@@ -46,6 +48,7 @@ export default function Header({
                 {...(config.type === 'search'
                     ? {
                           onSearch,
+                          onFilterChange,
                           onNewCredential,
                           showNewButton: config.showNewButton,
                           showFilter: config.showFilter,

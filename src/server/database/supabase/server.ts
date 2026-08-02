@@ -18,7 +18,9 @@ export async function createServerSupabaseClient() {
                             cookieStore.set(name, value, options);
                         });
                     } catch {
-                        // Cookies podem não estar disponíveis em Server Components
+                        throw new Error(
+                            'Falha ao definir cookies. Cookies podem não estar disponíveis em Server Components.',
+                        );
                     }
                 },
             },

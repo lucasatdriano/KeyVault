@@ -1,10 +1,4 @@
-export interface JWTPayload {
-    sub: string;
-    email: string;
-
-    iat: number;
-    exp: number;
-}
+import { JWTPayload } from '@/src/shared/types/jwt-payload';
 
 export interface VerifyTokenResult {
     valid: boolean;

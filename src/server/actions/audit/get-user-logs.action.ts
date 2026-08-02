@@ -16,7 +16,7 @@ export async function getUserLogsAction(
 
         return {
             success: true,
-            message: '',
+            message: 'Auditorias do usuário recuperadas com sucesso.',
             data: logs,
         };
     } catch (error) {

@@ -120,9 +120,9 @@ export default function AuditCard({
                             </div>
 
                             {isExpanded ? (
-                                <ChevronDownIcon className="h-4 w-4 text-foreground/30" />
+                                <ChevronDownIcon className="cursor-pointer h-4 w-4 text-foreground/30" />
                             ) : (
-                                <ChevronUpIcon className="h-4 w-4 text-foreground/30" />
+                                <ChevronUpIcon className="cursor-pointer h-4 w-4 text-foreground/30" />
                             )}
                         </button>
 

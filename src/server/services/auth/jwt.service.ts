@@ -1,7 +1,8 @@
 import { JWT_ALGORITHM } from '@/src/shared/constants/auth/auth.constants';
 import { base64ToBytes, bytesToBase64 } from '../../crypto/encoding';
-import { JWTPayload, VerifyTokenResult } from '../../types/service/jwt';
+import { VerifyTokenResult } from '../../types/service/jwt';
 import { getSubtle } from '../../crypto/webcrypto';
+import { JWTPayload } from '@/src/shared/types/jwt-payload';
 
 export class JWTService {
     private readonly secret: string;
@@ -24,6 +25,7 @@ export class JWTService {
         const payload: JWTPayload = {
             sub: userId,
             email,
+            type: 'access_token',
             iat: now,
             exp: now + expiresIn,
         };
@@ -71,6 +73,13 @@ export class JWTService {
             const decoded = JSON.parse(
                 new TextDecoder().decode(base64ToBytes(payload)),
             ) as JWTPayload;
+
+            if (decoded.type !== 'access_token') {
+                return {
+                    valid: false,
+                    error: 'Tipo de token inválido.',
+                };
+            }
 
             const now = Math.floor(Date.now() / 1000);
 

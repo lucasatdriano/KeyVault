@@ -1,5 +1,5 @@
 export const ACCESS_TOKEN_DURATION = {
-    MINUTES_30: 30 * 60,
+    MINUTES_30: 1 * 60,
     HOUR_1: 60 * 60,
     HOURS_2: 2 * 60 * 60,
 } as const;
