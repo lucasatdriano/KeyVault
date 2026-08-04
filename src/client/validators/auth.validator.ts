@@ -1,6 +1,6 @@
-import { LoginData, RegisterData } from '@/src/shared/types/auth';
+import { LoginFormData, RegisterFormData } from '@/src/shared/types/auth';
 
-export function validateLoginForm(data: LoginData) {
+export function validateLoginForm(data: LoginFormData) {
     const errors: Record<string, string> = {};
 
     if (!data.email.trim()) {
@@ -17,7 +17,7 @@ export function validateLoginForm(data: LoginData) {
 }
 
 export function validateRegisterForm(
-    data: RegisterData & { confirmPassword: string },
+    data: RegisterFormData & { confirmPassword: string },
     acceptTerms: boolean,
 ) {
     const errors: Record<string, string> = {};

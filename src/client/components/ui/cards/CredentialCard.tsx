@@ -2,17 +2,16 @@
 
 import React, { useState } from 'react';
 import {
-    Key,
-    Star,
-    MoreVertical,
-    Trash2,
-    Copy,
-    Eye,
-    EyeOff,
-    Calendar,
-    Mail,
-    Phone,
-    Shield,
+    KeyIcon,
+    StarIcon,
+    MoreVerticalIcon,
+    Trash2Icon,
+    CopyIcon,
+    EyeIcon,
+    EyeOffIcon,
+    CalendarIcon,
+    MailIcon,
+    ShieldIcon,
 } from 'lucide-react';
 import { Credential } from '@/src/shared/types/credential';
 import DeleteConfirmationModal from '../../layout/modals/credentialsModals/DeleteConfirmationModal';
@@ -155,7 +154,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                             : 'Adicionar aos favoritos'
                                     }
                                 >
-                                    <Star
+                                    <StarIcon
                                         className={`
                                             w-4 h-4
                                             transition-all duration-200
@@ -187,7 +186,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                             onClick={() => setShowMenu(!showMenu)}
                             className="p-1.5 rounded-lg hover:bg-white/5 text-foreground/40 hover:text-foreground transition-colors"
                         >
-                            <MoreVertical className="w-5 h-5" />
+                            <MoreVerticalIcon className="w-5 h-5" />
                         </button>
 
                         {showMenu && (
@@ -204,7 +203,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                         }}
                                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground/70 hover:bg-white/5 transition-colors"
                                     >
-                                        <Star
+                                        <StarIcon
                                             className={`w-4 h-4 ${isFavorite ? 'text-yellow-500 fill-yellow-500' : ''}`}
                                         />
                                         {isFavorite
@@ -215,7 +214,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                         onClick={handleDelete}
                                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-error hover:bg-white/5 transition-colors"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2Icon className="w-4 h-4" />
                                         Excluir
                                     </button>
                                 </div>
@@ -227,25 +226,16 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                 <div className="space-y-2">
                     {(credential.email || credential.username) && (
                         <div className="flex items-center gap-2 text-sm">
-                            <Mail className="w-4 h-4 text-foreground/30 shrink-0" />
+                            <MailIcon className="w-4 h-4 text-foreground/30 shrink-0" />
                             <span className="text-foreground/70 truncate">
                                 {credential.email || credential.username}
                             </span>
                         </div>
                     )}
 
-                    {credential.phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                            <Phone className="w-4 h-4 text-foreground/30 shrink-0" />
-                            <span className="text-foreground/70 truncate">
-                                {credential.phone}
-                            </span>
-                        </div>
-                    )}
-
                     {credential.password && (
                         <div className="flex items-center gap-2 text-sm">
-                            <Key className="w-4 h-4 text-foreground/30 shrink-0" />
+                            <KeyIcon className="w-4 h-4 text-foreground/30 shrink-0" />
                             <span className="text-foreground/70 font-mono">
                                 {showPassword
                                     ? credential.password
@@ -260,9 +250,9 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                     className="p-1 rounded hover:bg-white/5 text-foreground/30 hover:text-foreground/60 transition-colors"
                                 >
                                     {showPassword ? (
-                                        <EyeOff className="w-4 h-4" />
+                                        <EyeOffIcon className="w-4 h-4" />
                                     ) : (
-                                        <Eye className="w-4 h-4" />
+                                        <EyeIcon className="w-4 h-4" />
                                     )}
                                 </button>
                                 <button
@@ -272,7 +262,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                     }}
                                     className="p-1 rounded hover:bg-white/5 text-foreground/30 hover:text-foreground/60 transition-colors"
                                 >
-                                    <Copy className="w-4 h-4" />
+                                    <CopyIcon className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
@@ -282,13 +272,13 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                 <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5">
                     <div className="flex items-center gap-3 text-xs">
                         <div className="flex items-center gap-1 text-foreground/40">
-                            <Calendar className="w-3.5 h-3.5" />
+                            <CalendarIcon className="w-3.5 h-3.5" />
                             <span>{credential.createdAt}</span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-1">
-                        <Shield className="w-3.5 h-3.5 text-green-500" />
+                        <ShieldIcon className="w-3.5 h-3.5 text-green-500" />
                         <span className="text-[10px] text-foreground/30">
                             Seguro
                         </span>

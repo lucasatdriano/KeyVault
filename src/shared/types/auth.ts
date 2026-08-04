@@ -1,20 +1,15 @@
-export interface RegisterData {
+export interface RegisterFormData {
     name: string;
     email: string;
     password: string;
-    userAgent?: string;
-    sessionExpiration?: number;
+    confirmPassword: string;
 }
 
-export interface LoginData {
+export interface LoginFormData {
     email: string;
     password: string;
-    userAgent?: string;
-    sessionExpiration?: number;
 }
 
-export interface ChangePasswordData {
-    userId: string;
-    currentPassword: string;
+export interface ChangePasswordFormData {
     newPassword: string;
 }

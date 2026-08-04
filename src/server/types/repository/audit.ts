@@ -17,5 +17,4 @@ export interface FindUserLogsOptions extends PaginationQuery {
     action?: AuditAction;
     credentialId?: string;
     resourceSearchHash?: string;
-    search?: string;
 }

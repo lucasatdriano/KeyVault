@@ -1,16 +1,27 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Key, Mail, Globe, Plus, Lock } from 'lucide-react';
+import { GlobeIcon, KeyIcon, LockIcon, MailIcon, PlusIcon } from 'lucide-react';
+import { toast } from 'sonner';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
-import { NewCredentialData } from '@/src/shared/types/credential';
+
+import { CreateCredentialData } from '@/src/shared/types/credential';
+import { DEFAULT_CATEGORIES } from '@/src/client/constants/categories';
+import { createCredentialAction } from '@/src/server/actions/credentials/create-credential.action';
+import { useVaultStore } from '@/src/client/store/vault.store';
+import { encryptString } from '@/src/shared/crypto/cipher';
+import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
+import { bytesToBase64 } from '@/src/shared/crypto/encoding';
+import { generateSalt } from '@/src/shared/crypto/random';
+import { validateCredentialForm } from '@/src/client/validators/credential.validator';
 
 interface NewCredentialModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (data: NewCredentialData) => void;
+    onSave?: () => void;
 }
 
 const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
@@ -19,36 +30,129 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
     onSave,
 }) => {
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState<NewCredentialData>({
+    const vaultKey = useVaultStore((state) => state.vaultKey);
+
+    const [formData, setFormData] = useState<CreateCredentialData>({
         title: '',
         username: '',
         email: '',
         password: '',
         url: '',
-        category: 'Social',
+        category: '',
+        notes: '',
+    });
+    const [errors, setErrors] = useState({
+        title: '',
+        username: '',
+        email: '',
+        password: '',
+        url: '',
+        category: '',
         notes: '',
     });
 
-    const handleChange = (field: keyof NewCredentialData, value: string) => {
-        setFormData({ ...formData, [field]: value });
+    const handleChange = (field: keyof CreateCredentialData, value: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const resetForm = () => {
+        setFormData({
+            title: '',
+            username: '',
+            email: '',
+            password: '',
+            url: '',
+            category: '',
+            notes: '',
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!vaultKey) {
+            toast.error('Vault Key não encontrada.');
+            return;
+        }
+
+        const validationErrors = validateCredentialForm(formData);
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors({
+                title: validationErrors.title ?? '',
+                username: validationErrors.username ?? '',
+                email: validationErrors.email ?? '',
+                password: validationErrors.password ?? '',
+                url: validationErrors.url ?? '',
+                category: validationErrors.category ?? '',
+                notes: validationErrors.notes ?? '',
+            });
+
+            return;
+        }
+
+        setErrors({
+            title: '',
+            username: '',
+            email: '',
+            password: '',
+            url: '',
+            category: '',
+            notes: '',
+        });
+
         setIsLoading(true);
+
         try {
-            await onSave(formData);
+            const payload = {
+                title: formData.title,
+                username: formData.username,
+                email: formData.email,
+                password: formData.password,
+                url: formData.url,
+                notes: formData.notes,
+            };
+
+            const encrypted = await encryptString(
+                JSON.stringify(payload),
+                vaultKey,
+            );
+
+            const resourceSearchHash = await generateResourceSearchHash(
+                formData.title,
+                vaultKey,
+            );
+
+            const salt = bytesToBase64(generateSalt());
+
+            const result = await createCredentialAction({
+                categoryId: formData.category || null,
+                cipherText: encrypted.cipherText,
+                iv: encrypted.iv,
+                salt,
+                resourceSearchHash,
+                version: 1,
+                algorithm: 'AES-256-GCM',
+                favorite: false,
+            });
+
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+
+            toast.success(result.message);
+
+            resetForm();
+
             onClose();
 
-            setFormData({
-                title: '',
-                username: '',
-                email: '',
-                password: '',
-                url: '',
-                category: 'Social',
-                notes: '',
-            });
+            onSave?.();
+        } catch {
+            toast.error('Erro ao criar credencial.');
         } finally {
             setIsLoading(false);
         }
@@ -59,13 +163,14 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             isOpen={isOpen}
             onClose={onClose}
             title="Nova Credencial"
-            icon={<Plus className="w-5 h-5 text-primary" />}
+            icon={<PlusIcon className="w-5 h-5 text-primary" />}
             maxWidth="lg"
             footer={
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <Button onClick={onClose} variant="secondary" fullWidth>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                    <Button variant="secondary" onClick={onClose} fullWidth>
                         Cancelar
                     </Button>
+
                     <Button
                         onClick={handleSubmit}
                         isLoading={isLoading}
@@ -80,19 +185,21 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             <form onSubmit={handleSubmit} className="space-y-4">
                 <InputTextForm
                     label="Título"
-                    placeholder="ex: GitHub"
+                    placeholder="GitHub"
                     value={formData.title}
                     onChange={(e) => handleChange('title', e.target.value)}
-                    leftIcon={<Key className="w-5 h-5" />}
+                    leftIcon={<KeyIcon className="w-5 h-5" />}
+                    error={errors.title}
                     required
                 />
 
                 <InputTextForm
                     label="Usuário / E-mail"
-                    placeholder="seu@email.com"
+                    placeholder="usuario@email.com"
                     value={formData.email || formData.username}
                     onChange={(e) => {
                         const value = e.target.value;
+
                         if (value.includes('@')) {
                             handleChange('email', value);
                             handleChange('username', '');
@@ -101,7 +208,8 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                             handleChange('email', '');
                         }
                     }}
-                    leftIcon={<Mail className="w-5 h-5" />}
+                    leftIcon={<MailIcon className="w-5 h-5" />}
+                    error={errors.username || errors.email}
                     required
                 />
 
@@ -111,70 +219,70 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                     placeholder="********"
                     value={formData.password}
                     onChange={(e) => handleChange('password', e.target.value)}
-                    leftIcon={<Lock className="w-5 h-5" />}
+                    leftIcon={<LockIcon className="w-5 h-5" />}
+                    error={errors.password}
                     required
                 />
 
                 <InputTextForm
                     label="Website"
                     placeholder="https://exemplo.com"
-                    value={formData.url || ''}
+                    value={formData.url}
                     onChange={(e) => handleChange('url', e.target.value)}
-                    leftIcon={<Globe className="w-5 h-5" />}
+                    leftIcon={<GlobeIcon className="w-5 h-5" />}
+                    error={errors.url}
                 />
 
                 <div>
-                    <label className="block text-foreground/90 text-sm font-medium mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground/90">
                         Categoria
                     </label>
+
                     <select
                         value={formData.category}
                         onChange={(e) =>
                             handleChange('category', e.target.value)
                         }
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
-                        <option value="E-mail" className="bg-background">
-                            E-mail
+                        <option value="" disabled className="bg-background">
+                            Selecione uma categoria
                         </option>
-                        <option
-                            value="Desenvolvimento"
-                            className="bg-background"
-                        >
-                            Desenvolvimento
-                        </option>
-                        <option value="Streaming" className="bg-background">
-                            Streaming
-                        </option>
-                        <option value="Social" className="bg-background">
-                            Social
-                        </option>
-                        <option value="Finanças" className="bg-background">
-                            Finanças
-                        </option>
-                        <option value="Trabalho" className="bg-background">
-                            Trabalho
-                        </option>
-                        <option value="Música" className="bg-background">
-                            Música
-                        </option>
-                        <option value="Compras" className="bg-background">
-                            Compras
-                        </option>
+
+                        {DEFAULT_CATEGORIES.map((category) => (
+                            <option
+                                key={category.name}
+                                value={category.name}
+                                className="bg-background"
+                            >
+                                {category.name}
+                            </option>
+                        ))}
                     </select>
+                    {errors.category && (
+                        <p className="mt-1 text-xs text-error">
+                            {errors.category}
+                        </p>
+                    )}
                 </div>
 
                 <div>
-                    <label className="block text-foreground/90 text-sm font-medium mb-1.5">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground/90">
                         Notas
                     </label>
+
                     <textarea
-                        value={formData.notes || ''}
-                        onChange={(e) => handleChange('notes', e.target.value)}
                         rows={3}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-foreground placeholder-foreground/30 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
+                        value={formData.notes}
+                        onChange={(e) => handleChange('notes', e.target.value)}
                         placeholder="Informações adicionais..."
+                        className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-foreground placeholder-foreground/30 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
                     />
+                    {errors.notes && (
+                        <p className="mt-1 text-xs text-error">
+                            {errors.notes}
+                        </p>
+                    )}
                 </div>
             </form>
         </ModalBase>

@@ -1,214 +1,109 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useState } from 'react';
-import { Key } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { KeyIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import { Credential } from '@/src/shared/types/credential';
+import { formatDateTime } from '@/src/client/utils/formatters/date';
+import { useVaultStore } from '@/src/client/store/vault.store';
+import { decryptString } from '@/src/shared/crypto/cipher';
+import { getCredentialsAction } from '@/src/server/actions/credentials/get-credentials.action';
 import Header from '@/src/client/components/layout/header/Header';
 import CredentialCard from '@/src/client/components/ui/cards/CredentialCard';
 import ViewCredentialModal from '@/src/client/components/layout/modals/credentialsModals/ViewCredentialModal';
-import { Credential, NewCredentialData } from '@/src/shared/types/credential';
 import NewCredentialModal from '@/src/client/components/layout/modals/credentialsModals/NewCredentialModal';
 
-const credentialsData: Credential[] = [
-    {
-        id: '1',
-        userId: 'user-1',
-        categoryId: 'cat-1',
-        category: 'Desenvolvimento',
-        title: 'GitHub',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@email.com',
-        phone: '',
-        password: 'MinhaSenha123!',
-        url: 'https://github.com',
-        notes: 'Conta principal do GitHub',
-        favorite: true,
-        createdAt: '2024-06-20T10:00:00Z',
-        updatedAt: '2024-06-20T10:00:00Z',
-    },
-    {
-        id: '2',
-        userId: 'user-1',
-        categoryId: 'cat-2',
-        category: 'E-mail',
-        title: 'Gmail Pessoal',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@gmail.com',
-        phone: '',
-        password: 'OutraSenha456!',
-        url: 'https://gmail.com',
-        notes: 'E-mail pessoal',
-        favorite: false,
-        createdAt: '2024-05-10T10:00:00Z',
-        updatedAt: '2024-05-10T10:00:00Z',
-    },
-    {
-        id: '3',
-        userId: 'user-1',
-        categoryId: 'cat-3',
-        category: 'Finanças',
-        title: 'Nubank',
-        username: '99887-6655',
-        email: '',
-        phone: '(11) 99887-6655',
-        password: '',
-        url: 'https://nubank.com.br',
-        notes: 'Conta corrente principal',
-        favorite: false,
-        createdAt: '2024-07-01T10:00:00Z',
-        updatedAt: '2024-07-01T10:00:00Z',
-    },
-    {
-        id: '4',
-        userId: 'user-1',
-        categoryId: 'cat-4',
-        category: 'Streaming',
-        title: 'Netflix',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@gmail.com',
-        phone: '',
-        password: 'Netflix123!',
-        url: 'https://netflix.com',
-        notes: 'Conta compartilhada',
-        favorite: false,
-        createdAt: '2024-03-22T10:00:00Z',
-        updatedAt: '2024-03-22T10:00:00Z',
-    },
-    {
-        id: '5',
-        userId: 'user-1',
-        categoryId: 'cat-5',
-        category: 'Trabalho',
-        title: 'Slack Empresa',
-        username: 'alex',
-        email: 'alex@startupxyz.com.br',
-        phone: '',
-        password: 'Slack456!',
-        url: 'https://startupxyz.slack.com',
-        notes: 'Slack da empresa',
-        favorite: false,
-        createdAt: '2024-06-15T10:00:00Z',
-        updatedAt: '2024-06-15T10:00:00Z',
-    },
-    {
-        id: '6',
-        userId: 'user-1',
-        categoryId: 'cat-6',
-        category: 'Redes Sociais',
-        title: 'Instagram',
-        username: '@alex.dev.br',
-        email: 'alex.dev@email.com',
-        phone: '',
-        password: 'Insta789!',
-        url: 'https://instagram.com/alex.dev.br',
-        notes: 'Perfil profissional',
-        favorite: false,
-        createdAt: '2024-04-18T10:00:00Z',
-        updatedAt: '2024-04-18T10:00:00Z',
-    },
-    {
-        id: '7',
-        userId: 'user-1',
-        categoryId: 'cat-1',
-        category: 'Desenvolvimento',
-        title: 'AWS Console',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@startupxyz.com.br',
-        phone: '',
-        password: 'AWS123!',
-        url: 'https://aws.amazon.com/console',
-        notes: 'Console AWS da empresa',
-        favorite: false,
-        createdAt: '2024-07-05T10:00:00Z',
-        updatedAt: '2024-07-05T10:00:00Z',
-    },
-    {
-        id: '8',
-        userId: 'user-1',
-        categoryId: 'cat-4',
-        category: 'Streaming',
-        title: 'Spotify',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@gmail.com',
-        phone: '',
-        password: 'Spotify456!',
-        url: 'https://spotify.com',
-        notes: 'Conta premium',
-        favorite: false,
-        createdAt: '2024-02-14T10:00:00Z',
-        updatedAt: '2024-02-14T10:00:00Z',
-    },
-    {
-        id: '9',
-        userId: 'user-1',
-        categoryId: 'cat-4',
-        category: 'Streaming',
-        title: 'Spotify',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@gmail.com',
-        phone: '',
-        password: 'Spotify456!',
-        url: 'https://spotify.com',
-        notes: 'Conta premium',
-        favorite: false,
-        createdAt: '2024-02-14T10:00:00Z',
-        updatedAt: '2024-02-14T10:00:00Z',
-    },
-    {
-        id: '10',
-        userId: 'user-1',
-        categoryId: 'cat-4',
-        category: 'Streaming',
-        title: 'Spotify',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@gmail.com',
-        phone: '',
-        password: 'Spotify456!',
-        url: 'https://spotify.com',
-        notes: 'Conta premium',
-        favorite: false,
-        createdAt: '2024-02-14T10:00:00Z',
-        updatedAt: '2024-02-14T10:00:00Z',
-    },
-    {
-        id: '11',
-        userId: 'user-1',
-        categoryId: 'cat-4',
-        category: 'Streaming',
-        title: 'Spotify',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@gmail.com',
-        phone: '',
-        password: 'Spotify456!',
-        url: 'https://spotify.com',
-        notes: 'Conta premium',
-        favorite: false,
-        createdAt: '2024-02-14T10:00:00Z',
-        updatedAt: '2024-02-14T10:00:00Z',
-    },
-];
-
-const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-    });
-};
-
 export default function DashboardPage() {
-    const [credentials, setCredentials] =
-        useState<Credential[]>(credentialsData);
+    const [credentials, setCredentials] = useState<Credential[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('Todas');
+
     const [selectedCredential, setSelectedCredential] =
         useState<Credential | null>(null);
+
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isNewModalOpen, setIsNewModalOpen] = useState(false);
 
-    const handleSearch = (query: string) => {
+    const vaultKey = useVaultStore((state) => state.vaultKey);
+
+    const loadCredentials = useCallback(
+        async (search?: string, category?: string) => {
+            if (!vaultKey) {
+                return;
+            }
+
+            setIsLoading(true);
+
+            try {
+                const result = await getCredentialsAction({
+                    search,
+                    categoryId:
+                        category && category !== 'Todas' ? category : undefined,
+                });
+
+                if (!result.success || !result.data) {
+                    return;
+                }
+
+                const decrypted = await Promise.all(
+                    result.data.data.map(async (credential) => {
+                        const json = await decryptString(
+                            {
+                                cipherText: credential.cipherText,
+                                iv: credential.iv,
+                            },
+                            vaultKey,
+                        );
+
+                        const data = JSON.parse(json);
+
+                        return {
+                            id: credential.id,
+                            userId: credential.userId,
+                            categoryId: credential.categoryId,
+
+                            title: data.title,
+                            username: data.username,
+                            email: data.email,
+                            password: data.password,
+                            url: data.url,
+                            notes: data.notes,
+
+                            category: data.category,
+
+                            favorite: credential.favorite,
+
+                            createdAt: credential.createdAt.toISOString(),
+                            updatedAt: credential.updatedAt.toISOString(),
+                        } as Credential;
+                    }),
+                );
+
+                setCredentials(decrypted);
+            } finally {
+                setIsLoading(false);
+            }
+        },
+        [vaultKey],
+    );
+
+    useEffect(() => {
+        loadCredentials();
+    }, [loadCredentials]);
+
+    const handleSearch = async (query: string) => {
         setSearchQuery(query);
-        console.log('Buscando:', query);
+
+        await loadCredentials(query, selectedCategory);
+    };
+
+    const handleFilterChange = async (category: string) => {
+        setSelectedCategory(category);
+
+        await loadCredentials(searchQuery, category);
     };
 
     const handleNewCredential = () => {
@@ -220,110 +115,89 @@ export default function DashboardPage() {
         setIsViewModalOpen(true);
     };
 
-    const handleEdit = (credential: Credential) => {
-        console.log('Editando:', credential);
-        setCredentials((prev) =>
-            prev.map((c) => (c.id === credential.id ? credential : c)),
-        );
+    const handleEdit = async () => {
+        await loadCredentials(searchQuery, selectedCategory);
+
         setIsViewModalOpen(false);
+        setSelectedCredential(null);
     };
 
-    const handleNewCredentialSave = (data: NewCredentialData) => {
-        console.log('Nova credencial:', data);
-        const now = new Date().toISOString();
-        const newCredential: Credential = {
-            id: String(Date.now()),
-            userId: 'user-1',
-            categoryId: `cat-${Date.now()}`,
-            category: data.category,
-            title: data.title,
-            username: data.username || data.email || '',
-            email: data.email || '',
-            phone: '',
-            password: data.password,
-            url: data.url || '',
-            notes: data.notes || '',
-            favorite: false,
-            createdAt: now,
-            updatedAt: now,
-        };
-        setCredentials((prev) => [newCredential, ...prev]);
+    const handleNewCredentialSave = async () => {
+        await loadCredentials(searchQuery, selectedCategory);
+
         setIsNewModalOpen(false);
     };
 
-    const handleDelete = (id: string) => {
-        console.log('Excluir:', id);
-        setCredentials((prev) => prev.filter((c) => c.id !== id));
+    const handleDelete = async () => {
+        await loadCredentials(searchQuery, selectedCategory);
+
+        setIsViewModalOpen(false);
+        setSelectedCredential(null);
     };
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
-        console.log('Copiado:', text);
+        toast.info('Copiado para a área de transferência');
     };
 
-    const handleToggleFavorite = (id: string) => {
-        setCredentials((prev) =>
-            prev.map((c) =>
-                c.id === id ? { ...c, favorite: !c.favorite } : c,
-            ),
-        );
+    const handleToggleFavorite = async () => {
+        await loadCredentials(searchQuery, selectedCategory);
     };
-
-    const filteredCredentials = credentials.filter((cred) => {
-        const matchesSearch =
-            cred.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            cred.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            cred.email?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesCategory =
-            selectedCategory === 'Todas' || cred.category === selectedCategory;
-        return matchesSearch && matchesCategory;
-    });
 
     return (
         <>
             <Header
                 variant="search"
-                credentialCount={8}
+                credentialCount={credentials.length}
                 onSearch={handleSearch}
                 onNewCredential={handleNewCredential}
+                onFilterChange={handleFilterChange}
             />
 
             <div className="p-4 lg:p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredCredentials.map((cred) => (
-                        <CredentialCard
-                            key={cred.id}
-                            credential={{
-                                ...cred,
-                                favorite: cred.favorite,
-                                createdAt: formatDate(cred.createdAt),
-                            }}
-                            onClick={() => handleCardClick(cred)}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            onCopy={handleCopy}
-                            onToggleFavorite={handleToggleFavorite}
-                        />
-                    ))}
-                </div>
+                {isLoading ? (
+                    <div className="text-center py-12">Carregando...</div>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {credentials.map((credential) => (
+                                <CredentialCard
+                                    key={credential.id}
+                                    credential={{
+                                        ...credential,
+                                        createdAt: formatDateTime(
+                                            credential.createdAt,
+                                        ),
+                                    }}
+                                    onClick={() => handleCardClick(credential)}
+                                    onEdit={handleEdit}
+                                    onDelete={handleDelete}
+                                    onCopy={handleCopy}
+                                    onToggleFavorite={handleToggleFavorite}
+                                />
+                            ))}
+                        </div>
 
-                {filteredCredentials.length === 0 && (
-                    <div className="text-center py-12">
-                        <Key className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
-                        <p className="text-foreground/40">
-                            Nenhuma credencial encontrada
-                        </p>
-                    </div>
+                        {credentials.length === 0 && (
+                            <div className="py-12 text-center">
+                                <KeyIcon className="mx-auto mb-3 h-12 w-12 text-foreground/20" />
+
+                                <p className="text-foreground/40">
+                                    Nenhuma credencial encontrada
+                                </p>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
             <ViewCredentialModal
                 isOpen={isViewModalOpen}
+                credential={selectedCredential}
                 onClose={() => {
                     setIsViewModalOpen(false);
                     setSelectedCredential(null);
                 }}
-                credential={selectedCredential}
                 onEdit={handleEdit}
             />
 

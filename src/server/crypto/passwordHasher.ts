@@ -1,11 +1,11 @@
 import { hash, verify } from '@node-rs/argon2';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
-import { validatePassword } from '../validators/auth/password.validator';
-import { validateArgon2Params } from '../validators/crypto/argon2.validator';
 import {
     HashPasswordParams,
     VerifyPasswordParams,
 } from '@/src/server/types/crypto/passwordHasher';
+import { validatePassword } from '@/src/shared/validators/auth/password.validator';
+import { validateArgon2Params } from '@/src/shared/validators/crypto/argon2.validator';
 
 export async function hashPassword(
     params: HashPasswordParams,

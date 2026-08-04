@@ -3,14 +3,11 @@ import {
     VAULT_KEY_LENGTH,
 } from '@/src/shared/constants/crypto/vault.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
-import { EncryptedVault } from '@/src/server/types/crypto/vault';
-import { Argon2Params } from '@/src/server/types/crypto/argon2';
 import {
     generateIV,
     generateRandomBytes,
     generateSalt,
 } from '../crypto/random';
-import { deriveArgon2Key } from './argon2';
 import { decrypt, encrypt, importAESKey } from './aes';
 import { base64ToBytes, bytesToBase64 } from '../crypto/encoding';
 import {
@@ -18,6 +15,9 @@ import {
     validateVaultKey,
 } from '../validators/crypto/vault.validator';
 import { validatePassword } from '../validators/auth/password.validator';
+import { deriveArgon2Key } from './argon2';
+import { EncryptedVault } from '../types/crypto/vault';
+import { Argon2Params } from '../types/crypto/argon2';
 
 export function createVaultKey(): Uint8Array {
     return generateRandomBytes(VAULT_KEY_LENGTH);

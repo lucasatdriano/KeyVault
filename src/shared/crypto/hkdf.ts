@@ -9,17 +9,17 @@ import {
 import {
     DeriveExportKeyParams,
     DeriveHmacKeyParams,
-    HKDFDeriveKeyParams,
     DeriveVaultKeyParams,
-} from '@/src/server/types/crypto/hkdf';
+    HKDFDeriveKeyParams,
+} from '../types/crypto/hkdf';
 import {
     validateKeyLength,
     validateMasterKey,
 } from '../validators/crypto/key.validator';
-import { validateSalt } from '../validators/crypto/argon2.validator';
 import { validateInfo } from '../validators/crypto/common.validator';
 import { generateRandomBytes } from './random';
 import { getSubtle, toArrayBuffer } from './webcrypto';
+import { validateSalt } from '../validators/crypto/argon2.validator';
 
 export async function deriveHKDFKey(
     params: HKDFDeriveKeyParams,

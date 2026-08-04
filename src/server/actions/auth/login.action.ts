@@ -1,9 +1,8 @@
 'use server';
 
-import { LoginData } from '@/src/shared/types/auth';
 import { authService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
-import { LoginResult } from '../../types/service/auth';
+import { LoginData, LoginResult } from '../../types/service/auth';
 import { getAuditContext } from '../../utils/audit-context';
 
 export async function loginAction(

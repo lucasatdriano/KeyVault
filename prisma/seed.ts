@@ -1,37 +1,51 @@
-import { PrismaClient } from '@/src/generated/prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
-import argon2 from 'argon2';
+// import { PrismaClient } from '@/src/generated/prisma/client';
+// import { PrismaPg } from '@prisma/adapter-pg';
 
-const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
-});
+// const adapter = new PrismaPg({
+//     connectionString: process.env.DATABASE_URL!,
+// });
 
-const prisma = new PrismaClient({ adapter });
+// const prisma = new PrismaClient({ adapter });
 
-async function main() {
-    const adminPassword = await argon2.hash('Admin123456!');
+// async function main() {
+//     const categories = [
+//         { name: 'Streamings', color: '#EF4444' },
+//         { name: 'Finanças', color: '#10B981' },
+//         { name: 'Redes Sociais', color: '#3B82F6' },
+//         { name: 'Jogos', color: '#8B5CF6' },
+//         { name: 'Lojas', color: '#F97316' },
+//         { name: 'Saúde', color: '#14B8A6' },
+//         { name: 'Instituições', color: '#6366F1' },
+//         { name: 'Corporativos', color: '#64748B' },
+//         { name: 'Técnicos', color: '#0EA5E9' },
+//         { name: 'Aplicativos', color: '#06B6D4' },
+//         { name: 'Acesso Físico', color: '#A855F7' },
+//         { name: 'Outros', color: '#6B7280' },
+//     ];
 
-    await prisma.user.upsert({
-        where: {
-            email: 'admin@keyvault.com',
-        },
-        update: {},
-        create: {
-            name: 'Admin',
-            email: 'admin@keyvault.com',
-            passwordHash: adminPassword,
-            emailVerified: true,
-        },
-    });
+//     for (const category of categories) {
+//         const cipherText = await encryptCategoryName(category.name);
+//         const exists = await prisma.category.findFirst({
+//             where: {
+//                 cipherText,
+//             },
+//         });
 
-    console.log('✅ Seed executado com sucesso!');
-}
+//         if (!exists) {
+//             await prisma.category.create({
+//                 data: {
+//                     cipherText,
+//                     color: category.color,
+//                 },
+//             });
+//         }
+//     }
 
-main()
-    .catch((error) => {
-        console.error(error);
-        process.exit(1);
-    })
-    .finally(async () => {
-        await prisma.$disconnect();
-    });
+//     console.log('Categorias criadas.');
+// }
+
+// main()
+//     .catch(console.error)
+//     .finally(async () => {
+//         await prisma.$disconnect();
+//     });

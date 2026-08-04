@@ -2,25 +2,36 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Key, Lock, CheckCircle } from 'lucide-react';
+import {
+    UserIcon,
+    MailIcon,
+    KeyIcon,
+    LockIcon,
+    CheckCircleIcon,
+} from 'lucide-react';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
 import { registerAction } from '@/src/server/actions/auth/register.action';
 import { toast } from 'sonner';
 import { validateRegisterForm } from '@/src/client/validators/auth.validator';
+import { DEFAULT_CATEGORIES } from '@/src/client/constants/categories';
+import { createVaultKey, encryptVaultKey } from '@/src/shared/crypto/vault';
+import { encryptString } from '@/src/shared/crypto/cipher';
+import { RegisterFormData } from '@/src/shared/types/auth';
 
 export default function RegisterPage() {
     const router = useRouter();
+
     const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<RegisterFormData>({
         name: '',
         email: '',
         password: '',
         confirmPassword: '',
     });
     const [acceptTerms, setAcceptTerms] = useState(false);
-    const [errors, setErrors] = useState({
+    const [errors, setErrors] = useState<RegisterFormData & { terms: string }>({
         name: '',
         email: '',
         password: '',
@@ -34,6 +45,7 @@ export default function RegisterPage() {
         const validationErrors = validateRegisterForm(
             {
                 ...formData,
+                confirmPassword: formData.confirmPassword,
             },
             acceptTerms,
         );
@@ -58,12 +70,33 @@ export default function RegisterPage() {
             terms: '',
         });
 
+        const vaultKey = createVaultKey();
+
+        const encryptedCategories = await Promise.all(
+            DEFAULT_CATEGORIES.map(async (category) => {
+                const encrypted = await encryptString(category.name, vaultKey);
+
+                return {
+                    cipherText: encrypted.cipherText,
+                    iv: encrypted.iv,
+                    color: category.color,
+                };
+            }),
+        );
+
+        const encryptedVaultKey = await encryptVaultKey(
+            vaultKey,
+            formData.password,
+        );
+
         setIsLoading(true);
         try {
             const result = await registerAction({
                 name: formData.name,
                 email: formData.email,
                 password: formData.password,
+                encryptedVaultKey,
+                categories: encryptedCategories,
             });
 
             if (!result.success) {
@@ -108,7 +141,7 @@ export default function RegisterPage() {
                                 name: e.target.value,
                             }))
                         }
-                        leftIcon={<User className="w-5 h-5" />}
+                        leftIcon={<UserIcon className="w-5 h-5" />}
                         error={errors.name}
                     />
 
@@ -124,7 +157,7 @@ export default function RegisterPage() {
                                 email: e.target.value,
                             }))
                         }
-                        leftIcon={<Mail className="w-5 h-5" />}
+                        leftIcon={<MailIcon className="w-5 h-5" />}
                         error={errors.email}
                     />
 
@@ -140,7 +173,7 @@ export default function RegisterPage() {
                                 password: e.target.value,
                             }))
                         }
-                        leftIcon={<Key className="w-5 h-5" />}
+                        leftIcon={<KeyIcon className="w-5 h-5" />}
                         error={errors.password}
                     />
 
@@ -156,7 +189,7 @@ export default function RegisterPage() {
                                 confirmPassword: e.target.value,
                             }))
                         }
-                        leftIcon={<Lock className="w-5 h-5" />}
+                        leftIcon={<LockIcon className="w-5 h-5" />}
                         error={errors.confirmPassword}
                     />
 
@@ -202,7 +235,9 @@ export default function RegisterPage() {
                         isLoading={isLoading}
                         loadingText="Criando conta..."
                         leftIcon={
-                            !isLoading && <CheckCircle className="w-5 h-5" />
+                            !isLoading && (
+                                <CheckCircleIcon className="w-5 h-5" />
+                            )
                         }
                     >
                         Criar Conta

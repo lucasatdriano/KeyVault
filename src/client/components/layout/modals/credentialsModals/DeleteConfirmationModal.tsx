@@ -77,7 +77,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
                                 Você está prestes a excluir permanentemente a
                                 credencial{' '}
                                 <span className="text-foreground font-medium">
-                                    "{credentialTitle}"
+                                    {credentialTitle}
                                 </span>
                                 . Esta ação é{' '}
                                 <span className="text-error font-medium">
@@ -89,7 +89,7 @@ const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
                             <>
                                 Você está prestes a excluir a credencial{' '}
                                 <span className="text-foreground font-medium">
-                                    "{credentialTitle}"
+                                    {credentialTitle}
                                 </span>
                                 . Ela será movida para a lixeira e poderá ser
                                 restaurada em até 30 dias.

@@ -3,18 +3,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ShieldIcon } from 'lucide-react';
 
-import Header from '@/src/client/components/layout/header/Header';
-import AuditCard from './components/AuditCard';
-
+import { AuditAction } from '@/src/generated/prisma/enums';
+import { getUserLogsAction } from '@/src/server/actions/audit/get-user-logs.action';
+import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
 import { AuditLog } from '@/src/client/types/audit';
 import { mapAuditLog } from '@/src/client/utils/audit/audit.mapper';
+import { useVaultStore } from '@/src/client/store/vault.store';
+import { mapAuditSearch } from '@/src/client/utils/audit/audit-search.mapper';
 
-import { getUserLogsAction } from '@/src/server/actions/audit/get-user-logs.action';
+import Header from '@/src/client/components/layout/header/Header';
+import AuditCard from './components/AuditCard';
 import InfoCard from '@/src/client/components/ui/cards/InfoCard';
-import { AuditAction } from '@/src/generated/prisma/enums';
 
 export default function AuditPage() {
     const [logs, setLogs] = useState<AuditLog[]>([]);
+    const vaultKey = useVaultStore((state) => state.vaultKey);
     const [search, setSearch] = useState('');
     const [action, setAction] = useState('');
     const [loading, setLoading] = useState(true);
@@ -22,11 +25,22 @@ export default function AuditPage() {
     const loadLogs = useCallback(async () => {
         setLoading(true);
 
+        const mapped = mapAuditSearch(search);
+
+        let resourceSearchHash: string | undefined;
+
+        if (mapped.resourceName && vaultKey) {
+            resourceSearchHash = await generateResourceSearchHash(
+                mapped.resourceName,
+                vaultKey,
+            );
+        }
+
         const result = await getUserLogsAction({
             page: 1,
             limit: 20,
             action: action ? (action as AuditAction) : undefined,
-            search: search || undefined,
+            resourceSearchHash,
         });
 
         if (result.success && result.data) {
@@ -34,7 +48,7 @@ export default function AuditPage() {
         }
 
         setLoading(false);
-    }, [search, action]);
+    }, [search, action, vaultKey]);
 
     useEffect(() => {
         const timer = setTimeout(() => {

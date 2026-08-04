@@ -1,0 +1,50 @@
+import { encrypt, decrypt, importAESKey } from './aes';
+import { generateIV } from './random';
+import { base64ToBytes, bytesToBase64 } from '../crypto/encoding';
+import { EncryptedField } from '../types/crypto/cipher';
+import {
+    validateDecrypt,
+    validateEncrypt,
+} from '../validators/crypto/cipher.validator';
+
+export async function encryptString(text: string, vaultKey: Uint8Array) {
+    validateEncrypt(text, vaultKey);
+
+    const key = await importAESKey({
+        keyData: vaultKey,
+        encrypt: true,
+        decrypt: false,
+    });
+
+    const iv = generateIV();
+
+    const encrypted = await encrypt({
+        key,
+        data: new TextEncoder().encode(text),
+        iv,
+    });
+
+    return {
+        cipherText: bytesToBase64(encrypted),
+        iv: bytesToBase64(iv),
+    };
+}
+
+export async function decryptString(
+    encrypted: EncryptedField,
+    vaultKey: Uint8Array,
+): Promise<string> {
+    validateDecrypt(encrypted, vaultKey);
+
+    const key = await importAESKey({
+        keyData: vaultKey,
+    });
+
+    const plaintext = await decrypt({
+        key,
+        iv: base64ToBytes(encrypted.iv),
+        ciphertext: base64ToBytes(encrypted.cipherText),
+    });
+
+    return new TextDecoder().decode(plaintext);
+}

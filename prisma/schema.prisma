@@ -59,28 +59,29 @@ model User {
 }
 
 model Credential {
-  id          String   @id @default(cuid())
+  id                   String    @id @default(cuid())
+         
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId           String?
+  category             Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+         
+  cipherText           String    @db.Text
+         
+  iv                   String    @db.Text
+  salt                 String    @db.Text
+         
+  version              Int       @default(1)
+  algorithm            String    @default("AES-256-GCM")
+  resourceSearchHash   String?   @db.Char(64)
 
-  categoryId  String?
-  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
-  cipherText  String   @db.Text
-
-  iv          String   @db.Text
-  salt        String   @db.Text
-
-  version     Int      @default(1)
-  algorithm   String   @default("AES-256-GCM")
-
-  favorite    Boolean  @default(false)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  auditLogs   AuditLog[]
+  favorite             Boolean   @default(false)
+         
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+         
+  auditLogs            AuditLog[]
 
   @@index([userId])
   @@index([categoryId])
@@ -94,6 +95,7 @@ model Category {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   cipherText  String   @db.Text
+  iv          String   @db.Text
   color       String?  @db.VarChar(20)
 
   createdAt   DateTime @default(now())
@@ -104,7 +106,7 @@ model Category {
   @@index([userId])
 }
 
-model AuditLog {model AuditLog {
+model AuditLog {
   id                 String        @id @default(cuid())
 
   userId             String

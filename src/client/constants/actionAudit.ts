@@ -1,6 +1,6 @@
-import { AuditAction } from '@/src/generated/prisma/client';
+import { AuditAction } from '@/src/generated/prisma/enums';
 
-const ACTION_MAP: Record<string, AuditAction> = {
+export const ACTION_MAP: Record<string, AuditAction> = {
     login: AuditAction.LOGIN,
 
     logout: AuditAction.LOGOUT,
@@ -31,20 +31,3 @@ const ACTION_MAP: Record<string, AuditAction> = {
     email: AuditAction.VERIFY_EMAIL,
     verificar: AuditAction.VERIFY_EMAIL,
 };
-
-export function mapAuditSearch(search: string): {
-    action?: AuditAction;
-    resourceName?: string;
-} {
-    const value = search.trim().toLowerCase();
-
-    const action = ACTION_MAP[value];
-
-    if (action) {
-        return { action };
-    }
-
-    return {
-        resourceName: value,
-    };
-}

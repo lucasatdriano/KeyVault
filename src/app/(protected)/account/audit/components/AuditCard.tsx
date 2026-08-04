@@ -13,7 +13,7 @@ import {
 import AuditEventCard from './AuditEventCard';
 
 import { AuditLog } from '@/src/client/types/audit';
-import { formatDate } from '@/src/client/utils/formatters/date';
+import { formatDateOnly } from '@/src/client/utils/formatters/date';
 import { groupAuditLogs } from '@/src/client/utils/audit/audit.utils';
 
 interface AuditCardProps {
@@ -110,7 +110,7 @@ export default function AuditCard({
                                 <CalendarIcon className="h-5 w-5 text-foreground/40" />
 
                                 <span className="text-sm font-semibold text-foreground">
-                                    {formatDate(date)}
+                                    {formatDateOnly(date)}
                                 </span>
 
                                 <span className="text-xs text-foreground/40">

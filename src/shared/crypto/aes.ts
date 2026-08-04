@@ -1,16 +1,16 @@
 import { AES_ALGORITHM } from '../../shared/constants/crypto/aes.constants';
 import {
-    DecryptParams,
-    EncryptParams,
-    ExportKeyParams,
-    ImportKeyParams,
-} from '@/src/server/types/crypto/aes';
-import {
     validateCryptoKey,
     validateKeyData,
 } from '../validators/crypto/key.validator';
 import { validateIV } from '../validators/crypto/aes.validator';
 import { getSubtle, toArrayBuffer } from '../crypto/webcrypto';
+import {
+    DecryptParams,
+    EncryptParams,
+    ExportKeyParams,
+    ImportKeyParams,
+} from '../types/crypto/aes';
 
 export async function importAESKey(
     params: ImportKeyParams,
@@ -91,10 +91,10 @@ export async function encrypt(params: EncryptParams): Promise<Uint8Array> {
     const algorithm: AesGcmParams = {
         name: AES_ALGORITHM.name,
         iv: toArrayBuffer(params.iv),
-        additionalData: params.additionalData
-            ? toArrayBuffer(params.additionalData)
-            : undefined,
         tagLength: 128,
+        ...(params.additionalData && {
+            additionalData: toArrayBuffer(params.additionalData),
+        }),
     };
 
     try {
@@ -136,10 +136,10 @@ export async function decrypt(params: DecryptParams): Promise<Uint8Array> {
     const algorithm: AesGcmParams = {
         name: AES_ALGORITHM.name,
         iv: toArrayBuffer(params.iv),
-        additionalData: params.additionalData
-            ? toArrayBuffer(params.additionalData)
-            : undefined,
         tagLength: 128,
+        ...(params.additionalData && {
+            additionalData: toArrayBuffer(params.additionalData),
+        }),
     };
 
     try {

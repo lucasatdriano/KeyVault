@@ -6,8 +6,6 @@ import {
 } from '../types/repository/audit';
 import { validateAuditData } from '../validators/auth/audit.validator';
 import { PaginatedResponse } from '@/src/shared/types/pagination';
-import { generateResourceSearchHash } from '../crypto/resource-search';
-import { mapAuditSearch } from '../utils/audit-search.mapper';
 
 export class AuditService {
     constructor(private readonly auditRepository: AuditRepository) {}
@@ -26,34 +24,7 @@ export class AuditService {
             throw new Error('userId inválido.');
         }
 
-        const { search, action, ...rest } = options;
-
-        const repositoryOptions: FindUserLogsOptions = {
-            ...rest,
-        };
-
-        if (action?.trim()) {
-            const mapped = mapAuditSearch(action);
-
-            if (mapped.action) {
-                repositoryOptions.action = mapped.action;
-            }
-        }
-
-        if (search?.trim()) {
-            const mapped = mapAuditSearch(search);
-
-            if (mapped.action) {
-                repositoryOptions.action = mapped.action;
-            }
-
-            if (mapped.resourceName) {
-                repositoryOptions.resourceSearchHash =
-                    await generateResourceSearchHash(mapped.resourceName);
-            }
-        }
-
-        return this.auditRepository.findByUser(userId, repositoryOptions);
+        return this.auditRepository.findByUser(userId, options);
     }
 
     async getLogById(id: string): Promise<AuditLog | null> {

@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import {
     Key,
     Mail,
-    Phone,
     Globe,
     FileText,
     Calendar,
@@ -15,9 +14,9 @@ import {
     Shield,
     Lock,
 } from 'lucide-react';
-import Button from '@/src/client/components/ui/buttons/Button';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import { Credential } from '@/src/shared/types/credential';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import Button from '@/src/client/components/ui/buttons/Button';
 import ModalBase from '../ModalBase';
 
 interface ViewCredentialModalProps {
@@ -297,20 +296,6 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                                     <p className="text-foreground font-medium">
                                         {credential.email ||
                                             credential.username}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {credential.phone && (
-                            <div className="flex items-start gap-3">
-                                <Phone className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
-                                        Telefone
-                                    </p>
-                                    <p className="text-foreground font-medium">
-                                        {credential.phone}
                                     </p>
                                 </div>
                             </div>

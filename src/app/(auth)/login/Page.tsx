@@ -9,18 +9,26 @@ import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
 import { loginAction } from '@/src/server/actions/auth/login.action';
 import { validateLoginForm } from '@/src/client/validators/auth.validator';
+import { useVaultStore } from '@/src/client/store/vault.store';
+import { decryptVaultKey } from '@/src/shared/crypto/vault';
+import { LoginFormData } from '@/src/shared/types/auth';
 
 export default function LoginPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+
     const [isLoading, setIsLoading] = useState(false);
-    const [errors, setErrors] = useState({
+    const [formData, setFormData] = useState<LoginFormData>({
+        email: '',
+        password: '',
+    });
+    const [errors, setErrors] = useState<LoginFormData>({
         email: '',
         password: '',
     });
     const logoutExecuted = useRef(false);
+
+    const setVaultKey = useVaultStore((state) => state.setVaultKey);
 
     useEffect(() => {
         if (logoutExecuted.current) return;
@@ -38,8 +46,8 @@ export default function LoginPage() {
         e.preventDefault();
 
         const validationErrors = validateLoginForm({
-            email,
-            password,
+            email: formData.email,
+            password: formData.password,
         });
 
         if (Object.keys(validationErrors).length > 0) {
@@ -60,17 +68,31 @@ export default function LoginPage() {
 
         try {
             const result = await loginAction({
-                email,
-                password,
+                email: formData.email,
+                password: formData.password,
             });
 
-            if (!result.success) {
+            if (!result.success || !result.data) {
                 toast.error(result.error);
                 return;
             }
 
+            const vaultKey = await decryptVaultKey(
+                result.data.encryptedVaultKey,
+                formData.password,
+            );
+
+            setVaultKey(vaultKey);
+            setFormData({
+                email: '',
+                password: '',
+            });
+
             toast.success(result.message);
+
             router.push('/dashboard');
+        } catch {
+            toast.error('Erro interno do servidor.');
         } finally {
             setIsLoading(false);
         }
@@ -99,8 +121,10 @@ export default function LoginPage() {
                         placeholder="seu@email.com"
                         type="text"
                         name="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={formData.email}
+                        onChange={(e) =>
+                            setFormData({ ...formData, email: e.target.value })
+                        }
                         leftIcon={<Mail className="w-5 h-5" />}
                         error={errors.email}
                     />
@@ -110,8 +134,13 @@ export default function LoginPage() {
                         placeholder="********"
                         type="password"
                         name="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={formData.password}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                password: e.target.value,
+                            })
+                        }
                         leftIcon={<Key className="w-5 h-5" />}
                         error={errors.password}
                     />

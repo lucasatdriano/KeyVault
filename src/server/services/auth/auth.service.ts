@@ -2,11 +2,12 @@ import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constant
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 import { hashPassword, verifyPassword } from '../../crypto/passwordHasher';
 import {
-    changeMasterPassword,
-    createVaultKey,
-    encryptVaultKey,
-} from '../../crypto/vault';
-import { LoginResult, RegisterResult } from '../../types/service/auth';
+    ChangePasswordData,
+    LoginData,
+    RegisterData,
+    LoginResult,
+    RegisterResult,
+} from '../../types/service/auth';
 import { JWTService } from './jwt.service';
 import { AuditService } from '../audit.service';
 import { AuthRepository } from '../../database/repositories/auth.repository';
@@ -15,24 +16,22 @@ import {
     getAccessToken,
     setAccessToken,
 } from '../../auth/cookies';
+import { changeMasterPassword } from '@/src/shared/crypto/vault';
 import { AuditAction, User } from '@/src/generated/prisma/client';
 import {
     validateChangePasswordData,
     validateLoginData,
     validateRegisterData,
 } from '../../validators/auth/auth.validator';
-import {
-    ChangePasswordData,
-    LoginData,
-    RegisterData,
-} from '@/src/shared/types/auth';
 import { AuditContext } from '../../types/service/audit';
+import { CategoryService } from '../category.service';
 
 export class AuthService {
     constructor(
         private readonly authRepository: AuthRepository,
         private readonly jwtService: JWTService,
         private readonly auditService: AuditService,
+        private readonly categoryService: CategoryService,
     ) {}
 
     async register(
@@ -48,15 +47,6 @@ export class AuthService {
         if (existingUser) {
             throw new Error('Email já cadastrado.');
         }
-
-        const vaultKey = createVaultKey();
-
-        const encryptedVault = await encryptVaultKey(
-            vaultKey,
-            data.password,
-            DEFAULT_ARGON2_PARAMS,
-        );
-
         const passwordHash = await hashPassword({
             password: data.password,
             params: DEFAULT_ARGON2_PARAMS,
@@ -67,8 +57,10 @@ export class AuthService {
             email: data.email,
             emailVerified: true,
             passwordHash: passwordHash,
-            encryptedVaultKey: JSON.stringify(encryptedVault),
+            encryptedVaultKey: JSON.stringify(data.encryptedVaultKey),
         });
+
+        await this.categoryService.createMany(user.id, data.categories);
 
         const duration =
             data.sessionExpiration ?? ACCESS_TOKEN_DURATION.MINUTES_30;
@@ -151,6 +143,7 @@ export class AuthService {
                 email: user.email,
                 emailVerified: true,
             },
+            encryptedVaultKey: JSON.parse(user.encryptedVaultKey),
         };
     }
 

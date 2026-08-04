@@ -11,6 +11,7 @@ import { useSidebar } from '@/src/client/hooks/useSidebar';
 
 import { sidebarSections } from './Sidebar.config';
 import { logoutAction } from '@/src/server/actions/auth/logout.action';
+import { useVaultStore } from '@/src/client/store/vault.store';
 
 interface SidebarProps {
     mobile?: boolean;
@@ -22,6 +23,8 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
 
     const router = useRouter();
     const pathname = usePathname();
+
+    const clearVault = useVaultStore.getState().clearVault;
 
     const [expandedSections, setExpandedSections] = useState<string[]>([
         'CREDENCIAIS',
@@ -60,6 +63,8 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
                 console.error(result.error);
                 return;
             }
+
+            clearVault();
 
             router.replace('/login');
             router.refresh();
