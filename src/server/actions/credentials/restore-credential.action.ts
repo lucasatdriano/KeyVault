@@ -4,18 +4,18 @@ import { authService, credentialService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
 import { getAuditContext } from '../../utils/audit-context';
 
-export async function deleteCredentialAction(
+export async function restoreCredentialAction(
     id: string,
 ): Promise<ActionResult<null>> {
     try {
         await authService.requireAuth();
         const audit = await getAuditContext();
 
-        await credentialService.delete(id, audit);
+        await credentialService.restoreCredential(id, audit);
 
         return {
             success: true,
-            message: 'Credencial movida para lixeira.',
+            message: 'Credencial restaurada.',
             data: null,
         };
     } catch (error) {
@@ -24,7 +24,7 @@ export async function deleteCredentialAction(
             error:
                 error instanceof Error
                     ? error.message
-                    : 'Erro ao excluir credencial.',
+                    : 'Erro ao restaurar credencial.',
             data: null,
         };
     }

@@ -6,14 +6,14 @@ export type AuditEventType =
     | 'create'
     | 'edit'
     | 'delete'
-    | 'password'
-    | 'device';
+    | 'password';
 
 export interface AuditLogResponse {
     browser: string | null;
     os: string | null;
     device: string | null;
     ip: string | null;
+    resource: string | null;
 
     id: string;
     action: AuditAction;

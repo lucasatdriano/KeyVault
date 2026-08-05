@@ -1,180 +1,205 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, AlertCircle, AlertCircleIcon } from 'lucide-react';
+import { Trash2Icon, AlertCircleIcon } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { Credential } from '@/src/shared/types/credential';
+import { decryptString } from '@/src/shared/crypto/cipher';
+
+import { useVaultStore } from '@/src/client/store/vault.store';
+
+import { getCredentialsAction } from '@/src/server/actions/credentials/get-credentials.action';
+import { restoreCredentialAction } from '@/src/server/actions/credentials/restore-credential.action';
+
 import Header from '@/src/client/components/layout/header/Header';
-import Button from '@/src/client/components/ui/buttons/Button';
 import DeletedCredentialCard from '@/src/client/components/ui/cards/DeletedCredentialCard';
 import InfoCard from '@/src/client/components/ui/cards/InfoCard';
-
-const trashData: Credential[] = [
-    {
-        id: 'trash-1',
-        userId: 'user-1',
-        categoryId: 'cat-3',
-        category: 'Finanças',
-        title: 'Banco do Brasil',
-        username: 'alex.ferreira',
-        email: 'alex.ferreira@bb.com.br',
-        phone: '',
-        password: 'BB123!',
-        url: 'https://bb.com.br',
-        notes: 'Conta excluída em 20/07/2024',
-        favorite: false,
-        createdAt: '2024-06-10T10:00:00Z',
-        updatedAt: '2024-07-20T10:00:00Z',
-    },
-    {
-        id: 'trash-2',
-        userId: 'user-1',
-        categoryId: 'cat-6',
-        category: 'Redes Sociais',
-        title: 'Twitter/X',
-        username: '@alex_dev',
-        email: 'alex@twitter.com',
-        phone: '',
-        password: 'Twitter123!',
-        url: 'https://twitter.com',
-        notes: 'Conta excluída em 18/07/2024',
-        favorite: false,
-        createdAt: '2024-05-15T10:00:00Z',
-        updatedAt: '2024-07-18T10:00:00Z',
-    },
-    {
-        id: 'trash-3',
-        userId: 'user-1',
-        categoryId: 'cat-5',
-        category: 'Trabalho',
-        title: 'Notion',
-        username: 'alex@empresa.com',
-        email: 'alex@empresa.com',
-        phone: '',
-        password: 'Notion456!',
-        url: 'https://notion.so',
-        notes: 'Conta excluída em 15/07/2024',
-        favorite: false,
-        createdAt: '2024-04-20T10:00:00Z',
-        updatedAt: '2024-07-15T10:00:00Z',
-    },
-];
-
-const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-};
-
-const getDaysRemaining = (deletedAt: string) => {
-    const deleted = new Date(deletedAt);
-    const now = new Date();
-    const diffTime =
-        deleted.getTime() + 30 * 24 * 60 * 60 * 1000 - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-};
+import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
+import { usePagination } from '@/src/client/hooks/usePagination';
+import { Pagination } from '@/src/client/components/layout/pagination/Pagination';
 
 export default function TrashPage() {
     const router = useRouter();
-    const [trashItems, setTrashItems] = useState<Credential[]>(trashData);
 
-    const handleRestore = (id: string) => {
-        console.log('Restaurar:', id);
-        setTrashItems((prev) => prev.filter((c) => c.id !== id));
-    };
+    const vaultKey = useVaultStore((state) => state.vaultKey);
 
-    const handlePermanentDelete = (id: string) => {
-        console.log('Excluir permanentemente:', id);
-        setTrashItems((prev) => prev.filter((c) => c.id !== id));
-    };
+    const [trashItems, setTrashItems] = useState<Credential[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const handleClearTrash = () => {
-        console.log('Esvaziar lixeira');
-        setTrashItems([]);
-    };
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const handleSearch = (query: string) => {
+    const pagination = usePagination({
+        initialPage: 1,
+        initialItemsPerPage: 10,
+    });
+
+    const loadTrash = useCallback(
+        async (search?: string, page: number = pagination.currentPage) => {
+            if (!vaultKey) {
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const searchHash =
+                    search && vaultKey
+                        ? await generateResourceSearchHash(search, vaultKey)
+                        : undefined;
+
+                const result = await getCredentialsAction({
+                    deleted: true,
+                    search: searchHash,
+                    page,
+                    limit: pagination.itemsPerPage,
+                });
+
+                if (!result.success || !result.data) {
+                    return;
+                }
+
+                pagination.setTotalItems(result.data.total);
+
+                const decrypted = await Promise.all(
+                    result.data.data.map(async (credential) => {
+                        const json = await decryptString(
+                            {
+                                cipherText: credential.cipherText,
+                                iv: credential.iv,
+                            },
+                            vaultKey,
+                        );
+
+                        const data = JSON.parse(json);
+
+                        let categoryName = 'Outros';
+
+                        if (credential.category) {
+                            categoryName = await decryptString(
+                                {
+                                    cipherText: credential.category.cipherText,
+                                    iv: credential.category.iv,
+                                },
+                                vaultKey,
+                            );
+                        }
+
+                        return {
+                            id: credential.id,
+                            userId: credential.userId,
+                            categoryId: credential.categoryId,
+
+                            title: data.title,
+                            username: data.username,
+                            email: data.email,
+                            password: data.password,
+                            url: data.url,
+                            notes: data.notes,
+
+                            category: categoryName,
+
+                            favorite: credential.favorite,
+
+                            createdAt: credential.createdAt.toISOString(),
+
+                            updatedAt: credential.updatedAt.toISOString(),
+
+                            deletedAt: credential.deletedAt?.toISOString(),
+                        } as Credential;
+                    }),
+                );
+
+                setTrashItems(decrypted);
+            } catch (error) {
+                console.error(error);
+                toast.error('Erro ao carregar a lixeira.');
+            } finally {
+                setLoading(false);
+            }
+        },
+        [vaultKey, pagination],
+    );
+
+    const handlePageChange = useCallback(
+        (page: number) => {
+            pagination.goToPage(page);
+            loadTrash(searchQuery, page);
+        },
+        [pagination, loadTrash, searchQuery],
+    );
+
+    useEffect(() => {
+        loadTrash();
+    }, [loadTrash]);
+
+    const handleSearch = async (query: string) => {
         setSearchQuery(query);
-        console.log('Buscando:', query);
+        pagination.resetPagination();
+        await loadTrash(query, 1);
     };
 
-    const getInitials = (title: string) => {
-        return title
-            .split(' ')
-            .map((word) => word[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    };
+    const handleRestore = async (id: string) => {
+        const result = await restoreCredentialAction(id);
 
-    const getCategoryColor = (category: string) => {
-        const colors: Record<string, string> = {
-            'E-mail': 'from-blue-500 to-blue-600',
-            Desenvolvimento: 'from-purple-500 to-purple-600',
-            Streaming: 'from-error to-red-600',
-            Música: 'from-green-500 to-green-600',
-            Compras: 'from-orange-500 to-orange-600',
-            'Redes Sociais': 'from-pink-500 to-pink-600',
-            Finanças: 'from-emerald-500 to-emerald-600',
-            Trabalho: 'from-indigo-500 to-indigo-600',
-        };
-        return colors[category] || 'from-primary to-secondary';
+        if (!result.success) {
+            toast.error(result.error);
+            return;
+        }
+
+        toast.success(result.message);
+
+        await loadTrash(searchQuery, pagination.currentPage);
     };
 
     return (
         <div className="space-y-6">
             <Header
                 variant="trash"
-                credentialCount={3}
+                credentialCount={trashItems.length}
                 onSearch={handleSearch}
             />
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-end px-4">
-                {trashItems.length > 0 && (
-                    <>
-                        <Button
-                            variant="error"
-                            size="sm"
-                            leftIcon={<Trash2 className="w-4 h-4" />}
-                        >
-                            Esvaziar Lixeira
-                        </Button>
-                    </>
-                )}
-            </div>
-
-            {trashItems.length > 0 ? (
+            {loading ? (
+                <div className="py-16 text-center">Carregando...</div>
+            ) : trashItems.length > 0 ? (
                 <div className="space-y-3 px-4">
-                    {trashItems.map((item) => (
+                    {trashItems.map((credential) => (
                         <DeletedCredentialCard
-                            key={item.id}
-                            credential={item}
+                            key={credential.id}
+                            credential={credential}
                             onRestore={handleRestore}
-                            onPermanentDelete={handlePermanentDelete}
                         />
                     ))}
+
+                    <Pagination
+                        currentPage={pagination.currentPage}
+                        totalPages={pagination.totalPages}
+                        totalItems={pagination.totalItems}
+                        itemsPerPage={pagination.itemsPerPage}
+                        onPageChange={handlePageChange}
+                    />
                 </div>
             ) : (
-                <div className="text-center py-16">
-                    <div className="w-20 h-20 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-4">
-                        <Trash2 className="w-10 h-10 text-error/40" />
+                <div className="py-16 text-center">
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-error/10">
+                        <Trash2Icon className="h-10 w-10 text-error/40" />
                     </div>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">
+
+                    <h3 className="mb-2 text-lg font-semibold">
                         Lixeira vazia
                     </h3>
-                    <p className="text-foreground/40 text-sm max-w-sm mx-auto">
+
+                    <p className="mx-auto max-w-sm text-sm text-foreground/40">
                         Credenciais excluídas aparecerão aqui por 30 dias. Você
-                        pode restaurá-las a qualquer momento.
+                        poderá restaurá-las a qualquer momento.
                     </p>
+
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="mt-4 text-primary hover:underline text-sm"
+                        className="mt-4 text-sm text-primary hover:underline"
                     >
                         Voltar para o dashboard
                     </button>
@@ -198,8 +223,8 @@ export default function TrashPage() {
                         <span className="font-medium text-foreground/80">
                             Retenção de 30 dias:
                         </span>{' '}
-                        Credenciais excluídas permanecem na lixeira por 30 dias
-                        antes de serem permanentemente removidas.
+                        Credenciais excluídas permanecem disponíveis por 30 dias
+                        antes da remoção definitiva.
                     </>
                 </InfoCard>
             )}

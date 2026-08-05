@@ -18,6 +18,11 @@ import { Credential } from '@/src/shared/types/credential';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Button from '@/src/client/components/ui/buttons/Button';
 import ModalBase from '../ModalBase';
+import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+import {
+    getCategoryBadgeColor,
+    getCategoryColor,
+} from '@/src/client/utils/credentials/credential-category';
 
 interface ViewCredentialModalProps {
     isOpen: boolean;
@@ -39,51 +44,6 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
     const [formData, setFormData] = useState<Credential | null>(credential);
 
     if (!credential) return null;
-
-    const getInitials = (title: string) => {
-        return title
-            .split(' ')
-            .map((word) => word[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    };
-
-    const getCategoryColor = (category: string) => {
-        const colors: Record<string, string> = {
-            'E-mail': 'from-blue-500 to-blue-600',
-            Desenvolvimento: 'from-purple-500 to-purple-600',
-            Streaming: 'from-error to-red-600',
-            Música: 'from-green-500 to-green-600',
-            Compras: 'from-orange-500 to-orange-600',
-            'Redes Sociais': 'from-pink-500 to-pink-600',
-            Finanças: 'from-emerald-500 to-emerald-600',
-            Trabalho: 'from-indigo-500 to-indigo-600',
-            Saúde: 'from-teal-500 to-teal-600',
-            Educação: 'from-cyan-500 to-cyan-600',
-        };
-        return colors[category] || 'from-primary to-secondary';
-    };
-
-    const getCategoryBadgeColor = (category: string) => {
-        const colors: Record<string, string> = {
-            'E-mail': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-            Desenvolvimento:
-                'bg-purple-500/20 text-purple-400 border-purple-500/30',
-            Streaming: 'bg-error/20 text-red-400 border-error/30',
-            Música: 'bg-green-500/20 text-green-400 border-green-500/30',
-            Compras: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-            'Redes Sociais': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-            Finanças:
-                'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-            Trabalho: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-            Saúde: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-            Educação: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-        };
-        return (
-            colors[category] || 'bg-primary/20 text-primary border-primary/30'
-        );
-    };
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -116,7 +76,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
         <ModalBase
             isOpen={isOpen}
             onClose={onClose}
-            title={isEditing ? 'Editar Credencial' : credential.title}
+            title={isEditing ? 'Editar Credencial' : 'Credencial'}
             icon={
                 isEditing ? (
                     <Edit className="w-5 h-5 text-primary" />

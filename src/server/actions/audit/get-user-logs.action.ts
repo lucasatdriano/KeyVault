@@ -2,13 +2,15 @@
 
 import { authService, auditService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
-import { AuditLog } from '@/src/generated/prisma/client';
 import { PaginatedResponse } from '@/src/shared/types/pagination';
-import { FindUserLogsOptions } from '../../types/repository/audit';
+import {
+    AuditLogWithCredential,
+    FindUserLogsOptions,
+} from '../../types/repository/audit';
 
 export async function getUserLogsAction(
     params: FindUserLogsOptions = {},
-): Promise<ActionResult<PaginatedResponse<AuditLog> | null>> {
+): Promise<ActionResult<PaginatedResponse<AuditLogWithCredential> | null>> {
     try {
         const user = await authService.requireAuth();
 

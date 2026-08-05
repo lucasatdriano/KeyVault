@@ -5,6 +5,7 @@ import { PaginatedResponse } from '@/src/shared/types/pagination';
 import { AuditService } from './audit.service';
 import {
     CreateCredentialData,
+    CredentialWithCategory,
     FindCredentialsOptions,
     UpdateCredentialData,
 } from '../types/repository/credential';
@@ -53,7 +54,7 @@ export class CredentialService {
     async getUserCredentials(
         userId: string,
         options: FindCredentialsOptions = {},
-    ): Promise<PaginatedResponse<Credential>> {
+    ): Promise<PaginatedResponse<CredentialWithCategory>> {
         if (!userId) {
             throw new Error('userId inválido.');
         }
@@ -147,12 +148,37 @@ export class CredentialService {
             throw new Error('Credencial não encontrada.');
         }
 
-        await this.credentialRepository.delete(id);
+        await this.credentialRepository.softDelete(id);
 
         await this.auditService.createLog({
             userId: credential.userId,
             credentialId: credential.id,
             action: AuditAction.DELETE_CREDENTIAL,
+            resourceSearchHash: credential.resourceSearchHash,
+            browser: audit?.browser,
+            os: audit?.os,
+            device: audit?.device,
+            ip: audit?.ip,
+        });
+    }
+
+    async restoreCredential(id: string, audit?: AuditContext) {
+        if (!id) {
+            throw new Error('id inválido.');
+        }
+
+        const credential = await this.credentialRepository.findById(id, true);
+
+        if (!credential) {
+            throw new Error('Credencial não encontrada.');
+        }
+
+        await this.credentialRepository.restore(id);
+
+        await this.auditService.createLog({
+            userId: credential.userId,
+            credentialId: credential.id,
+            action: AuditAction.RESTORE_CREDENTIAL,
             resourceSearchHash: credential.resourceSearchHash,
             browser: audit?.browser,
             os: audit?.os,

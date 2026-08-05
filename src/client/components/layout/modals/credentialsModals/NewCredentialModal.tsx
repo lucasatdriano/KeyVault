@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { GlobeIcon, KeyIcon, LockIcon, MailIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -9,14 +10,15 @@ import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
 
 import { CreateCredentialData } from '@/src/shared/types/credential';
-import { DEFAULT_CATEGORIES } from '@/src/client/constants/categories';
 import { createCredentialAction } from '@/src/server/actions/credentials/create-credential.action';
 import { useVaultStore } from '@/src/client/store/vault.store';
-import { encryptString } from '@/src/shared/crypto/cipher';
+import { decryptString, encryptString } from '@/src/shared/crypto/cipher';
 import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
 import { bytesToBase64 } from '@/src/shared/crypto/encoding';
 import { generateSalt } from '@/src/shared/crypto/random';
 import { validateCredentialForm } from '@/src/client/validators/credential.validator';
+import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
+import { DecryptedCategory } from '@/src/shared/types/category';
 
 interface NewCredentialModalProps {
     isOpen: boolean;
@@ -30,6 +32,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
     onSave,
 }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [categories, setCategories] = useState<DecryptedCategory[]>([]);
     const vaultKey = useVaultStore((state) => state.vaultKey);
 
     const [formData, setFormData] = useState<CreateCredentialData>({
@@ -38,7 +41,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
         email: '',
         password: '',
         url: '',
-        category: '',
+        categoryId: '',
         notes: '',
     });
     const [errors, setErrors] = useState({
@@ -47,9 +50,50 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
         email: '',
         password: '',
         url: '',
-        category: '',
+        categoryId: '',
         notes: '',
     });
+
+    const loadCategories = useCallback(async () => {
+        if (!vaultKey) {
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            const result = await getCategoriesAction();
+
+            if (!result.success || !result.data) {
+                return;
+            }
+
+            const decrypted = await Promise.all(
+                result.data.map(async (category) => {
+                    const name = await decryptString(
+                        {
+                            cipherText: category.cipherText,
+                            iv: category.iv,
+                        },
+                        vaultKey,
+                    );
+
+                    return {
+                        id: category.id,
+                        name,
+                    };
+                }),
+            );
+
+            setCategories(decrypted);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [vaultKey]);
+
+    useEffect(() => {
+        loadCategories();
+    }, [loadCategories]);
 
     const handleChange = (field: keyof CreateCredentialData, value: string) => {
         setFormData((prev) => ({
@@ -65,7 +109,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             email: '',
             password: '',
             url: '',
-            category: '',
+            categoryId: '',
             notes: '',
         });
     };
@@ -87,7 +131,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                 email: validationErrors.email ?? '',
                 password: validationErrors.password ?? '',
                 url: validationErrors.url ?? '',
-                category: validationErrors.category ?? '',
+                categoryId: validationErrors.categoryId ?? '',
                 notes: validationErrors.notes ?? '',
             });
 
@@ -100,7 +144,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             email: '',
             password: '',
             url: '',
-            category: '',
+            categoryId: '',
             notes: '',
         });
 
@@ -129,7 +173,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             const salt = bytesToBase64(generateSalt());
 
             const result = await createCredentialAction({
-                categoryId: formData.category || null,
+                categoryId: formData.categoryId || null,
                 cipherText: encrypted.cipherText,
                 iv: encrypted.iv,
                 salt,
@@ -239,29 +283,28 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                     </label>
 
                     <select
-                        value={formData.category}
+                        value={formData.categoryId ?? ''}
                         onChange={(e) =>
-                            handleChange('category', e.target.value)
+                            handleChange('categoryId', e.target.value)
                         }
                         className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                         <option value="" disabled className="bg-background">
                             Selecione uma categoria
                         </option>
-
-                        {DEFAULT_CATEGORIES.map((category) => (
+                        {categories.map((category) => (
                             <option
-                                key={category.name}
-                                value={category.name}
+                                key={category.id}
+                                value={category.id}
                                 className="bg-background"
                             >
                                 {category.name}
                             </option>
                         ))}
                     </select>
-                    {errors.category && (
+                    {errors.categoryId && (
                         <p className="mt-1 text-xs text-error">
-                            {errors.category}
+                            {errors.categoryId}
                         </p>
                     )}
                 </div>

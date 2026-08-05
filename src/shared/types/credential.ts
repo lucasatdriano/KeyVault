@@ -13,13 +13,14 @@ export interface Credential {
 
     favorite: boolean;
 
+    deletedAt: string;
     createdAt: string;
     updatedAt: string;
 }
 
 export interface CreateCredentialData {
     title: string;
-    category: string;
+    categoryId?: string | null;
     username?: string;
     email?: string;
     password: string;

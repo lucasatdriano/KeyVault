@@ -2,10 +2,13 @@
 
 import { authService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
+import { getAuditContext } from '../../utils/audit-context';
 
 export async function logoutAction(): Promise<ActionResult<void | null>> {
     try {
-        const result = await authService.logout();
+        const audit = await getAuditContext();
+
+        const result = await authService.logout(audit);
 
         return {
             success: true,

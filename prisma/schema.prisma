@@ -19,6 +19,7 @@ enum AuditAction {
   CREATE_CREDENTIAL
   UPDATE_CREDENTIAL
   DELETE_CREDENTIAL
+  RESTORE_CREDENTIAL
   COPY_PASSWORD
 
   CHANGE_MASTER_PASSWORD
@@ -78,6 +79,7 @@ model Credential {
 
   favorite             Boolean   @default(false)
          
+  deletedAt            DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
          
@@ -86,6 +88,7 @@ model Credential {
   @@index([userId])
   @@index([categoryId])
   @@index([favorite])
+  @@index([deletedAt])
 }
 
 model Category {
@@ -96,7 +99,6 @@ model Category {
 
   cipherText  String   @db.Text
   iv          String   @db.Text
-  color       String?  @db.VarChar(20)
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

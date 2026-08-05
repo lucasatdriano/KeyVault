@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Trash2, RotateCcw, Calendar, Clock } from 'lucide-react';
+import { RotateCcw, Calendar, Clock } from 'lucide-react';
 import { Credential } from '@/src/shared/types/credential';
-import DeleteConfirmationModal from '../../layout/modals/credentialsModals/DeleteConfirmationModal';
+import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+import {
+    getCategoryBadgeColor,
+    getCategoryColor,
+} from '@/src/client/utils/credentials/credential-category';
 
 interface DeletedCredentialCardProps {
     credential: Credential;
@@ -32,37 +36,10 @@ const getDaysRemaining = (deletedAt: string) => {
     return diffDays;
 };
 
-const getInitials = (title: string) => {
-    return title
-        .split(' ')
-        .map((word) => word[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
-};
-
-const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-        'E-mail': 'from-blue-500 to-blue-600',
-        Desenvolvimento: 'from-purple-500 to-purple-600',
-        Streaming: 'from-error to-red-600',
-        Música: 'from-green-500 to-green-600',
-        Compras: 'from-orange-500 to-orange-600',
-        'Redes Sociais': 'from-pink-500 to-pink-600',
-        Finanças: 'from-emerald-500 to-emerald-600',
-        Trabalho: 'from-indigo-500 to-indigo-600',
-        Saúde: 'from-teal-500 to-teal-600',
-        Educação: 'from-cyan-500 to-cyan-600',
-    };
-    return colors[category] || 'from-primary to-secondary';
-};
-
 const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
     credential,
     onRestore,
-    onPermanentDelete,
 }) => {
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
 
     const daysRemaining = getDaysRemaining(credential.updatedAt);
@@ -70,15 +47,6 @@ const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
 
     const handleRestore = () => {
         onRestore?.(credential.id);
-    };
-
-    const handlePermanentDelete = () => {
-        setShowDeleteModal(true);
-    };
-
-    const confirmPermanentDelete = () => {
-        onPermanentDelete?.(credential.id);
-        setShowDeleteModal(false);
     };
 
     return (
@@ -109,7 +77,9 @@ const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
                                 <span className="text-xs text-foreground/40 truncate">
                                     {credential.email || credential.username}
                                 </span>
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-foreground/30 shrink-0">
+                                <span
+                                    className={`text-xs px-2 py-0.5 rounded-full text-foreground/30 shrink-0 ${getCategoryBadgeColor(credential.category)}`}
+                                >
                                     {credential.category}
                                 </span>
                             </div>
@@ -147,13 +117,6 @@ const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
                             >
                                 <RotateCcw className="w-4 h-4" />
                             </button>
-                            <button
-                                onClick={handlePermanentDelete}
-                                className="cursor-pointer p-2 rounded-xl hover:bg-error/10 text-foreground/40 hover:text-error transition-all"
-                                title="Excluir permanentemente"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -179,14 +142,6 @@ const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
                     </div>
                 </div>
             </div>
-
-            <DeleteConfirmationModal
-                isOpen={showDeleteModal}
-                onClose={() => setShowDeleteModal(false)}
-                onConfirm={confirmPermanentDelete}
-                credentialTitle={credential.title}
-                isPermanent={true}
-            />
         </>
     );
 };

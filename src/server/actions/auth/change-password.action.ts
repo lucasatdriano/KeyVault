@@ -1,8 +1,8 @@
 'use server';
 
-import { ChangePasswordData } from '@/src/shared/types/auth';
 import { authService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
+import { ChangePasswordData } from '../../types/service/auth';
 
 export async function changePasswordAction(
     data: ChangePasswordData,

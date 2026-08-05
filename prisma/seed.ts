@@ -9,18 +9,18 @@
 
 // async function main() {
 //     const categories = [
-//         { name: 'Streamings', color: '#EF4444' },
-//         { name: 'Finanças', color: '#10B981' },
-//         { name: 'Redes Sociais', color: '#3B82F6' },
-//         { name: 'Jogos', color: '#8B5CF6' },
-//         { name: 'Lojas', color: '#F97316' },
-//         { name: 'Saúde', color: '#14B8A6' },
-//         { name: 'Instituições', color: '#6366F1' },
-//         { name: 'Corporativos', color: '#64748B' },
-//         { name: 'Técnicos', color: '#0EA5E9' },
-//         { name: 'Aplicativos', color: '#06B6D4' },
-//         { name: 'Acesso Físico', color: '#A855F7' },
-//         { name: 'Outros', color: '#6B7280' },
+//         { name: 'Streamings' },
+//         { name: 'Finanças' },
+//         { name: 'Redes Sociais' },
+//         { name: 'Jogos' },
+//         { name: 'Lojas' },
+//         { name: 'Saúde', },
+//         { name: 'Instituições' },
+//         { name: 'Corporativos' },
+//         { name: 'Técnicos' },
+//         { name: 'Aplicativos' },
+//         { name: 'Acesso Físico' },
+//         { name: 'Outros' },
 //     ];
 
 //     for (const category of categories) {
@@ -35,7 +35,6 @@
 //             await prisma.category.create({
 //                 data: {
 //                     cipherText,
-//                     color: category.color,
 //                 },
 //             });
 //         }

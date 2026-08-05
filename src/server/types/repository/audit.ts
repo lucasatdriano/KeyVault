@@ -1,4 +1,8 @@
-import { AuditAction } from '@/src/generated/prisma/client';
+import {
+    AuditAction,
+    AuditLog,
+    Credential,
+} from '@/src/generated/prisma/client';
 import { PaginationQuery } from '@/src/shared/types/pagination';
 
 export interface CreateAuditLogData {
@@ -12,6 +16,10 @@ export interface CreateAuditLogData {
     device?: string | null;
     ip?: string | null;
 }
+
+export type AuditLogWithCredential = AuditLog & {
+    credential: Pick<Credential, 'cipherText' | 'iv'> | null;
+};
 
 export interface FindUserLogsOptions extends PaginationQuery {
     action?: AuditAction;

@@ -28,7 +28,7 @@ export function validateCredentialForm(data: CreateCredentialData) {
         errors.url = 'Informe uma URL válida.';
     }
 
-    if (!data.category.trim()) {
+    if (!data.categoryId == null) {
         errors.category = 'Selecione uma categoria.';
     }
 

@@ -54,6 +54,13 @@ const actionMap: Record<
         details: () => 'Credencial removida.',
     },
 
+    RESTORE_CREDENTIAL: {
+        type: 'edit',
+        event: (resource) =>
+            `Credencial restaurada ${resource ? `: ${resource}` : ''}`,
+        details: () => 'Credencial restaurada.',
+    },
+
     COPY_PASSWORD: {
         type: 'edit',
         event: (resource) => `Senha copiada${resource ? `: ${resource}` : ''}`,
@@ -104,7 +111,7 @@ export function mapAuditLog(log: AuditLogResponse): AuditLog {
             minute: '2-digit',
         }),
 
-        event: config.event(),
+        event: config.event(log.resource),
 
         details: config.details(),
 

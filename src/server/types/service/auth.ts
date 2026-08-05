@@ -8,7 +8,6 @@ export interface VerifyEmailData {
 export interface RegisterCategoryData {
     cipherText: string;
     iv: string;
-    color?: string | null;
 }
 
 export interface RegisterData {

@@ -37,7 +37,6 @@ export class CategoryService {
                 userId,
                 cipherText: category.cipherText,
                 iv: category.iv,
-                color: category.color,
             })),
         );
     }

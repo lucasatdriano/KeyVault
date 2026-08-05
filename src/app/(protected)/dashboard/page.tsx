@@ -11,8 +11,14 @@ import { decryptString } from '@/src/shared/crypto/cipher';
 import { getCredentialsAction } from '@/src/server/actions/credentials/get-credentials.action';
 import Header from '@/src/client/components/layout/header/Header';
 import CredentialCard from '@/src/client/components/ui/cards/CredentialCard';
-import ViewCredentialModal from '@/src/client/components/layout/modals/credentialsModals/ViewCredentialModal';
 import NewCredentialModal from '@/src/client/components/layout/modals/credentialsModals/NewCredentialModal';
+import ViewCredentialModal from '@/src/client/components/layout/modals/credentialsModals/ViewCredentialModal';
+import { copyPasswordAction } from '@/src/server/actions/credentials/copy-password.action';
+import { toggleFavoriteAction } from '@/src/server/actions/credentials/toggle-favorite.action';
+import { deleteCredentialAction } from '@/src/server/actions/credentials/delete-credential.action';
+import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
+import { usePagination } from '@/src/client/hooks/usePagination';
+import { Pagination } from '@/src/client/components/layout/pagination/Pagination';
 
 export default function DashboardPage() {
     const [credentials, setCredentials] = useState<Credential[]>([]);
@@ -29,8 +35,17 @@ export default function DashboardPage() {
 
     const vaultKey = useVaultStore((state) => state.vaultKey);
 
+    const pagination = usePagination({
+        initialPage: 1,
+        initialItemsPerPage: 18,
+    });
+
     const loadCredentials = useCallback(
-        async (search?: string, category?: string) => {
+        async (
+            search?: string,
+            category?: string,
+            page: number = pagination.currentPage,
+        ) => {
             if (!vaultKey) {
                 return;
             }
@@ -38,15 +53,24 @@ export default function DashboardPage() {
             setIsLoading(true);
 
             try {
+                const searchHash =
+                    search && vaultKey
+                        ? await generateResourceSearchHash(search, vaultKey)
+                        : undefined;
+
                 const result = await getCredentialsAction({
-                    search,
+                    search: searchHash,
                     categoryId:
                         category && category !== 'Todas' ? category : undefined,
+                    page,
+                    limit: pagination.itemsPerPage,
                 });
 
                 if (!result.success || !result.data) {
                     return;
                 }
+
+                pagination.setTotalItems(result.data.total);
 
                 const decrypted = await Promise.all(
                     result.data.data.map(async (credential) => {
@@ -60,6 +84,18 @@ export default function DashboardPage() {
 
                         const data = JSON.parse(json);
 
+                        let categoryName = 'Outros';
+
+                        if (credential.category) {
+                            categoryName = await decryptString(
+                                {
+                                    cipherText: credential.category.cipherText,
+                                    iv: credential.category.iv,
+                                },
+                                vaultKey,
+                            );
+                        }
+
                         return {
                             id: credential.id,
                             userId: credential.userId,
@@ -72,7 +108,7 @@ export default function DashboardPage() {
                             url: data.url,
                             notes: data.notes,
 
-                            category: data.category,
+                            category: categoryName,
 
                             favorite: credential.favorite,
 
@@ -83,11 +119,22 @@ export default function DashboardPage() {
                 );
 
                 setCredentials(decrypted);
+            } catch (error) {
+                console.error(error);
+                toast.error('Erro ao carregar credenciais.');
             } finally {
                 setIsLoading(false);
             }
         },
-        [vaultKey],
+        [vaultKey, pagination],
+    );
+
+    const handlePageChange = useCallback(
+        (page: number) => {
+            pagination.goToPage(page);
+            loadCredentials(searchQuery, selectedCategory, page);
+        },
+        [pagination, loadCredentials, searchQuery, selectedCategory],
     );
 
     useEffect(() => {
@@ -96,14 +143,14 @@ export default function DashboardPage() {
 
     const handleSearch = async (query: string) => {
         setSearchQuery(query);
-
-        await loadCredentials(query, selectedCategory);
+        pagination.resetPagination();
+        await loadCredentials(query, selectedCategory, 1);
     };
 
     const handleFilterChange = async (category: string) => {
         setSelectedCategory(category);
-
-        await loadCredentials(searchQuery, category);
+        pagination.resetPagination();
+        await loadCredentials(searchQuery, category, 1);
     };
 
     const handleNewCredential = () => {
@@ -116,32 +163,86 @@ export default function DashboardPage() {
     };
 
     const handleEdit = async () => {
-        await loadCredentials(searchQuery, selectedCategory);
-
+        await loadCredentials(
+            searchQuery,
+            selectedCategory,
+            pagination.currentPage,
+        );
         setIsViewModalOpen(false);
         setSelectedCredential(null);
     };
 
     const handleNewCredentialSave = async () => {
-        await loadCredentials(searchQuery, selectedCategory);
-
+        await loadCredentials(
+            searchQuery,
+            selectedCategory,
+            pagination.currentPage,
+        );
         setIsNewModalOpen(false);
     };
 
-    const handleDelete = async () => {
-        await loadCredentials(searchQuery, selectedCategory);
+    const handleDelete = async (credential: Credential) => {
+        try {
+            const result = await deleteCredentialAction(credential.id);
 
-        setIsViewModalOpen(false);
-        setSelectedCredential(null);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+
+            toast.success(result.message);
+
+            await loadCredentials(
+                searchQuery,
+                selectedCategory,
+                pagination.currentPage,
+            );
+
+            if (selectedCredential?.id === credential.id) {
+                setIsViewModalOpen(false);
+                setSelectedCredential(null);
+            }
+        } catch {
+            toast.error('Erro ao excluir credencial.');
+        }
     };
 
-    const handleCopy = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast.info('Copiado para a área de transferência');
+    const handleCopy = async (text: string, credentialId: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+
+            const result = await copyPasswordAction(credentialId);
+
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+
+            toast.info(result.message);
+        } catch {
+            toast.error('Erro ao copiar credencial.');
+        }
     };
 
-    const handleToggleFavorite = async () => {
-        await loadCredentials(searchQuery, selectedCategory);
+    const handleToggleFavorite = async (id: string) => {
+        try {
+            const result = await toggleFavoriteAction(id);
+
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+
+            toast.success(result.message);
+
+            await loadCredentials(
+                searchQuery,
+                selectedCategory,
+                pagination.currentPage,
+            );
+        } catch {
+            toast.error('Erro ao atualizar favorito.');
+        }
     };
 
     return (
@@ -186,6 +287,17 @@ export default function DashboardPage() {
                                     Nenhuma credencial encontrada
                                 </p>
                             </div>
+                        )}
+
+                        {/* Paginação */}
+                        {!isLoading && credentials.length > 0 && (
+                            <Pagination
+                                currentPage={pagination.currentPage}
+                                totalPages={pagination.totalPages}
+                                totalItems={pagination.totalItems}
+                                itemsPerPage={pagination.itemsPerPage}
+                                onPageChange={handlePageChange}
+                            />
                         )}
                     </>
                 )}

@@ -71,6 +71,26 @@ export class AuditRepository {
         };
     }
 
+    async findCredentialsByIds(ids: string[]) {
+        if (ids.length === 0) {
+            return [];
+        }
+
+        return this.prisma.credential.findMany({
+            where: {
+                id: {
+                    in: ids,
+                },
+            },
+
+            select: {
+                id: true,
+                cipherText: true,
+                iv: true,
+            },
+        });
+    }
+
     async findById(id: string): Promise<AuditLog | null> {
         return this.prisma.auditLog.findUnique({
             where: {

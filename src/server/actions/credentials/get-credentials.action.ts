@@ -2,13 +2,15 @@
 
 import { authService, credentialService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
-import { Credential } from '@/src/generated/prisma/client';
-import { FindCredentialsOptions } from '../../types/repository/credential';
+import {
+    CredentialWithCategory,
+    FindCredentialsOptions,
+} from '../../types/repository/credential';
 import { PaginatedResponse } from '@/src/shared/types/pagination';
 
 export async function getCredentialsAction(
     params: FindCredentialsOptions = {},
-): Promise<ActionResult<PaginatedResponse<Credential> | null>> {
+): Promise<ActionResult<PaginatedResponse<CredentialWithCategory> | null>> {
     try {
         const user = await authService.requireAuth();
 

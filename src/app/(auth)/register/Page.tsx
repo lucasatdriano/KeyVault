@@ -79,7 +79,6 @@ export default function RegisterPage() {
                 return {
                     cipherText: encrypted.cipherText,
                     iv: encrypted.iv,
-                    color: category.color,
                 };
             }),
         );

@@ -2,18 +2,20 @@
 
 import { authService, credentialService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
+import { getAuditContext } from '../../utils/audit-context';
 
 export async function copyPasswordAction(
     credentialId: string,
 ): Promise<ActionResult<null>> {
     try {
         await authService.requireAuth();
+        const audit = await getAuditContext();
 
-        await credentialService.copyPassword(credentialId);
+        await credentialService.copyPassword(credentialId, audit);
 
         return {
             success: true,
-            message: 'Cópia registrada.',
+            message: 'Copiado para a área de transferência.',
             data: null,
         };
     } catch (error) {

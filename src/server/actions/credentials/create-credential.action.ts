@@ -4,17 +4,22 @@ import { authService, credentialService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
 import { Credential } from '@/src/generated/prisma/client';
 import { CreateCredentialData } from '../../types/repository/credential';
+import { getAuditContext } from '../../utils/audit-context';
 
 export async function createCredentialAction(
     data: Omit<CreateCredentialData, 'userId'>,
 ): Promise<ActionResult<Credential | null>> {
     try {
         const user = await authService.requireAuth();
+        const audit = await getAuditContext();
 
-        const credential = await credentialService.create({
-            ...data,
-            userId: user.id,
-        });
+        const credential = await credentialService.create(
+            {
+                ...data,
+                userId: user.id,
+            },
+            audit,
+        );
 
         return {
             success: true,

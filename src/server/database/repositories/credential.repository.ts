@@ -6,9 +6,11 @@ import {
 import { PaginatedResponse } from '@/src/shared/types/pagination';
 import {
     CreateCredentialData,
+    CredentialWithCategory,
     FindCredentialsOptions,
     UpdateCredentialData,
 } from '../../types/repository/credential';
+import { getThirtyDaysAgo } from '../../utils/date';
 
 export class CredentialRepository {
     constructor(private readonly prisma: PrismaClient) {}
@@ -19,10 +21,19 @@ export class CredentialRepository {
         });
     }
 
-    async findById(id: string): Promise<Credential | null> {
-        return this.prisma.credential.findUnique({
+    async findById(
+        id: string,
+        includeDeleted = false,
+    ): Promise<Credential | null> {
+        return this.prisma.credential.findFirst({
             where: {
                 id,
+
+                ...(includeDeleted
+                    ? {}
+                    : {
+                          deletedAt: null,
+                      }),
             },
         });
     }
@@ -30,11 +41,29 @@ export class CredentialRepository {
     async findByUser(
         userId: string,
         options: FindCredentialsOptions = {},
-    ): Promise<PaginatedResponse<Credential>> {
-        const { page = 1, limit = 20, categoryId, favorite, search } = options;
+    ): Promise<PaginatedResponse<CredentialWithCategory>> {
+        const {
+            page = 1,
+            limit = 20,
+            categoryId,
+            favorite,
+            search,
+            deleted = false,
+        } = options;
 
         const where: Prisma.CredentialWhereInput = {
             userId,
+
+            ...(deleted
+                ? {
+                      deletedAt: {
+                          not: null,
+                          gte: getThirtyDaysAgo(),
+                      },
+                  }
+                : {
+                      deletedAt: null,
+                  }),
 
             ...(categoryId && {
                 categoryId,
@@ -46,12 +75,6 @@ export class CredentialRepository {
 
             ...(search && {
                 OR: [
-                    {
-                        cipherText: {
-                            contains: search,
-                            mode: 'insensitive',
-                        },
-                    },
                     {
                         resourceSearchHash: {
                             contains: search,
@@ -65,8 +88,15 @@ export class CredentialRepository {
         const [data, total] = await this.prisma.$transaction([
             this.prisma.credential.findMany({
                 where,
-                orderBy: {
-                    updatedAt: 'desc',
+                orderBy: deleted
+                    ? {
+                          deletedAt: 'desc',
+                      }
+                    : {
+                          updatedAt: 'desc',
+                      },
+                include: {
+                    category: true,
                 },
                 skip: (page - 1) * limit,
                 take: limit,
@@ -106,10 +136,25 @@ export class CredentialRepository {
         });
     }
 
-    async delete(id: string): Promise<Credential> {
-        return this.prisma.credential.delete({
+    async softDelete(id: string): Promise<Credential> {
+        return this.prisma.credential.update({
             where: {
                 id,
+            },
+            data: {
+                deletedAt: new Date(),
+            },
+        });
+    }
+
+    async restore(id: string): Promise<Credential> {
+        return this.prisma.credential.update({
+            where: {
+                id,
+            },
+
+            data: {
+                deletedAt: null,
             },
         });
     }

@@ -14,14 +14,19 @@ import {
     ShieldIcon,
 } from 'lucide-react';
 import { Credential } from '@/src/shared/types/credential';
-import DeleteConfirmationModal from '../../layout/modals/credentialsModals/DeleteConfirmationModal';
+import DeleteConfirmationModal from '../../layout/modals/credentialsModals/DeleteCredentialModal';
+import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+import {
+    getCategoryBadgeColor,
+    getCategoryColor,
+} from '@/src/client/utils/credentials/credential-category';
 
 interface CredentialCardProps {
     credential: Credential;
     onClick?: () => void;
     onEdit?: (credential: Credential) => void;
-    onDelete?: (id: string) => void;
-    onCopy?: (text: string) => void;
+    onDelete?: (credential: Credential) => Promise<void>;
+    onCopy?: (text: string, id: string) => void;
     onToggleFavorite?: (id: string) => void;
 }
 
@@ -37,54 +42,10 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
 
-    const getInitials = (title: string) => {
-        return title
-            .split(' ')
-            .map((word) => word[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2);
-    };
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
 
-    const getCategoryColor = (category: string) => {
-        const colors: Record<string, string> = {
-            'E-mail': 'from-blue-500 to-blue-600',
-            Desenvolvimento: 'from-purple-500 to-purple-600',
-            Streaming: 'from-error to-red-600',
-            Música: 'from-green-500 to-green-600',
-            Compras: 'from-orange-500 to-orange-600',
-            'Redes Sociais': 'from-pink-500 to-pink-600',
-            Finanças: 'from-emerald-500 to-emerald-600',
-            Trabalho: 'from-indigo-500 to-indigo-600',
-            Saúde: 'from-teal-500 to-teal-600',
-            Educação: 'from-cyan-500 to-cyan-600',
-        };
-        return colors[category] || 'from-primary to-secondary';
-    };
-
-    const getCategoryBadgeColor = (category: string) => {
-        const colors: Record<string, string> = {
-            'E-mail': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-            Desenvolvimento:
-                'bg-purple-500/20 text-purple-400 border-purple-500/30',
-            Streaming: 'bg-error/20 text-red-400 border-error/30',
-            Música: 'bg-green-500/20 text-green-400 border-green-500/30',
-            Compras: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-            'Redes Sociais': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-            Finanças:
-                'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-            Trabalho: 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-            Saúde: 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-            Educação: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-        };
-        return (
-            colors[category] || 'bg-primary/20 text-primary border-primary/30'
-        );
-    };
-
-    const handleCopy = (text: string) => {
-        navigator.clipboard.writeText(text);
-        onCopy?.(text);
+        onCopy?.(credential.password, credential.id);
     };
 
     const handleDelete = () => {
@@ -92,8 +53,8 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
         setShowMenu(false);
     };
 
-    const confirmDelete = () => {
-        onDelete?.(credential.id);
+    const confirmDelete = async () => {
+        await onDelete?.(credential);
         setShowDeleteModal(false);
     };
 
@@ -105,6 +66,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
 
     const handleToggleFavorite = (e: React.MouseEvent) => {
         e.stopPropagation();
+
         onToggleFavorite?.(credential.id);
     };
 
@@ -140,7 +102,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                 <button
                                     onClick={handleToggleFavorite}
                                     className={`
-                                        transition-all duration-200 shrink-0
+                                        cursor-pointer transition-all duration-200 shrink-0
                                         ${
                                             isHovered || isFavorite
                                                 ? 'opacity-100 scale-100'
@@ -184,7 +146,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                     >
                         <button
                             onClick={() => setShowMenu(!showMenu)}
-                            className="p-1.5 rounded-lg hover:bg-white/5 text-foreground/40 hover:text-foreground transition-colors"
+                            className="cursor-pointer p-1.5 rounded-lg hover:bg-white/5 text-foreground/40 hover:text-foreground transition-colors"
                         >
                             <MoreVerticalIcon className="w-5 h-5" />
                         </button>
@@ -197,22 +159,8 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                 />
                                 <div className="absolute right-0 mt-1 w-48 bg-background/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl z-50 py-1">
                                     <button
-                                        onClick={() => {
-                                            setShowMenu(false);
-                                            onToggleFavorite?.(credential.id);
-                                        }}
-                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-foreground/70 hover:bg-white/5 transition-colors"
-                                    >
-                                        <StarIcon
-                                            className={`w-4 h-4 ${isFavorite ? 'text-yellow-500 fill-yellow-500' : ''}`}
-                                        />
-                                        {isFavorite
-                                            ? 'Remover dos favoritos'
-                                            : 'Adicionar aos favoritos'}
-                                    </button>
-                                    <button
                                         onClick={handleDelete}
-                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-error hover:bg-white/5 transition-colors"
+                                        className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-sm text-error hover:bg-white/5 transition-colors"
                                     >
                                         <Trash2Icon className="w-4 h-4" />
                                         Excluir
@@ -247,7 +195,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                         e.stopPropagation();
                                         setShowPassword(!showPassword);
                                     }}
-                                    className="p-1 rounded hover:bg-white/5 text-foreground/30 hover:text-foreground/60 transition-colors"
+                                    className="cursor-pointer p-1 rounded hover:bg-white/5 text-foreground/30 hover:text-foreground/60 transition-colors"
                                 >
                                     {showPassword ? (
                                         <EyeOffIcon className="w-4 h-4" />
@@ -256,11 +204,8 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                     )}
                                 </button>
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleCopy(credential.password!);
-                                    }}
-                                    className="p-1 rounded hover:bg-white/5 text-foreground/30 hover:text-foreground/60 transition-colors"
+                                    onClick={handleCopy}
+                                    className="cursor-pointer p-1 rounded hover:bg-white/5 text-foreground/30 hover:text-foreground/60 transition-colors"
                                 >
                                     <CopyIcon className="w-4 h-4" />
                                 </button>

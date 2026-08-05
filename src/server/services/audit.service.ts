@@ -1,6 +1,7 @@
 import { AuditAction, AuditLog } from '@/src/generated/prisma/client';
 import { AuditRepository } from '../database/repositories/audit.repository';
 import {
+    AuditLogWithCredential,
     CreateAuditLogData,
     FindUserLogsOptions,
 } from '../types/repository/audit';
@@ -19,12 +20,35 @@ export class AuditService {
     async getUserLogs(
         userId: string,
         options: FindUserLogsOptions = {},
-    ): Promise<PaginatedResponse<AuditLog>> {
+    ): Promise<PaginatedResponse<AuditLogWithCredential>> {
         if (!userId) {
             throw new Error('userId inválido.');
         }
 
-        return this.auditRepository.findByUser(userId, options);
+        const result = await this.auditRepository.findByUser(userId, options);
+
+        const credentialIds = result.data
+            .map((log) => log.credentialId)
+            .filter((id): id is string => Boolean(id));
+
+        const credentials =
+            await this.auditRepository.findCredentialsByIds(credentialIds);
+
+        const credentialMap = new Map(
+            credentials.map((credential) => [credential.id, credential]),
+        );
+
+        return {
+            ...result,
+
+            data: result.data.map((log) => ({
+                ...log,
+
+                credential: log.credentialId
+                    ? (credentialMap.get(log.credentialId) ?? null)
+                    : null,
+            })),
+        };
     }
 
     async getLogById(id: string): Promise<AuditLog | null> {
