@@ -5,7 +5,6 @@ import {
     LogInIcon,
     LogOutIcon,
     LucideIcon,
-    MonitorIcon,
     PlusIcon,
     Trash2Icon,
 } from 'lucide-react';
@@ -59,13 +58,6 @@ export const auditEventConfig: Record<AuditEventType, AuditEventConfigItem> = {
         iconClass: 'text-purple',
         badgeClass: 'bg-purple/20 text-purple border-purple/30',
         label: 'Senha',
-    },
-
-    device: {
-        icon: MonitorIcon,
-        iconClass: 'text-cyan-500',
-        badgeClass: 'bg-cyan-500/20 text-cyan-500 border-cyan-500/30',
-        label: 'Dispositivo',
     },
 };
 

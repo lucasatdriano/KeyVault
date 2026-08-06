@@ -11,7 +11,7 @@ interface PaginationProps {
     siblingCount?: number;
 }
 
-export function Pagination({
+export default function Pagination({
     currentPage,
     totalPages,
     totalItems,

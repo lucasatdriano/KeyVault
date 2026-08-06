@@ -74,14 +74,9 @@ export class CredentialRepository {
             }),
 
             ...(search && {
-                OR: [
-                    {
-                        resourceSearchHash: {
-                            contains: search,
-                            mode: 'insensitive',
-                        },
-                    },
-                ],
+                resourceSearchHash: {
+                    equals: search,
+                },
             }),
         };
 

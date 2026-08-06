@@ -5,20 +5,23 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { GlobeIcon, KeyIcon, LockIcon, MailIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import Button from '@/src/client/components/ui/buttons/Button';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import ModalBase from '../ModalBase';
-
-import { CreateCredentialData } from '@/src/shared/types/credential';
+import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
 import { createCredentialAction } from '@/src/server/actions/credentials/create-credential.action';
-import { useVaultStore } from '@/src/client/store/vault.store';
-import { decryptString, encryptString } from '@/src/shared/crypto/cipher';
+
 import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
+import { decryptString, encryptString } from '@/src/shared/crypto/cipher';
 import { bytesToBase64 } from '@/src/shared/crypto/encoding';
 import { generateSalt } from '@/src/shared/crypto/random';
-import { validateCredentialForm } from '@/src/client/validators/credential.validator';
-import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
+import { CreateCredentialData } from '@/src/shared/types/credential';
 import { DecryptedCategory } from '@/src/shared/types/category';
+
+import { validateCredentialForm } from '@/src/client/validators/credential.validator';
+import { useVaultStore } from '@/src/client/store/vault.store';
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
+import InputTextAreaForm from '@/src/client/components/ui/inputs/InputTextAreaForm';
+import ModalBase from '../ModalBase';
 
 interface NewCredentialModalProps {
     isOpen: boolean;
@@ -202,6 +205,11 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
         }
     };
 
+    const categoryOptions = categories.map((cat) => ({
+        value: cat.id,
+        label: cat.name,
+    }));
+
     return (
         <ModalBase
             isOpen={isOpen}
@@ -277,56 +285,23 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                     error={errors.url}
                 />
 
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground/90">
-                        Categoria
-                    </label>
+                <InputSelectForm
+                    label="Categoria"
+                    options={categoryOptions}
+                    placeholder="Selecione uma categoria"
+                    value={formData.categoryId ?? ''}
+                    onChange={(e) => handleChange('categoryId', e.target.value)}
+                    error={errors.categoryId}
+                />
 
-                    <select
-                        value={formData.categoryId ?? ''}
-                        onChange={(e) =>
-                            handleChange('categoryId', e.target.value)
-                        }
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-foreground transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    >
-                        <option value="" disabled className="bg-background">
-                            Selecione uma categoria
-                        </option>
-                        {categories.map((category) => (
-                            <option
-                                key={category.id}
-                                value={category.id}
-                                className="bg-background"
-                            >
-                                {category.name}
-                            </option>
-                        ))}
-                    </select>
-                    {errors.categoryId && (
-                        <p className="mt-1 text-xs text-error">
-                            {errors.categoryId}
-                        </p>
-                    )}
-                </div>
-
-                <div>
-                    <label className="mb-1.5 block text-sm font-medium text-foreground/90">
-                        Notas
-                    </label>
-
-                    <textarea
-                        rows={3}
-                        value={formData.notes}
-                        onChange={(e) => handleChange('notes', e.target.value)}
-                        placeholder="Informações adicionais..."
-                        className="w-full resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-foreground placeholder-foreground/30 transition-all focus:outline-none focus:ring-2 focus:ring-primary/50"
-                    />
-                    {errors.notes && (
-                        <p className="mt-1 text-xs text-error">
-                            {errors.notes}
-                        </p>
-                    )}
-                </div>
+                <InputTextAreaForm
+                    label="Notas"
+                    placeholder="Informações adicionais..."
+                    value={formData.notes}
+                    onChange={(e) => handleChange('notes', e.target.value)}
+                    error={errors.notes}
+                    rows={3}
+                />
             </form>
         </ModalBase>
     );

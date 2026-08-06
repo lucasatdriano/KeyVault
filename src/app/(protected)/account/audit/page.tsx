@@ -5,19 +5,22 @@ import { useCallback, useEffect, useState } from 'react';
 import { ShieldIcon } from 'lucide-react';
 
 import { AuditAction } from '@/src/generated/prisma/enums';
+
 import { getUserLogsAction } from '@/src/server/actions/audit/get-user-logs.action';
+
 import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
+import { decryptString } from '@/src/shared/crypto/cipher';
+
+import { mapAuditSearch } from '@/src/client/utils/audit/audit-search.mapper';
 import { AuditLog } from '@/src/client/types/audit';
 import { mapAuditLog } from '@/src/client/utils/audit/audit.mapper';
 import { useVaultStore } from '@/src/client/store/vault.store';
-import { mapAuditSearch } from '@/src/client/utils/audit/audit-search.mapper';
+import { usePagination } from '@/src/client/hooks/usePagination';
 
 import Header from '@/src/client/components/layout/header/Header';
 import AuditCard from './components/AuditCard';
+import Pagination from '@/src/client/components/layout/pagination/Pagination';
 import InfoCard from '@/src/client/components/ui/cards/InfoCard';
-import { decryptString } from '@/src/shared/crypto/cipher';
-import { Pagination } from '@/src/client/components/layout/pagination/Pagination';
-import { usePagination } from '@/src/client/hooks/usePagination';
 
 export default function AuditPage() {
     const pagination = usePagination({

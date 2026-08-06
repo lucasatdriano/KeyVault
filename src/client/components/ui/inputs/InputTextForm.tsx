@@ -1,6 +1,6 @@
 'use client';
 
-import React, { InputHTMLAttributes, useState, forwardRef } from 'react';
+import React, { InputHTMLAttributes, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface InputTextFormProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -12,21 +12,18 @@ interface InputTextFormProps extends InputHTMLAttributes<HTMLInputElement> {
     variant?: 'default' | 'outline' | 'ghost';
 }
 
-function InputText(
-    {
-        label,
-        error,
-        leftIcon,
-        rightIcon,
-        fullWidth = true,
-        variant = 'default',
-        className = '',
-        type = 'text',
-        disabled,
-        ...props
-    }: InputTextFormProps,
-    ref: React.ForwardedRef<HTMLInputElement>,
-) {
+export default function InputTextForm({
+    label,
+    error,
+    leftIcon,
+    rightIcon,
+    fullWidth = true,
+    variant = 'default',
+    className = '',
+    type = 'text',
+    disabled,
+    ...props
+}: InputTextFormProps) {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === 'password';
 
@@ -51,22 +48,21 @@ function InputText(
     `;
 
     return (
-        <div className={`${fullWidth ? 'w-full' : ''}`}>
+        <div className={fullWidth ? 'w-full' : ''}>
             {label && (
-                <label className="block text-foreground/90 text-sm font-medium mb-1.5">
+                <label className="mb-1.5 block text-sm font-medium text-foreground/90">
                     {label}
                 </label>
             )}
 
             <div className="relative">
                 {leftIcon && (
-                    <div className="absolute left-3 w-5 h-5 top-1/2 -translate-y-1/2 text-foreground/30">
+                    <div className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-foreground/30">
                         {leftIcon}
                     </div>
                 )}
 
                 <input
-                    ref={ref}
                     type={isPassword && showPassword ? 'text' : type}
                     disabled={disabled}
                     className={inputClasses}
@@ -74,18 +70,18 @@ function InputText(
                 />
 
                 {(rightIcon || isPassword) && (
-                    <div className="absolute right-3 w-6 h-6 top-1/2 -translate-y-1/2">
+                    <div className="absolute top-1/2 right-3 h-6 w-6 -translate-y-1/2">
                         {isPassword ? (
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="cursor-pointer text-foreground/30 hover:text-foreground/60 transition-colors"
+                                className="cursor-pointer text-foreground/30 transition-colors hover:text-foreground/60"
                                 disabled={disabled}
                             >
                                 {showPassword ? (
-                                    <EyeOff className="w-6 h-6" />
+                                    <EyeOff className="h-6 w-6" />
                                 ) : (
-                                    <Eye className="w-6 h-6" />
+                                    <Eye className="h-6 w-6" />
                                 )}
                             </button>
                         ) : (
@@ -98,16 +94,8 @@ function InputText(
             </div>
 
             {error && (
-                <p className="text-error text-xs mt-1.5 font-medium">{error}</p>
+                <p className="mt-1.5 text-xs font-medium text-error">{error}</p>
             )}
         </div>
     );
 }
-
-const InputTextForm = forwardRef<HTMLInputElement, InputTextFormProps>(
-    InputText,
-);
-
-InputTextForm.displayName = 'InputText';
-
-export default InputTextForm;
