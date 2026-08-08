@@ -1,22 +1,25 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Mail, Key, LogIn } from 'lucide-react';
+import React, { Suspense, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { MailIcon, KeyIcon, LogInIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import Button from '@/src/client/components/ui/buttons/Button';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import Logo from '@/src/client/components/layout/logo/Logo';
+
 import { loginAction } from '@/src/server/actions/auth/login.action';
-import { validateLoginForm } from '@/src/client/validators/auth.validator';
-import { useVaultStore } from '@/src/client/store/vault.store';
+
 import { decryptVaultKey } from '@/src/shared/crypto/vault';
 import { LoginFormData } from '@/src/shared/types/auth';
 
+import { validateLoginForm } from '@/src/client/validators/auth.validator';
+import { useVaultStore } from '@/src/client/store/vault.store';
+
+import { LoginClient } from './components/LoginClient';
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import Logo from '@/src/client/components/layout/logo/Logo';
+
 export default function LoginPage() {
     const router = useRouter();
-    const searchParams = useSearchParams();
-
     const [isLoading, setIsLoading] = useState(false);
     const [formData, setFormData] = useState<LoginFormData>({
         email: '',
@@ -26,21 +29,8 @@ export default function LoginPage() {
         email: '',
         password: '',
     });
-    const logoutExecuted = useRef(false);
 
     const setVaultKey = useVaultStore((state) => state.setVaultKey);
-
-    useEffect(() => {
-        if (logoutExecuted.current) return;
-
-        if (!searchParams.get('expired')) return;
-
-        logoutExecuted.current = true;
-
-        toast.info('Sua sessão expirou. Faça login novamente.');
-
-        router.replace('/login');
-    }, [router, searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -99,79 +89,84 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
-            <div className="flex justify-center mb-6">
-                <Logo variant="icon" size="lg"></Logo>
-            </div>
-
-            <h2 className="text-3xl font-bold text-foreground mb-2 text-center">
-                Bem-vindo de volta
-            </h2>
-            <p className="text-foreground/70 text-sm mb-8 text-center">
-                Entre na sua conta para acessar suas credenciais.
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-                <InputTextForm
-                    label="E-mail"
-                    placeholder="seu@email.com"
-                    type="text"
-                    name="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                    }
-                    leftIcon={<Mail className="w-5 h-5" />}
-                    error={errors.email}
-                />
-
-                <InputTextForm
-                    label="Senha"
-                    placeholder="********"
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={(e) =>
-                        setFormData({
-                            ...formData,
-                            password: e.target.value,
-                        })
-                    }
-                    leftIcon={<Key className="w-5 h-5" />}
-                    error={errors.password}
-                />
-
-                <div className="flex items-center justify-end">
-                    <button
-                        type="button"
-                        onClick={() => router.push('/forgot-password')}
-                        className="cursor-pointer text-sm text-primary/60 hover:text-primary transition-colors duration-200"
-                    >
-                        Esqueci minha senha
-                    </button>
+        <>
+            <Suspense fallback={null}>
+                <LoginClient />
+            </Suspense>
+            <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
+                <div className="flex justify-center mb-6">
+                    <Logo variant="icon" size="lg"></Logo>
                 </div>
 
-                <Button
-                    type="submit"
-                    disabled={isLoading}
-                    fullWidth
-                    isLoading={isLoading}
-                    loadingText="Entrando..."
-                    leftIcon={<LogIn className="w-5 h-5" />}
-                >
-                    Entrar
-                </Button>
-            </form>
+                <h2 className="text-3xl font-bold text-foreground mb-2 text-center">
+                    Bem-vindo de volta
+                </h2>
+                <p className="text-foreground/70 text-sm mb-8 text-center">
+                    Entre na sua conta para acessar suas credenciais.
+                </p>
 
-            <p className="text-center mt-6 text-foreground/60 text-sm">
-                Não tem uma conta?{' '}
-                <button
-                    onClick={() => router.push('/register')}
-                    className="cursor-pointer text-primary font-semibold hover:underline transition-all duration-200"
-                >
-                    Criar conta
-                </button>
-            </p>
-        </div>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <InputTextForm
+                        label="E-mail"
+                        placeholder="seu@email.com"
+                        type="text"
+                        name="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                            setFormData({ ...formData, email: e.target.value })
+                        }
+                        leftIcon={<MailIcon className="w-5 h-5" />}
+                        error={errors.email}
+                    />
+
+                    <InputTextForm
+                        label="Senha"
+                        placeholder="********"
+                        type="password"
+                        name="password"
+                        value={formData.password}
+                        onChange={(e) =>
+                            setFormData({
+                                ...formData,
+                                password: e.target.value,
+                            })
+                        }
+                        leftIcon={<KeyIcon className="w-5 h-5" />}
+                        error={errors.password}
+                    />
+
+                    <div className="flex items-center justify-end">
+                        <button
+                            type="button"
+                            onClick={() => router.push('/forgot-password')}
+                            className="cursor-pointer text-sm text-primary/60 hover:text-primary transition-colors duration-200"
+                        >
+                            Esqueci minha senha
+                        </button>
+                    </div>
+
+                    <Button
+                        type="submit"
+                        disabled={isLoading}
+                        fullWidth
+                        isLoading={isLoading}
+                        loadingText="Entrando..."
+                        leftIcon={<LogInIcon className="w-5 h-5" />}
+                    >
+                        Entrar
+                    </Button>
+                </form>
+
+                <p className="text-center mt-6 text-foreground/60 text-sm">
+                    Não tem uma conta?{' '}
+                    <button
+                        onClick={() => router.push('/register')}
+                        className="cursor-pointer text-primary font-semibold hover:underline transition-all duration-200"
+                    >
+                        Criar conta
+                    </button>
+                </p>
+            </div>
+        </>
     );
 }

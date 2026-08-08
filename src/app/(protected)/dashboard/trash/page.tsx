@@ -3,10 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trash2Icon, AlertCircleIcon } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { useCredentials } from '@/src/client/hooks/useCredentials';
-import { restoreCredentialAction } from '@/src/server/actions/credentials/restore-credential.action';
+import { useCredentials } from '@/src/client/hooks/credentials/useCredentials';
 
 import Header from '@/src/client/components/layout/header/Header';
 import DeletedCredentialCard from '@/src/client/components/ui/cards/DeletedCredentialCard';
@@ -21,7 +19,7 @@ export default function TrashPage() {
         isLoading,
         pagination,
         handleSearch,
-        refresh,
+        handleRestore,
         loadCredentials,
         selectedCategory,
     } = useCredentials({
@@ -32,20 +30,10 @@ export default function TrashPage() {
 
     useEffect(() => {
         loadCredentials();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [loadCredentials]);
 
-    const handleRestore = async (id: string) => {
-        const result = await restoreCredentialAction(id);
-
-        if (!result.success) {
-            toast.error(result.error);
-            return;
-        }
-
-        toast.success(result.message);
-
-        await refresh();
+    const handleRestoreWrapper = async (id: string) => {
+        await handleRestore(id);
     };
 
     return (
@@ -59,69 +47,74 @@ export default function TrashPage() {
 
             {isLoading ? (
                 <div className="py-16 text-center">Carregando...</div>
-            ) : trashItems.length > 0 ? (
-                <div className="space-y-3 px-4">
-                    {trashItems.map((credential) => (
-                        <DeletedCredentialCard
-                            key={credential.id}
-                            credential={credential}
-                            onRestore={handleRestore}
-                        />
-                    ))}
-
-                    <Pagination
-                        currentPage={pagination.currentPage}
-                        totalPages={pagination.totalPages}
-                        totalItems={pagination.totalItems}
-                        itemsPerPage={pagination.itemsPerPage}
-                        onPageChange={pagination.goToPage}
-                    />
-                </div>
             ) : (
-                <div className="py-16 text-center">
-                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-error/10">
-                        <Trash2Icon className="h-10 w-10 text-error/40" />
-                    </div>
+                <>
+                    {trashItems.length > 0 ? (
+                        <div className="space-y-3 px-4">
+                            {trashItems.map((credential) => (
+                                <DeletedCredentialCard
+                                    key={credential.id}
+                                    credential={credential}
+                                    onRestore={handleRestoreWrapper}
+                                />
+                            ))}
 
-                    <h3 className="mb-2 text-lg font-semibold">
-                        Lixeira vazia
-                    </h3>
+                            <Pagination
+                                currentPage={pagination.currentPage}
+                                totalPages={pagination.totalPages}
+                                totalItems={pagination.totalItems}
+                                itemsPerPage={pagination.itemsPerPage}
+                                onPageChange={pagination.goToPage}
+                            />
+                        </div>
+                    ) : (
+                        <div className="py-16 text-center">
+                            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-error/10">
+                                <Trash2Icon className="h-10 w-10 text-error/40" />
+                            </div>
 
-                    <p className="mx-auto max-w-sm text-sm text-foreground/40">
-                        Credenciais excluídas aparecerão aqui por 30 dias. Você
-                        poderá restaurá-las a qualquer momento.
-                    </p>
+                            <h3 className="mb-2 text-lg font-semibold">
+                                Lixeira vazia
+                            </h3>
 
-                    <button
-                        onClick={() => router.push('/dashboard')}
-                        className="mt-4 text-sm text-primary hover:underline"
-                    >
-                        Voltar para o dashboard
-                    </button>
-                </div>
-            )}
+                            <p className="mx-auto max-w-sm text-sm text-foreground/40">
+                                Credenciais excluídas aparecerão aqui por 30
+                                dias. Você poderá restaurá-las a qualquer
+                                momento.
+                            </p>
 
-            {trashItems.length > 0 && (
-                <InfoCard
-                    icon={AlertCircleIcon}
-                    footer={
-                        <>
-                            {trashItems.length}{' '}
-                            {trashItems.length === 1
-                                ? 'credencial'
-                                : 'credenciais'}{' '}
-                            na lixeira
-                        </>
-                    }
-                >
-                    <>
-                        <span className="font-medium text-foreground/80">
-                            Retenção de 30 dias:
-                        </span>{' '}
-                        Credenciais excluídas permanecem disponíveis por 30 dias
-                        antes da remoção definitiva.
-                    </>
-                </InfoCard>
+                            <button
+                                onClick={() => router.push('/dashboard')}
+                                className="mt-4 text-sm text-primary hover:underline"
+                            >
+                                Voltar para o dashboard
+                            </button>
+                        </div>
+                    )}
+
+                    {trashItems.length > 0 && (
+                        <InfoCard
+                            icon={AlertCircleIcon}
+                            footer={
+                                <>
+                                    {trashItems.length}{' '}
+                                    {trashItems.length === 1
+                                        ? 'credencial'
+                                        : 'credenciais'}{' '}
+                                    na lixeira
+                                </>
+                            }
+                        >
+                            <>
+                                <span className="font-medium text-foreground/80">
+                                    Retenção de 30 dias:
+                                </span>{' '}
+                                Credenciais excluídas permanecem disponíveis por
+                                30 dias antes da remoção definitiva.
+                            </>
+                        </InfoCard>
+                    )}
+                </>
             )}
         </div>
     );

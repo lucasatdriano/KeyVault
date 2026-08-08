@@ -1,42 +1,39 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GlobeIcon, KeyIcon, LockIcon, MailIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
-import { createCredentialAction } from '@/src/server/actions/credentials/create-credential.action';
-
-import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
-import { decryptString, encryptString } from '@/src/shared/crypto/cipher';
-import { bytesToBase64 } from '@/src/shared/crypto/encoding';
-import { generateSalt } from '@/src/shared/crypto/random';
 import { CreateCredentialData } from '@/src/shared/types/credential';
-import { DecryptedCategory } from '@/src/shared/types/category';
 
 import { validateCredentialForm } from '@/src/client/validators/credential.validator';
-import { useVaultStore } from '@/src/client/store/vault.store';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
 import InputTextAreaForm from '@/src/client/components/ui/inputs/InputTextAreaForm';
 import ModalBase from '../ModalBase';
+import { useCategories } from '@/src/client/hooks/categories/useCategories';
 
 interface NewCredentialModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave?: () => void;
+    onSave?: (data: CreateCredentialData) => Promise<void>;
+    isLoading?: boolean;
 }
 
 const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
     isOpen,
     onClose,
     onSave,
+    isLoading = false,
 }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [categories, setCategories] = useState<DecryptedCategory[]>([]);
-    const vaultKey = useVaultStore((state) => state.vaultKey);
+    const {
+        categories,
+        isLoading: isLoadingCategories,
+        loadCategories,
+    } = useCategories({
+        autoLoad: false,
+    });
 
     const [formData, setFormData] = useState<CreateCredentialData>({
         title: '',
@@ -57,46 +54,11 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
         notes: '',
     });
 
-    const loadCategories = useCallback(async () => {
-        if (!vaultKey) {
-            return;
-        }
-
-        setIsLoading(true);
-
-        try {
-            const result = await getCategoriesAction();
-
-            if (!result.success || !result.data) {
-                return;
-            }
-
-            const decrypted = await Promise.all(
-                result.data.map(async (category) => {
-                    const name = await decryptString(
-                        {
-                            cipherText: category.cipherText,
-                            iv: category.iv,
-                        },
-                        vaultKey,
-                    );
-
-                    return {
-                        id: category.id,
-                        name,
-                    };
-                }),
-            );
-
-            setCategories(decrypted);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [vaultKey]);
-
     useEffect(() => {
-        loadCategories();
-    }, [loadCategories]);
+        if (isOpen) {
+            loadCategories();
+        }
+    }, [isOpen, loadCategories]);
 
     const handleChange = (field: keyof CreateCredentialData, value: string) => {
         setFormData((prev) => ({
@@ -115,15 +77,19 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             categoryId: '',
             notes: '',
         });
+        setErrors({
+            title: '',
+            username: '',
+            email: '',
+            password: '',
+            url: '',
+            categoryId: '',
+            notes: '',
+        });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (!vaultKey) {
-            toast.error('Vault Key não encontrada.');
-            return;
-        }
 
         const validationErrors = validateCredentialForm(formData);
 
@@ -137,7 +103,6 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                 categoryId: validationErrors.categoryId ?? '',
                 notes: validationErrors.notes ?? '',
             });
-
             return;
         }
 
@@ -151,58 +116,18 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             notes: '',
         });
 
-        setIsLoading(true);
-
         try {
-            const payload = {
-                title: formData.title,
-                username: formData.username,
-                email: formData.email,
-                password: formData.password,
-                url: formData.url,
-                notes: formData.notes,
-            };
-
-            const encrypted = await encryptString(
-                JSON.stringify(payload),
-                vaultKey,
-            );
-
-            const resourceSearchHash = await generateResourceSearchHash(
-                formData.title,
-                vaultKey,
-            );
-
-            const salt = bytesToBase64(generateSalt());
-
-            const result = await createCredentialAction({
-                categoryId: formData.categoryId || null,
-                cipherText: encrypted.cipherText,
-                iv: encrypted.iv,
-                salt,
-                resourceSearchHash,
-                version: 1,
-                algorithm: 'AES-256-GCM',
-                favorite: false,
-            });
-
-            if (!result.success) {
-                toast.error(result.error);
-                return;
-            }
-
-            toast.success(result.message);
-
+            await onSave?.(formData);
             resetForm();
-
             onClose();
-
-            onSave?.();
         } catch {
             toast.error('Erro ao criar credencial.');
-        } finally {
-            setIsLoading(false);
         }
+    };
+
+    const handleClose = () => {
+        resetForm();
+        onClose();
     };
 
     const categoryOptions = categories.map((cat) => ({
@@ -213,13 +138,18 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
     return (
         <ModalBase
             isOpen={isOpen}
-            onClose={onClose}
+            onClose={handleClose}
             title="Nova Credencial"
             icon={<PlusIcon className="w-5 h-5 text-primary" />}
             maxWidth="lg"
             footer={
                 <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button variant="secondary" onClick={onClose} fullWidth>
+                    <Button
+                        variant="secondary"
+                        onClick={handleClose}
+                        fullWidth
+                        disabled={isLoading}
+                    >
                         Cancelar
                     </Button>
 
@@ -228,6 +158,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                         isLoading={isLoading}
                         loadingText="Salvando..."
                         fullWidth
+                        disabled={isLoadingCategories}
                     >
                         Salvar
                     </Button>
@@ -251,7 +182,6 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                     value={formData.email || formData.username}
                     onChange={(e) => {
                         const value = e.target.value;
-
                         if (value.includes('@')) {
                             handleChange('email', value);
                             handleChange('username', '');

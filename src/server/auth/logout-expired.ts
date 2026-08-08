@@ -8,9 +8,7 @@ export async function handleExpiredSession(
 ) {
     await notifyExpiredSession(request, userId);
 
-    const response = NextResponse.redirect(
-        new URL('/login?expired=1', request.url),
-    );
+    const response = NextResponse.redirect(new URL('/?expired=1', request.url));
 
     response.cookies.delete(ACCESS_TOKEN_COOKIE_NAME);
 

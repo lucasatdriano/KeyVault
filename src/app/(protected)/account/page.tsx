@@ -16,7 +16,7 @@ import {
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Header from '@/src/client/components/layout/header/Header';
-import { useAuth } from '@/src/client/hooks/useAuth';
+import { useAuth } from '@/src/client/hooks/auth/useAuth';
 
 const userData = {
     name: 'Alex Ferreira',

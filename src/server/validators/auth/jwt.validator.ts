@@ -1,5 +1,5 @@
+import { JWTPayload } from '@/src/shared/types/jwt-payload';
 import { jwtService } from '../../containers/services';
-import { JWTPayload } from '../../types/service/jwt';
 
 export async function validateAccessToken(token: string): Promise<boolean> {
     if (!token) {

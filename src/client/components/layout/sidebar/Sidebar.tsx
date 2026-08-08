@@ -1,17 +1,19 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOutIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 
 import Logo from '../logo/Logo';
 
-import { useAuth } from '@/src/client/hooks/useAuth';
-import { useSidebar } from '@/src/client/hooks/useSidebar';
+import { useSidebar } from '@/src/client/hooks/ui/useSidebar';
+import { useCredentialsStore } from '@/src/client/store/credential.store';
 
 import { sidebarSections } from './Sidebar.config';
 import { logoutAction } from '@/src/server/actions/auth/logout.action';
 import { useVaultStore } from '@/src/client/store/vault.store';
+import { useAuth } from '@/src/client/hooks/auth/useAuth';
 
 interface SidebarProps {
     mobile?: boolean;
@@ -26,12 +28,42 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
 
     const clearVault = useVaultStore.getState().clearVault;
 
+    const {
+        getCredentialsLength,
+        getFavoritesLength,
+        getDeletedLength,
+        credentials,
+        favoriteCredentials,
+        deletedCredentials,
+    } = useCredentialsStore();
+
     const [expandedSections, setExpandedSections] = useState<string[]>([
         'CREDENCIAIS',
         'CONTA',
     ]);
 
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const [counts, setCounts] = useState({
+        total: 0,
+        favorites: 0,
+        deleted: 0,
+    });
+
+    useEffect(() => {
+        setCounts({
+            total: getCredentialsLength(),
+            favorites: getFavoritesLength(),
+            deleted: getDeletedLength(),
+        });
+    }, [
+        credentials,
+        favoriteCredentials,
+        deletedCredentials,
+        getCredentialsLength,
+        getFavoritesLength,
+        getDeletedLength,
+    ]);
 
     const toggleSection = (title: string) => {
         setExpandedSections((prev) =>
@@ -75,6 +107,19 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
 
     const isActive = (href: string) => pathname === href;
 
+    const getItemCount = (itemLabel: string): number | undefined => {
+        switch (itemLabel) {
+            case 'Minhas Credenciais':
+                return counts.total;
+            case 'Favoritos':
+                return counts.favorites;
+            case 'Lixeira':
+                return counts.deleted;
+            default:
+                return undefined;
+        }
+    };
+
     return (
         <aside
             className={`bg-background/50 backdrop-blur-xl border-r border-white/10 flex flex-col ${
@@ -103,39 +148,44 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
 
                         {expandedSections.includes(section.title) && (
                             <div className="space-y-1">
-                                {section.items.map((item) => (
-                                    <button
-                                        key={item.label}
-                                        onClick={() =>
-                                            handleNavigation(item.href)
-                                        }
-                                        className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 transition-all duration-200 cursor-pointer ${
-                                            isActive(item.href)
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'text-foreground/70 hover:bg-white/5 hover:text-foreground'
-                                        }`}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <item.icon className="h-5 w-5" />
+                                {section.items.map((item) => {
+                                    const count = getItemCount(item.label);
 
-                                            <span className="text-sm font-medium">
-                                                {item.label}
-                                            </span>
-                                        </div>
+                                    return (
+                                        <button
+                                            key={item.label}
+                                            onClick={() =>
+                                                handleNavigation(item.href)
+                                            }
+                                            className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 transition-all duration-200 cursor-pointer ${
+                                                isActive(item.href)
+                                                    ? 'bg-primary/10 text-primary'
+                                                    : 'text-foreground/70 hover:bg-white/5 hover:text-foreground'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <item.icon className="h-5 w-5" />
 
-                                        {item.count !== undefined && (
-                                            <span
-                                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                    isActive(item.href)
-                                                        ? 'bg-primary/20 text-primary'
-                                                        : 'bg-white/5 text-foreground/40'
-                                                }`}
-                                            >
-                                                {item.count}
-                                            </span>
-                                        )}
-                                    </button>
-                                ))}
+                                                <span className="text-sm font-medium">
+                                                    {item.label}
+                                                </span>
+                                            </div>
+
+                                            {count !== undefined &&
+                                                count > 0 && (
+                                                    <span
+                                                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                                            isActive(item.href)
+                                                                ? 'bg-primary/20 text-primary'
+                                                                : 'bg-white/5 text-foreground/40'
+                                                        }`}
+                                                    >
+                                                        {count}
+                                                    </span>
+                                                )}
+                                        </button>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

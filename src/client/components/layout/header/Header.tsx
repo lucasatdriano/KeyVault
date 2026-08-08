@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+
 import { HeaderVariant } from '@/src/client/types/layout/header';
+import { useCategories } from '@/src/client/hooks/categories/useCategories';
+
 import { headerVariants } from './Header.config';
 import HeaderMobile from './HeaderMobile';
 import HeaderSearch from './HeaderSearch';
 import HeaderSimple from './HeaderSimple';
-import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
-import { decryptString } from '@/src/shared/crypto/cipher';
-import { useVaultStore } from '@/src/client/store/vault.store';
-import { DEFAULT_CATEGORIES } from '@/src/client/constants/categories';
 
 interface HeaderProps {
     variant: HeaderVariant;
@@ -32,14 +31,20 @@ export default function Header({
     filterOptions,
     selectedCategory = '',
 }: HeaderProps) {
-    const [categories, setCategories] = useState<
-        { id: string; name: string }[]
-    >([]);
-    const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-
-    const vaultKey = useVaultStore((state) => state.vaultKey);
-
     const config = headerVariants[variant];
+
+    const {
+        categories,
+        isLoading: isLoadingCategories,
+        getCategoryOptions,
+        loadCategories,
+    } = useCategories({ autoLoad: false });
+
+    useEffect(() => {
+        if (config.type === 'search' && config.showFilter) {
+            loadCategories();
+        }
+    }, [config.type, config.showFilter, loadCategories]);
 
     const subtitle =
         typeof config.defaultSubtitle === 'function'
@@ -49,83 +54,7 @@ export default function Header({
     const HeaderContent =
         config.type === 'search' ? HeaderSearch : HeaderSimple;
 
-    useEffect(() => {
-        const loadCategories = async () => {
-            if (config.type === 'search' && config.showFilter && vaultKey) {
-                setIsLoadingCategories(true);
-
-                try {
-                    const result = await getCategoriesAction();
-
-                    if (result.success && result.data) {
-                        const decryptedCategories = await Promise.all(
-                            result.data.map(async (cat) => {
-                                try {
-                                    const name = await decryptString(
-                                        {
-                                            cipherText: cat.cipherText,
-                                            iv: cat.iv,
-                                        },
-                                        vaultKey,
-                                    );
-
-                                    return {
-                                        id: cat.id,
-                                        name: name,
-                                    };
-                                } catch (error) {
-                                    console.error(
-                                        `Erro ao descriptografar categoria ${cat.id}:`,
-                                        error,
-                                    );
-                                    return {
-                                        id: cat.id,
-                                        name: 'Categoria',
-                                    };
-                                }
-                            }),
-                        );
-
-                        const uniqueCategories = decryptedCategories.reduce(
-                            (acc, current) => {
-                                const exists = acc.find(
-                                    (item) => item.name === current.name,
-                                );
-                                if (!exists) {
-                                    acc.push(current);
-                                }
-                                return acc;
-                            },
-                            [] as { id: string; name: string }[],
-                        );
-
-                        setCategories(uniqueCategories);
-                    } else {
-                        const defaultCats = DEFAULT_CATEGORIES.map(
-                            (cat, index) => ({
-                                id: `default-${index}`,
-                                name: cat.name,
-                            }),
-                        );
-                        setCategories(defaultCats);
-                    }
-                } catch (error) {
-                    console.error('Erro ao carregar categorias:', error);
-                    const defaultCats = DEFAULT_CATEGORIES.map(
-                        (cat, index) => ({
-                            id: `default-${index}`,
-                            name: cat.name,
-                        }),
-                    );
-                    setCategories(defaultCats);
-                } finally {
-                    setIsLoadingCategories(false);
-                }
-            }
-        };
-
-        loadCategories();
-    }, [config.type, config.showFilter, vaultKey]);
+    const filterOptionsFinal = filterOptions ?? getCategoryOptions();
 
     return (
         <>
@@ -145,7 +74,7 @@ export default function Header({
                           showNewButton: config.showNewButton,
                           showFilter: config.showFilter,
                           searchPlaceholder: config.searchPlaceholder,
-                          filterOptions: filterOptions ?? config.filterOptions,
+                          filterOptions: filterOptionsFinal,
                           categories: isLoadingCategories ? [] : categories,
                           selectedCategory,
                       }

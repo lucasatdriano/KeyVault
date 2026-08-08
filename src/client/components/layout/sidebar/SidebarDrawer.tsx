@@ -1,6 +1,6 @@
 'use client';
 
-import { useSidebar } from '@/src/client/hooks/useSidebar';
+import { useSidebar } from '@/src/client/hooks/ui/useSidebar';
 import Sidebar from './Sidebar';
 
 export default function SidebarDrawer() {

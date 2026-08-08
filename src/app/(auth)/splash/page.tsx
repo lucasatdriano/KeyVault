@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+
 import Logo from '@/src/client/components/layout/logo/Logo';
 
 interface SplashScreenProps {
@@ -8,10 +9,10 @@ interface SplashScreenProps {
     loadingDuration?: number;
 }
 
-const SplashScreen: React.FC<SplashScreenProps> = ({
+export default function SplashScreen({
     onGetStarted,
     loadingDuration = 1500,
-}) => {
+}: SplashScreenProps) {
     const [progress, setProgress] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -44,7 +45,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
         <div className="min-h-screen flex flex-col items-center justify-between relative">
             <div className="flex-1 flex flex-col items-center justify-center w-full">
                 <div className="relative z-10 mb-8">
-                    <Logo variant="icon" size="xl"></Logo>
+                    <Logo variant="icon" size="xl" />
                 </div>
 
                 <h1 className="text-5xl font-bold text-foreground mb-3 relative z-10 tracking-tight">
@@ -79,6 +80,4 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
             </p>
         </div>
     );
-};
-
-export default SplashScreen;
+}

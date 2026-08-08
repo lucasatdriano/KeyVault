@@ -42,6 +42,14 @@ export function usePagination({
         setTotalItemsState(total);
     }, []);
 
+    const decrementTotalItems = useCallback(() => {
+        setTotalItemsState((prev) => Math.max(0, prev - 1));
+    }, []);
+
+    const incrementTotalItems = useCallback(() => {
+        setTotalItemsState((prev) => prev + 1);
+    }, []);
+
     return {
         currentPage,
         itemsPerPage,
@@ -53,5 +61,7 @@ export function usePagination({
         resetPagination,
         setItemsPerPage,
         setTotalItems,
+        decrementTotalItems,
+        incrementTotalItems,
     };
 }

@@ -1,13 +1,13 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 
-import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';
-import SidebarDrawer from '@/src/client/components/layout/sidebar/SidebarDrawer';
-import BottomBar from '@/src/client/components/layout/bottomBar/BottomBar';
-
 import { AuthProvider } from '@/src/client/providers/AuthProvider';
 import { currentUserAction } from '@/src/server/actions/auth/current-user.action';
 import { SidebarProvider } from '@/src/client/providers/SidebarProvider';
+
+import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';
+import SidebarDrawer from '@/src/client/components/layout/sidebar/SidebarDrawer';
+import BottomBar from '@/src/client/components/layout/bottomBar/BottomBar';
 
 export default async function ProtectedLayout({
     children,
@@ -17,7 +17,7 @@ export default async function ProtectedLayout({
     const result = await currentUserAction();
 
     if (!result.success || !result.data) {
-        redirect('/login');
+        redirect('/');
     }
 
     const user = result.data;

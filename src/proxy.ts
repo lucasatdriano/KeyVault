@@ -4,7 +4,7 @@ import { ACCESS_TOKEN_COOKIE_NAME } from './shared/constants/auth/cookies.consta
 import { verifyEdgeToken } from './server/auth/verify-edge-token';
 import { handleExpiredSession } from './server/auth/logout-expired';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     const token = request.cookies.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
@@ -18,7 +18,7 @@ export async function middleware(request: NextRequest) {
     const hasSession = session?.valid ?? false;
 
     if (!hasSession && isProtectedRoute(pathname)) {
-        const response = NextResponse.redirect(new URL('/login', request.url));
+        const response = NextResponse.redirect(new URL('/', request.url));
 
         response.cookies.delete(ACCESS_TOKEN_COOKIE_NAME);
 

@@ -15,7 +15,7 @@ import { mapAuditSearch } from '@/src/client/utils/audit/audit-search.mapper';
 import { AuditLog } from '@/src/client/types/audit';
 import { mapAuditLog } from '@/src/client/utils/audit/audit.mapper';
 import { useVaultStore } from '@/src/client/store/vault.store';
-import { usePagination } from '@/src/client/hooks/usePagination';
+import { usePagination } from '@/src/client/hooks/ui/usePagination';
 
 import Header from '@/src/client/components/layout/header/Header';
 import AuditCard from './components/AuditCard';

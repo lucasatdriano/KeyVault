@@ -18,13 +18,11 @@ export const sidebarSections: SidebarSection[] = [
                 icon: KeyIcon,
                 label: 'Minhas Credenciais',
                 href: '/dashboard',
-                count: 8,
             },
             {
                 icon: StarIcon,
                 label: 'Favoritos',
                 href: '/dashboard/favorites',
-                count: 3,
             },
             {
                 icon: Trash2Icon,

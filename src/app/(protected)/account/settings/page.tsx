@@ -63,7 +63,7 @@ export default function SettingsPage() {
     const handleDeleteAccount = () => {
         console.log('Excluindo conta...');
         setShowDeleteModal(false);
-        router.push('/login');
+        router.push('/');
     };
 
     const handleToggleSetting = (key: keyof typeof settings) => {

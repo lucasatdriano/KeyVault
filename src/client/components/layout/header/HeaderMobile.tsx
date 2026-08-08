@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { MenuIcon, UserIcon } from 'lucide-react';
 
-import { useSidebar } from '@/src/client/hooks/useSidebar';
+import { useSidebar } from '@/src/client/hooks/ui/useSidebar';
 import Logo from '../logo/Logo';
 
 export default function HeaderMobile() {

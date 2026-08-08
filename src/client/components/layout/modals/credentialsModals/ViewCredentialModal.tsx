@@ -17,17 +17,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { Credential } from '@/src/shared/types/credential';
-import { DecryptedCategory } from '@/src/shared/types/category';
+import {
+    Credential,
+    UpdateCredentialData,
+} from '@/src/shared/types/credential';
 
-import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
-import { updateCredentialAction } from '@/src/server/actions/credentials/update-credential.action';
-import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
-import { decryptString, encryptString } from '@/src/shared/crypto/cipher';
-import { bytesToBase64 } from '@/src/shared/crypto/encoding';
-import { generateSalt } from '@/src/shared/crypto/random';
-
-import { useVaultStore } from '@/src/client/store/vault.store';
 import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
 import {
     getCategoryBadgeColor,
@@ -39,6 +33,8 @@ import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
 import InputTextAreaForm from '@/src/client/components/ui/inputs/InputTextAreaForm';
 import Button from '@/src/client/components/ui/buttons/Button';
 import ModalBase from '../ModalBase';
+import { formatDateTime } from '@/src/client/utils/formatters/date';
+import { useCategories } from '@/src/client/hooks/categories/useCategories';
 
 interface ViewCredentialModalProps {
     isOpen: boolean;
@@ -46,6 +42,11 @@ interface ViewCredentialModalProps {
     credential: Credential | null;
     onEdit?: () => void;
     onCopy?: (text: string, credentialId: string) => void;
+    onUpdate?: (
+        credential: Credential,
+        formData: UpdateCredentialData,
+    ) => Promise<{ success: boolean; error?: string }>;
+    isUpdating?: boolean;
 }
 
 const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
@@ -54,14 +55,28 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
     credential,
     onEdit,
     onCopy,
+    onUpdate,
+    isUpdating = false,
 }) => {
+    const {
+        isLoading: isLoadingCategories,
+        loadCategories,
+        getCategorySelectOptions,
+    } = useCategories({ autoLoad: false });
+
     const [isEditing, setIsEditing] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [categories, setCategories] = useState<DecryptedCategory[]>([]);
-    const vaultKey = useVaultStore((state) => state.vaultKey);
 
-    const [formData, setFormData] = useState<Credential | null>(credential);
+    const [formData, setFormData] = useState<{
+        title: string;
+        username: string;
+        email: string;
+        password: string;
+        url: string;
+        notes: string;
+        category: string;
+    } | null>(null);
+
     const [errors, setErrors] = useState({
         title: '',
         username: '',
@@ -73,48 +88,23 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
     });
 
     useEffect(() => {
-        const loadCategories = async () => {
-            if (!vaultKey) {
-                return;
-            }
-
-            try {
-                const result = await getCategoriesAction();
-
-                if (!result.success || !result.data) {
-                    return;
-                }
-
-                const decrypted = await Promise.all(
-                    result.data.map(async (category) => {
-                        const name = await decryptString(
-                            {
-                                cipherText: category.cipherText,
-                                iv: category.iv,
-                            },
-                            vaultKey,
-                        );
-
-                        return {
-                            id: category.id,
-                            name,
-                        };
-                    }),
-                );
-
-                setCategories(decrypted);
-            } catch (error) {
-                console.error('Erro ao carregar categorias:', error);
-            }
-        };
-
         if (isEditing) {
             loadCategories();
         }
-    }, [isEditing, vaultKey]);
+    }, [isEditing, loadCategories]);
 
     useEffect(() => {
-        setFormData(credential);
+        if (credential) {
+            setFormData({
+                title: credential.title,
+                username: credential.username || '',
+                email: credential.email || '',
+                password: credential.password,
+                url: credential.url || '',
+                notes: credential.notes || '',
+                category: credential.category || 'Outros',
+            });
+        }
         setErrors({
             title: '',
             username: '',
@@ -126,7 +116,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
         });
     }, [credential]);
 
-    if (!credential) return null;
+    if (!credential || !formData) return null;
 
     const handleCopy = (text: string) => {
         if (!credential) return;
@@ -135,10 +125,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
     };
 
     const handleSave = async () => {
-        if (!formData || !vaultKey) {
-            toast.error('Dados inválidos ou vault key não encontrada.');
-            return;
-        }
+        if (!formData) return;
 
         const newErrors = {
             title: formData.title ? '' : 'Título é obrigatório',
@@ -165,66 +152,19 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
             notes: '',
         });
 
-        setIsLoading(true);
-
         try {
-            const payload = {
-                title: formData.title,
-                username: formData.username || '',
-                email: formData.email || '',
-                password: formData.password,
-                url: formData.url || '',
-                notes: formData.notes || '',
-            };
+            const result = await onUpdate?.(credential, formData);
 
-            const encrypted = await encryptString(
-                JSON.stringify(payload),
-                vaultKey,
-            );
-
-            let resourceSearchHash: string | null = null;
-            if (formData.title !== credential.title) {
-                resourceSearchHash = await generateResourceSearchHash(
-                    formData.title,
-                    vaultKey,
-                );
+            if (result?.success) {
+                toast.success('Credencial atualizada com sucesso!');
+                setIsEditing(false);
+                onEdit?.();
+            } else {
+                toast.error(result?.error || 'Erro ao atualizar credencial.');
             }
-
-            let categoryId: string | null = null;
-            if (formData.category && formData.category !== 'Outros') {
-                const foundCategory = categories.find(
-                    (cat) => cat.name === formData.category,
-                );
-                categoryId = foundCategory?.id || null;
-            }
-
-            const salt = bytesToBase64(generateSalt());
-
-            const result = await updateCredentialAction({
-                id: credential.id,
-                categoryId: categoryId,
-                cipherText: encrypted.cipherText,
-                iv: encrypted.iv,
-                salt,
-                resourceSearchHash,
-                version: 1,
-                algorithm: 'AES-256-GCM',
-                favorite: credential.favorite,
-            });
-
-            if (!result.success) {
-                toast.error(result.error);
-                return;
-            }
-
-            toast.success('Credencial atualizada com sucesso!');
-            setIsEditing(false);
-            onEdit?.();
         } catch (error) {
             console.error(error);
             toast.error('Erro ao atualizar credencial.');
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -234,21 +174,9 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
         }
     };
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-        });
-    };
-
     const categoryOptions = [
         { value: 'Outros', label: 'Outros' },
-        ...categories.map((cat) => ({
-            value: cat.name,
-            label: cat.name,
-        })),
+        ...getCategorySelectOptions(),
     ];
 
     return (
@@ -271,7 +199,18 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                             <Button
                                 onClick={() => {
                                     setIsEditing(false);
-                                    setFormData(credential);
+                                    if (credential) {
+                                        setFormData({
+                                            title: credential.title,
+                                            username: credential.username || '',
+                                            email: credential.email || '',
+                                            password: credential.password,
+                                            url: credential.url || '',
+                                            notes: credential.notes || '',
+                                            category:
+                                                credential.category || 'Outros',
+                                        });
+                                    }
                                     setErrors({
                                         title: '',
                                         username: '',
@@ -284,15 +223,16 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                                 }}
                                 variant="secondary"
                                 fullWidth
-                                disabled={isLoading}
+                                disabled={isUpdating}
                             >
                                 Cancelar
                             </Button>
                             <Button
                                 onClick={handleSave}
-                                isLoading={isLoading}
+                                isLoading={isUpdating}
                                 loadingText="Salvando..."
                                 fullWidth
+                                disabled={isLoadingCategories}
                             >
                                 Salvar alterações
                             </Button>
@@ -323,7 +263,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                     <InputTextForm
                         label="Título"
                         placeholder="GitHub"
-                        value={formData?.title || ''}
+                        value={formData.title}
                         onChange={(e) => handleChange('title', e.target.value)}
                         leftIcon={<KeyIcon className="w-5 h-5" />}
                         error={errors.title}
@@ -333,7 +273,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                     <InputTextForm
                         label="Usuário / E-mail"
                         placeholder="usuario@email.com"
-                        value={formData?.email || formData?.username || ''}
+                        value={formData.email || formData.username}
                         onChange={(e) => {
                             const value = e.target.value;
                             if (value.includes('@')) {
@@ -352,7 +292,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                         label="Senha"
                         type="password"
                         placeholder="********"
-                        value={formData?.password || ''}
+                        value={formData.password}
                         onChange={(e) =>
                             handleChange('password', e.target.value)
                         }
@@ -364,7 +304,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                     <InputTextForm
                         label="Website"
                         placeholder="https://exemplo.com"
-                        value={formData?.url || ''}
+                        value={formData.url}
                         onChange={(e) => handleChange('url', e.target.value)}
                         leftIcon={<GlobeIcon className="w-5 h-5" />}
                         error={errors.url}
@@ -374,7 +314,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                         label="Categoria"
                         options={categoryOptions}
                         placeholder="Selecione uma categoria"
-                        value={formData?.category || 'Outros'}
+                        value={formData.category}
                         onChange={(e) =>
                             handleChange('category', e.target.value)
                         }
@@ -384,7 +324,7 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                     <InputTextAreaForm
                         label="Notas"
                         placeholder="Informações adicionais..."
-                        value={formData?.notes || ''}
+                        value={formData.notes}
                         onChange={(e) => handleChange('notes', e.target.value)}
                         error={errors.notes}
                         rows={3}
@@ -512,7 +452,8 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                             <div className="flex items-center gap-1">
                                 <CalendarIcon className="w-3.5 h-3.5" />
                                 <span>
-                                    Criado em {formatDate(credential.createdAt)}
+                                    Criado em{' '}
+                                    {formatDateTime(credential.createdAt)}
                                 </span>
                             </div>
                             {credential.updatedAt &&
@@ -522,7 +463,9 @@ const ViewCredentialModal: React.FC<ViewCredentialModalProps> = ({
                                         <CalendarIcon className="w-3.5 h-3.5" />
                                         <span>
                                             Alterado em{' '}
-                                            {formatDate(credential.updatedAt)}
+                                            {formatDateTime(
+                                                credential.updatedAt,
+                                            )}
                                         </span>
                                     </div>
                                 )}

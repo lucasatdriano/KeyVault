@@ -4,8 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HeartIcon } from 'lucide-react';
 
-import { useCredentials } from '@/src/client/hooks/useCredentials';
-import { Credential } from '@/src/shared/types/credential';
+import {
+    Credential,
+    UpdateCredentialData,
+} from '@/src/shared/types/credential';
+
+import { useCredentials } from '@/src/client/hooks/credentials/useCredentials';
 import { formatDateTime } from '@/src/client/utils/formatters/date';
 
 import Header from '@/src/client/components/layout/header/Header';
@@ -19,12 +23,14 @@ export default function FavoritePage() {
     const {
         credentials,
         isLoading,
+        isUpdating,
         pagination,
         handleSearch,
         handleFilterChange,
         handleCopy,
         handleToggleFavorite,
         handleDelete,
+        handleUpdateCredential,
         refresh,
         loadCredentials,
         selectedCategory,
@@ -40,8 +46,7 @@ export default function FavoritePage() {
 
     useEffect(() => {
         loadCredentials();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [loadCredentials]);
 
     const handleCardClick = (credential: Credential) => {
         setSelectedCredential(credential);
@@ -52,6 +57,22 @@ export default function FavoritePage() {
         await refresh();
         setIsViewModalOpen(false);
         setSelectedCredential(null);
+    };
+
+    const handleUpdateCredentialWrapper = async (
+        credential: Credential,
+        formData: UpdateCredentialData,
+    ) => {
+        const result = await handleUpdateCredential(credential, formData);
+
+        if (result.success) {
+            if (result.data && selectedCredential?.id === credential.id) {
+                setSelectedCredential(result.data);
+            }
+            return { success: true };
+        } else {
+            return { success: false, error: result.error };
+        }
     };
 
     const handleDeleteWrapper = async (credential: Credential) => {
@@ -77,6 +98,12 @@ export default function FavoritePage() {
                     <div className="text-center py-12">Carregando...</div>
                 ) : (
                     <>
+                        {isUpdating && (
+                            <div className="mb-4 text-sm text-primary">
+                                Atualizando credencial...
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                             {credentials.map((credential) => (
                                 <CredentialCard
@@ -141,6 +168,9 @@ export default function FavoritePage() {
                     setSelectedCredential(null);
                 }}
                 onEdit={handleEdit}
+                onCopy={handleCopy}
+                onUpdate={handleUpdateCredentialWrapper}
+                isUpdating={isUpdating}
             />
         </div>
     );

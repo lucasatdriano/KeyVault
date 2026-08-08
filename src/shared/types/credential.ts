@@ -27,3 +27,13 @@ export interface CreateCredentialData {
     url?: string;
     notes?: string;
 }
+
+export interface UpdateCredentialData {
+    title: string;
+    categoryId?: string | null;
+    username?: string;
+    email?: string;
+    password: string;
+    url?: string;
+    notes?: string;
+}
