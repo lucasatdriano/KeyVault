@@ -30,7 +30,8 @@ export default function TrashPage() {
 
     useEffect(() => {
         loadCredentials();
-    }, [loadCredentials]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleRestoreWrapper = async (id: string) => {
         await handleRestore(id);

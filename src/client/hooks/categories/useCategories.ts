@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
 import { DecryptedCategory } from '@/src/shared/types/category';
 import { useVaultStore } from '@/src/client/store/vault.store';
-import { decryptCategory } from '../../utils/categories/category-decrypt';
+import { decryptCategory } from '../../utils/categories/category-decryption';
 import { useCategoriesStore } from '../../store/category.store';
 
 interface UseCategoriesOptions {

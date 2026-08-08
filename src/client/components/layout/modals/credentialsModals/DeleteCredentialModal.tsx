@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import {
     AlertTriangleIcon,
     ShieldCheckIcon,
@@ -19,20 +18,20 @@ interface DeleteCredentialModalProps {
     isLoading?: boolean;
 }
 
-const DeleteCredentialModal: React.FC<DeleteCredentialModalProps> = ({
+export default function DeleteCredentialModal({
     isOpen,
     onClose,
     onConfirm,
     credentialTitle,
     isLoading = false,
-}) => {
+}: DeleteCredentialModalProps) {
     return (
         <ModalBase
             isOpen={isOpen}
             onClose={onClose}
             title="Excluir credencial"
             maxWidth="md"
-            icon={<AlertTriangleIcon className="w-5 h-5 text-error" />}
+            icon={<AlertTriangleIcon className="h-5 w-5 text-error" />}
             footer={
                 <div className="flex flex-col gap-3 sm:flex-row">
                     <Button
@@ -49,7 +48,7 @@ const DeleteCredentialModal: React.FC<DeleteCredentialModalProps> = ({
                         onClick={onConfirm}
                         isLoading={isLoading}
                         loadingText="Excluindo..."
-                        leftIcon={<Trash2 className="w-5 h-5" />}
+                        leftIcon={<Trash2 className="h-5 w-5" />}
                         fullWidth
                     >
                         Excluir
@@ -105,6 +104,4 @@ const DeleteCredentialModal: React.FC<DeleteCredentialModalProps> = ({
             </div>
         </ModalBase>
     );
-};
-
-export default DeleteCredentialModal;
+}

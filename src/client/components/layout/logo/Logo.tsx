@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { ShieldCheckIcon } from 'lucide-react';
 
 interface LogoProps {
@@ -13,7 +12,7 @@ interface LogoProps {
     onClick?: () => void;
 }
 
-const Logo: React.FC<LogoProps> = ({
+export default function Logo({
     variant = 'vertical',
     size = 'md',
     showText = true,
@@ -21,7 +20,7 @@ const Logo: React.FC<LogoProps> = ({
     iconClassName = '',
     textClassName = '',
     onClick,
-}) => {
+}: LogoProps) {
     const sizeStyles = {
         sm: {
             container: 'gap-1.5',
@@ -68,22 +67,23 @@ const Logo: React.FC<LogoProps> = ({
                 ${currentSize.iconWrapper}
                 ${currentSize.rounded}
                 flex items-center justify-center
-                p-0.5 bg-linear-to-br from-primary to-secondary
+                bg-linear-to-br from-primary to-secondary
+                p-0.5
                 shadow-lg
                 ${iconClassName}
             `}
         >
             <div
                 className={`
-                    w-full h-full 
                     ${currentSize.rounded}
-                    bg-background/90 backdrop-blur-sm 
-                    flex items-center justify-center
+                    flex h-full w-full items-center justify-center
+                    bg-background/90
+                    backdrop-blur-sm
                 `}
             >
                 <ShieldCheckIcon
                     className={`
-                        ${currentSize.icon} 
+                        ${currentSize.icon}
                         text-primary
                     `}
                 />
@@ -92,14 +92,15 @@ const Logo: React.FC<LogoProps> = ({
     );
 
     const renderText = () => {
-        if (!showText) return null;
+        if (!showText) {
+            return null;
+        }
 
         return (
             <span
                 className={`
-                    ${currentSize.text} 
-                    font-bold text-foreground 
-                    tracking-tight
+                    ${currentSize.text}
+                    font-bold tracking-tight text-foreground
                     ${textClassName}
                 `}
             >
@@ -149,6 +150,4 @@ const Logo: React.FC<LogoProps> = ({
             {renderContent()}
         </div>
     );
-};
-
-export default Logo;
+}

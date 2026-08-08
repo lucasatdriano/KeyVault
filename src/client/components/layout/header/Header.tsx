@@ -28,7 +28,7 @@ export default function Header({
     onFilterChange,
     onNewCredential,
     hideMobile = false,
-    filterOptions,
+    filterOptions: customFilterOptions,
     selectedCategory = '',
 }: HeaderProps) {
     const config = headerVariants[variant];
@@ -36,15 +36,21 @@ export default function Header({
     const {
         categories,
         isLoading: isLoadingCategories,
-        getCategoryOptions,
         loadCategories,
     } = useCategories({ autoLoad: false });
 
     useEffect(() => {
-        if (config.type === 'search' && config.showFilter) {
+        const shouldLoadCategories =
+            config.type === 'search' &&
+            config.showFilter &&
+            !customFilterOptions &&
+            variant !== 'audit';
+
+        if (shouldLoadCategories) {
             loadCategories();
         }
-    }, [config.type, config.showFilter, loadCategories]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [config.type, config.showFilter, customFilterOptions, variant]);
 
     const subtitle =
         typeof config.defaultSubtitle === 'function'
@@ -54,7 +60,25 @@ export default function Header({
     const HeaderContent =
         config.type === 'search' ? HeaderSearch : HeaderSimple;
 
-    const filterOptionsFinal = filterOptions ?? getCategoryOptions();
+    const getFilterOptions = () => {
+        if (customFilterOptions) {
+            return customFilterOptions;
+        }
+
+        if (categories.length > 0) {
+            return [
+                { value: '', label: 'Todas as categorias' },
+                ...categories.map((cat) => ({
+                    value: cat.id,
+                    label: cat.name,
+                })),
+            ];
+        }
+
+        return config.filterOptions || [{ value: '', label: 'Todos' }];
+    };
+
+    const filterOptionsFinal = getFilterOptions();
 
     return (
         <>

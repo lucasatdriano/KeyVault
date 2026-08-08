@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { GlobeIcon, KeyIcon, LockIcon, MailIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,12 +21,12 @@ interface NewCredentialModalProps {
     isLoading?: boolean;
 }
 
-const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
+export default function NewCredentialModal({
     isOpen,
     onClose,
     onSave,
     isLoading = false,
-}) => {
+}: NewCredentialModalProps) {
     const {
         categories,
         isLoading: isLoadingCategories,
@@ -44,6 +44,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
         categoryId: '',
         notes: '',
     });
+
     const [errors, setErrors] = useState({
         title: '',
         username: '',
@@ -58,7 +59,9 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
         if (isOpen) {
             loadCategories();
         }
-    }, [isOpen, loadCategories]);
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
 
     const handleChange = (field: keyof CreateCredentialData, value: string) => {
         setFormData((prev) => ({
@@ -77,6 +80,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             categoryId: '',
             notes: '',
         });
+
         setErrors({
             title: '',
             username: '',
@@ -103,6 +107,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                 categoryId: validationErrors.categoryId ?? '',
                 notes: validationErrors.notes ?? '',
             });
+
             return;
         }
 
@@ -118,6 +123,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
 
         try {
             await onSave?.(formData);
+
             resetForm();
             onClose();
         } catch {
@@ -130,9 +136,9 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
         onClose();
     };
 
-    const categoryOptions = categories.map((cat) => ({
-        value: cat.id,
-        label: cat.name,
+    const categoryOptions = categories.map((category) => ({
+        value: category.id,
+        label: category.name,
     }));
 
     return (
@@ -140,7 +146,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             isOpen={isOpen}
             onClose={handleClose}
             title="Nova Credencial"
-            icon={<PlusIcon className="w-5 h-5 text-primary" />}
+            icon={<PlusIcon className="h-5 w-5 text-primary" />}
             maxWidth="lg"
             footer={
                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -171,7 +177,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                     placeholder="GitHub"
                     value={formData.title}
                     onChange={(e) => handleChange('title', e.target.value)}
-                    leftIcon={<KeyIcon className="w-5 h-5" />}
+                    leftIcon={<KeyIcon className="h-5 w-5" />}
                     error={errors.title}
                     required
                 />
@@ -182,6 +188,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                     value={formData.email || formData.username}
                     onChange={(e) => {
                         const value = e.target.value;
+
                         if (value.includes('@')) {
                             handleChange('email', value);
                             handleChange('username', '');
@@ -190,7 +197,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                             handleChange('email', '');
                         }
                     }}
-                    leftIcon={<MailIcon className="w-5 h-5" />}
+                    leftIcon={<MailIcon className="h-5 w-5" />}
                     error={errors.username || errors.email}
                     required
                 />
@@ -201,7 +208,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                     placeholder="********"
                     value={formData.password}
                     onChange={(e) => handleChange('password', e.target.value)}
-                    leftIcon={<LockIcon className="w-5 h-5" />}
+                    leftIcon={<LockIcon className="h-5 w-5" />}
                     error={errors.password}
                     required
                 />
@@ -211,7 +218,7 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
                     placeholder="https://exemplo.com"
                     value={formData.url}
                     onChange={(e) => handleChange('url', e.target.value)}
-                    leftIcon={<GlobeIcon className="w-5 h-5" />}
+                    leftIcon={<GlobeIcon className="h-5 w-5" />}
                     error={errors.url}
                 />
 
@@ -235,6 +242,4 @@ const NewCredentialModal: React.FC<NewCredentialModalProps> = ({
             </form>
         </ModalBase>
     );
-};
-
-export default NewCredentialModal;
+}

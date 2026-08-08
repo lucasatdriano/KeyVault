@@ -1,19 +1,13 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { ShieldIcon } from 'lucide-react';
-
-import { AuditAction } from '@/src/generated/prisma/enums';
 
 import { getUserLogsAction } from '@/src/server/actions/audit/get-user-logs.action';
 
 import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
-import { decryptString } from '@/src/shared/crypto/cipher';
-
 import { mapAuditSearch } from '@/src/client/utils/audit/audit-search.mapper';
 import { AuditLog } from '@/src/client/types/audit';
-import { mapAuditLog } from '@/src/client/utils/audit/audit.mapper';
 import { useVaultStore } from '@/src/client/store/vault.store';
 import { usePagination } from '@/src/client/hooks/ui/usePagination';
 
@@ -21,6 +15,8 @@ import Header from '@/src/client/components/layout/header/Header';
 import AuditCard from './components/AuditCard';
 import Pagination from '@/src/client/components/layout/pagination/Pagination';
 import InfoCard from '@/src/client/components/ui/cards/InfoCard';
+import { decryptAuditLogs } from '@/src/client/utils/audit/audit-decryption';
+import { ACTION_MAP } from '@/src/client/constants/actionAudit';
 
 export default function AuditPage() {
     const pagination = usePagination({
@@ -33,61 +29,68 @@ export default function AuditPage() {
     const [action, setAction] = useState('');
     const [loading, setLoading] = useState(true);
 
+    const isMounted = useRef(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const searchRef = useRef(search);
+    const actionRef = useRef(action);
+
+    useEffect(() => {
+        searchRef.current = search;
+    }, [search]);
+
+    useEffect(() => {
+        actionRef.current = action;
+    }, [action]);
+
     const loadLogs = useCallback(
-        async (page: number = pagination.currentPage) => {
+        async (page: number) => {
             setLoading(true);
 
-            const mapped = mapAuditSearch(search);
-
-            let resourceSearchHash: string | undefined;
-
-            if (mapped.resourceName && vaultKey) {
-                resourceSearchHash = await generateResourceSearchHash(
-                    mapped.resourceName,
-                    vaultKey,
-                );
+            if (!vaultKey) {
+                setLoading(false);
+                return;
             }
 
-            const result = await getUserLogsAction({
-                page,
-                limit: pagination.itemsPerPage,
-                action: action ? (action as AuditAction) : undefined,
-                resourceSearchHash,
-            });
+            try {
+                const mapped = mapAuditSearch(searchRef.current);
 
-            if (result.success && result.data) {
-                pagination.setTotalItems(result.data.total);
+                let resourceSearchHash: string | undefined;
 
-                const decryptedLogs = await Promise.all(
-                    result.data.data.map(async (log) => {
-                        let resource = null;
+                if (mapped.resourceName) {
+                    resourceSearchHash = await generateResourceSearchHash(
+                        mapped.resourceName,
+                        vaultKey,
+                    );
+                }
 
-                        if (log.credential && vaultKey) {
-                            const json = await decryptString(
-                                {
-                                    cipherText: log.credential.cipherText,
-                                    iv: log.credential.iv,
-                                },
-                                vaultKey,
-                            );
+                const selectedAction = actionRef.current
+                    ? ACTION_MAP[actionRef.current]
+                    : undefined;
 
-                            const credential = JSON.parse(json);
-                            resource = credential.title;
-                        }
+                const result = await getUserLogsAction({
+                    page,
+                    limit: pagination.itemsPerPage,
+                    action: selectedAction,
+                    resourceSearchHash,
+                });
 
-                        return mapAuditLog({
-                            ...log,
-                            resource,
-                        });
-                    }),
-                );
+                if (result.success && result.data) {
+                    pagination.setTotalItems(result.data.total);
 
-                setLogs(decryptedLogs);
+                    const decryptedLogs = await decryptAuditLogs({
+                        logs: result.data.data,
+                        vaultKey,
+                    });
+
+                    setLogs(decryptedLogs);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar logs:', error);
+            } finally {
+                setLoading(false);
             }
-
-            setLoading(false);
         },
-        [search, action, vaultKey, pagination],
+        [vaultKey, pagination],
     );
 
     const handlePageChange = useCallback(
@@ -99,17 +102,29 @@ export default function AuditPage() {
     );
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            pagination.resetPagination();
+        if (!isMounted.current) {
+            isMounted.current = true;
+            loadLogs(1);
+            return;
+        }
+
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        pagination.resetPagination();
+
+        timeoutRef.current = setTimeout(() => {
             loadLogs(1);
         }, 500);
 
-        return () => clearTimeout(timer);
-    }, [search, action, pagination, loadLogs]);
-
-    useEffect(() => {
-        loadLogs(1);
-    }, [loadLogs]);
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search, action]);
 
     if (loading && logs.length === 0) {
         return (
@@ -129,6 +144,7 @@ export default function AuditPage() {
                 variant="audit"
                 onSearch={setSearch}
                 onFilterChange={setAction}
+                selectedCategory={action}
             />
 
             <AuditCard

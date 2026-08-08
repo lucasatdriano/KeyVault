@@ -46,7 +46,8 @@ export default function FavoritePage() {
 
     useEffect(() => {
         loadCredentials();
-    }, [loadCredentials]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleCardClick = (credential: Credential) => {
         setSelectedCredential(credential);

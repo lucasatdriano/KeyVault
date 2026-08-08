@@ -48,7 +48,8 @@ export default function DashboardPage() {
 
     useEffect(() => {
         loadCredentials();
-    }, [loadCredentials]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleNewCredential = () => {
         setIsNewModalOpen(true);

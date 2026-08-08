@@ -14,7 +14,7 @@ interface ModalBaseProps {
     className?: string;
 }
 
-const ModalBase: React.FC<ModalBaseProps> = ({
+export default function ModalBase({
     isOpen,
     onClose,
     title,
@@ -23,7 +23,7 @@ const ModalBase: React.FC<ModalBaseProps> = ({
     footer,
     maxWidth = 'md',
     className = '',
-}) => {
+}: ModalBaseProps) {
     if (!isOpen) return null;
 
     const maxWidthClasses = {
@@ -44,13 +44,13 @@ const ModalBase: React.FC<ModalBaseProps> = ({
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div
                     className={`
-                    relative w-full ${maxWidthClasses[maxWidth]} 
-                    bg-background/95 backdrop-blur-xl rounded-3xl 
-                    border border-white/10 shadow-2xl 
-                    animate-in slide-in-from-bottom-4 duration-300
-                    max-h-[90vh] overflow-y-auto
-                    ${className}
-                `}
+                        relative w-full ${maxWidthClasses[maxWidth]}
+                        bg-background/95 backdrop-blur-xl rounded-3xl
+                        border border-white/10 shadow-2xl
+                        animate-in slide-in-from-bottom-4 duration-300
+                        max-h-[90vh] overflow-y-auto
+                        ${className}
+                    `}
                 >
                     <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-white/10 bg-background/95 backdrop-blur-xl rounded-t-3xl">
                         <div className="flex items-center gap-3">
@@ -59,13 +59,17 @@ const ModalBase: React.FC<ModalBaseProps> = ({
                                     {icon}
                                 </div>
                             )}
+
                             <h2 className="text-xl font-bold text-foreground">
                                 {title}
                             </h2>
                         </div>
+
                         <button
+                            type="button"
                             onClick={onClose}
                             className="p-1.5 rounded-lg hover:bg-white/5 text-foreground/40 hover:text-foreground transition-colors"
+                            aria-label="Fechar modal"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -82,6 +86,4 @@ const ModalBase: React.FC<ModalBaseProps> = ({
             </div>
         </>
     );
-};
-
-export default ModalBase;
+}

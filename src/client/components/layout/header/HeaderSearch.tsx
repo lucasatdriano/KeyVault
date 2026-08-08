@@ -1,8 +1,9 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SearchIcon, PlusIcon, LucideIcon } from 'lucide-react';
+
 import Button from '../../ui/buttons/Button';
 import InputTextForm from '../../ui/inputs/InputTextForm';
 import InputSelectForm from '../../ui/inputs/InputSelectForm';
@@ -24,7 +25,7 @@ interface HeaderSearchProps {
     selectedCategory?: string;
 }
 
-const HeaderSearch: React.FC<HeaderSearchProps> = ({
+export default function HeaderSearch({
     icon: Icon,
     iconClass,
     iconBgColor,
@@ -39,12 +40,17 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
     filterOptions: customFilterOptions,
     categories = [],
     selectedCategory = '',
-}) => {
+}: HeaderSearchProps) {
     const [filterOptions, setFilterOptions] = useState<
         { value: string; label: string }[]
     >([]);
 
     useEffect(() => {
+        if (customFilterOptions && customFilterOptions.length > 0) {
+            setFilterOptions(customFilterOptions);
+            return;
+        }
+
         if (categories.length > 0) {
             const options = [
                 { value: '', label: 'Todas as categorias' },
@@ -54,27 +60,28 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
                 })),
             ];
             setFilterOptions(options);
-        } else if (customFilterOptions) {
-            setFilterOptions(customFilterOptions);
-        } else {
-            setFilterOptions([{ value: '', label: 'Todas as categorias' }]);
+            return;
         }
+
+        setFilterOptions([{ value: '', label: 'Todos' }]);
     }, [categories, customFilterOptions]);
 
     return (
-        <div className="px-4 pt-0 pb-4 sm:pt-4 border-b border-white/10 bg-background/50">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-4">
+        <div className="border-b border-white/10 bg-background/50 px-4 pb-4 pt-0 sm:pt-4">
+            <div className="mx-auto max-w-7xl">
+                <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div
-                            className={`w-12 h-12 rounded-2xl ${iconBgColor} flex items-center justify-center`}
+                            className={`flex h-12 w-12 items-center justify-center rounded-2xl ${iconBgColor}`}
                         >
-                            <Icon className={`w-6 h-6 ${iconClass}`} />
+                            <Icon className={`h-6 w-6 ${iconClass}`} />
                         </div>
+
                         <div>
-                            <h1 className="text-xl lg:text-2xl font-bold text-foreground">
+                            <h1 className="text-xl font-bold text-foreground lg:text-2xl">
                                 {title}
                             </h1>
+
                             <p className="text-sm text-foreground/60">
                                 {subtitle}
                             </p>
@@ -89,7 +96,8 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
                                 className="px-2 lg:px-4"
                                 aria-label="Nova credencial"
                             >
-                                <PlusIcon className="w-5 h-5" />
+                                <PlusIcon className="h-5 w-5" />
+
                                 <span className="hidden sm:inline">
                                     Nova Credencial
                                 </span>
@@ -98,12 +106,12 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
                     </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row">
                     <div className="flex-1 sm:flex-4">
                         <InputTextForm
                             type="search"
                             placeholder={searchPlaceholder}
-                            leftIcon={<SearchIcon className="w-5 h-5" />}
+                            leftIcon={<SearchIcon className="h-5 w-5" />}
                             onChange={(e) => onSearch?.(e.target.value)}
                         />
                     </div>
@@ -112,7 +120,7 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
                         <div className="sm:flex-1">
                             <InputSelectForm
                                 options={filterOptions}
-                                placeholder="Todas as categorias"
+                                placeholder={filterOptions[0]?.label || 'Todos'}
                                 onChange={(e) => {
                                     const value = e.target.value;
                                     onFilterChange?.(value === '' ? '' : value);
@@ -125,6 +133,4 @@ const HeaderSearch: React.FC<HeaderSearchProps> = ({
             </div>
         </div>
     );
-};
-
-export default HeaderSearch;
+}
