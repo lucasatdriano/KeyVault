@@ -3,20 +3,23 @@
 import { useCallback, useEffect, useState, useRef } from 'react';
 import { ShieldIcon } from 'lucide-react';
 
+import { AuditAction } from '@/src/generated/prisma/enums';
+
 import { getUserLogsAction } from '@/src/server/actions/audit/get-user-logs.action';
 
 import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
+
 import { mapAuditSearch } from '@/src/client/utils/audit/audit-search.mapper';
 import { AuditLog } from '@/src/client/types/audit';
 import { useVaultStore } from '@/src/client/store/vault.store';
 import { usePagination } from '@/src/client/hooks/ui/usePagination';
-
-import Header from '@/src/client/components/layout/header/Header';
-import AuditCard from './components/AuditCard';
-import Pagination from '@/src/client/components/layout/pagination/Pagination';
-import InfoCard from '@/src/client/components/ui/cards/InfoCard';
 import { decryptAuditLogs } from '@/src/client/utils/audit/audit-decryption';
 import { ACTION_MAP } from '@/src/client/constants/actionAudit';
+
+import Header from '@/src/client/components/layout/header/Header';
+import Pagination from '@/src/client/components/layout/pagination/Pagination';
+import InfoCard from '@/src/client/components/ui/cards/InfoCard';
+import AuditCard from './components/AuditCard';
 
 export default function AuditPage() {
     const pagination = usePagination({
@@ -55,17 +58,27 @@ export default function AuditPage() {
                 const mapped = mapAuditSearch(searchRef.current);
 
                 let resourceSearchHash: string | undefined;
+                let selectedAction: AuditAction | undefined;
 
                 if (mapped.resourceName) {
                     resourceSearchHash = await generateResourceSearchHash(
                         mapped.resourceName,
                         vaultKey,
                     );
+                } else {
+                    const searchTermLower = searchRef.current
+                        .trim()
+                        .toLowerCase();
+                    const mappedAction = ACTION_MAP[searchTermLower];
+
+                    if (mappedAction) {
+                        selectedAction = mappedAction;
+                    }
                 }
 
-                const selectedAction = actionRef.current
-                    ? ACTION_MAP[actionRef.current]
-                    : undefined;
+                if (actionRef.current) {
+                    selectedAction = ACTION_MAP[actionRef.current];
+                }
 
                 const result = await getUserLogsAction({
                     page,

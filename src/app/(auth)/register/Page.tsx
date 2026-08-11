@@ -12,6 +12,7 @@ import {
 import { toast } from 'sonner';
 
 import { registerAction } from '@/src/server/actions/auth/register.action';
+import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
 
 import { createVaultKey, encryptVaultKey } from '@/src/shared/crypto/vault';
 import { encryptString } from '@/src/shared/crypto/cipher';
@@ -19,11 +20,10 @@ import { RegisterFormData } from '@/src/shared/types/auth';
 
 import { validateRegisterForm } from '@/src/client/validators/auth.validator';
 import { DEFAULT_CATEGORIES } from '@/src/client/constants/categories';
+import EmailVerificationModal from '@/src/client/components/layout/modals/authModals/EmailVerificationModal';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
-import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
-import EmailVerificationModal from '@/src/client/components/layout/modals/authModals/EmailVerificationModal';
 
 export default function RegisterPage() {
     const router = useRouter();

@@ -1,11 +1,16 @@
 import { AuditAction } from '@/src/generated/prisma/enums';
 
 export type AuditEventType =
+    | 'register'
     | 'login'
     | 'logout'
     | 'create'
     | 'edit'
     | 'delete'
+    | 'restore'
+    | 'update_user'
+    | 'update_data'
+    | 'recovery'
     | 'password';
 
 export interface AuditLogResponse {

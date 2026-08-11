@@ -7,6 +7,11 @@ import {
     LucideIcon,
     PlusIcon,
     Trash2Icon,
+    UserIcon,
+    RefreshCwIcon,
+    ShieldIcon,
+    RotateCcwIcon,
+    UserCogIcon,
 } from 'lucide-react';
 import { AuditEventType } from '@/src/client/types/audit';
 
@@ -32,6 +37,13 @@ export const auditEventConfig: Record<AuditEventType, AuditEventConfigItem> = {
         label: 'Logout',
     },
 
+    register: {
+        icon: UserIcon,
+        iconClass: 'text-purple-500',
+        badgeClass: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
+        label: 'Registro',
+    },
+
     create: {
         icon: PlusIcon,
         iconClass: 'text-primary',
@@ -53,10 +65,38 @@ export const auditEventConfig: Record<AuditEventType, AuditEventConfigItem> = {
         label: 'Exclusão',
     },
 
+    restore: {
+        icon: RotateCcwIcon,
+        iconClass: 'text-teal-500',
+        badgeClass: 'bg-teal-500/20 text-teal-500 border-teal-500/30',
+        label: 'Restauração',
+    },
+
+    update_user: {
+        icon: UserCogIcon,
+        iconClass: 'text-sky-500',
+        badgeClass: 'bg-sky-500/20 text-sky-500 border-sky-400/30',
+        label: 'Atualização de usuário',
+    },
+
+    update_data: {
+        icon: RefreshCwIcon,
+        iconClass: 'text-cyan-500',
+        badgeClass: 'bg-cyan-500/20 text-cyan-500 border-cyan-500/30',
+        label: 'Atualização de dados',
+    },
+
+    recovery: {
+        icon: ShieldIcon,
+        iconClass: 'text-amber-500',
+        badgeClass: 'bg-amber-500/20 text-amber-500 border-amber-500/30',
+        label: 'Recuperação',
+    },
+
     password: {
         icon: KeyIcon,
-        iconClass: 'text-purple',
-        badgeClass: 'bg-purple/20 text-purple border-purple/30',
+        iconClass: 'text-pink-500',
+        badgeClass: 'bg-pink-500/20 text-pink-500 border-pink-500/30',
         label: 'Senha',
     },
 };

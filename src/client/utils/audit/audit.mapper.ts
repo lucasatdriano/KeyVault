@@ -10,13 +10,13 @@ const actionMap: Record<
     }
 > = {
     REGISTER: {
-        type: 'create',
+        type: 'register',
         event: () => 'Conta criada',
         details: () => 'Cadastro realizado com sucesso.',
     },
 
     VERIFY_EMAIL: {
-        type: 'edit',
+        type: 'update_user',
         event: () => 'E-mail verificado',
         details: () => 'O endereço de e-mail foi confirmado.',
     },
@@ -55,9 +55,9 @@ const actionMap: Record<
     },
 
     RESTORE_CREDENTIAL: {
-        type: 'edit',
+        type: 'restore',
         event: (resource) =>
-            `Credencial restaurada ${resource ? `: ${resource}` : ''}`,
+            `Credencial restaurada${resource ? `: ${resource}` : ''}`,
         details: () => 'Credencial restaurada.',
     },
 
@@ -74,15 +74,35 @@ const actionMap: Record<
     },
 
     EXPORT_DATA: {
-        type: 'edit',
+        type: 'update_data',
         event: () => 'Dados exportados',
         details: () => 'Exportação do cofre realizada.',
     },
 
     IMPORT_DATA: {
-        type: 'create',
+        type: 'update_data',
         event: () => 'Dados importados',
         details: () => 'Importação realizada.',
+    },
+
+    ENABLE_RECOVERY_METHOD: {
+        type: 'update_user',
+        event: (resource) =>
+            `Método de recuperação ativado${resource ? `: ${resource}` : ''}`,
+        details: () => 'Método de recuperação habilitado.',
+    },
+
+    DISABLE_RECOVERY_METHOD: {
+        type: 'update_user',
+        event: (resource) =>
+            `Método de recuperação desativado${resource ? `: ${resource}` : ''}`,
+        details: () => 'Método de recuperação desabilitado.',
+    },
+
+    GENERATE_RECOVERY_KEY: {
+        type: 'recovery',
+        event: () => 'Chave de recuperação gerada',
+        details: () => 'Nova chave de recuperação criada.',
     },
 
     RESET_PASSWORD: {
@@ -91,10 +111,16 @@ const actionMap: Record<
         details: () => 'A senha foi redefinida.',
     },
 
-    RECOVERY: {
-        type: 'password',
-        event: () => 'Recuperação da conta',
-        details: () => 'Método de recuperação utilizado.',
+    UPDATE_PROFILE: {
+        type: 'update_user',
+        event: () => 'Perfil atualizado',
+        details: () => 'Informações do perfil foram atualizadas.',
+    },
+
+    CHANGE_EMAIL: {
+        type: 'update_user',
+        event: () => 'E-mail alterado',
+        details: () => 'O endereço de e-mail foi atualizado.',
     },
 };
 

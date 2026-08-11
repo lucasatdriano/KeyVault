@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Home, ArrowLeft } from 'lucide-react';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import Logo from '../client/components/layout/logo/Logo';
 
@@ -56,7 +57,7 @@ export default function NotFound() {
                 <div className="mt-12 pt-6 border-t border-white/10">
                     <p className="text-foreground/30 text-xs">
                         Criptografia de ponta a ponta · Sem acesso aos seus
-                        dados .
+                        dados.
                     </p>
                 </div>
             </div>
