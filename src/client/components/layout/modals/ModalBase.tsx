@@ -12,6 +12,7 @@ interface ModalBaseProps {
     footer?: React.ReactNode;
     maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     className?: string;
+    canClose?: boolean;
 }
 
 export default function ModalBase({
@@ -23,6 +24,7 @@ export default function ModalBase({
     footer,
     maxWidth = 'md',
     className = '',
+    canClose = true,
 }: ModalBaseProps) {
     if (!isOpen) return null;
 
@@ -38,7 +40,7 @@ export default function ModalBase({
         <>
             <div
                 className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
-                onClick={onClose}
+                onClick={canClose ? onClose : undefined}
             />
 
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -65,14 +67,16 @@ export default function ModalBase({
                             </h2>
                         </div>
 
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="p-1.5 rounded-lg hover:bg-white/5 text-foreground/40 hover:text-foreground transition-colors"
-                            aria-label="Fechar modal"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                        {canClose && (
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="cursor-pointer p-1.5 rounded-lg hover:bg-white/5 text-foreground/40 hover:text-foreground transition-colors"
+                                aria-label="Fechar modal"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        )}
                     </div>
 
                     <div className="p-6">{children}</div>

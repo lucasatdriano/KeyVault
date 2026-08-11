@@ -1,9 +1,11 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 
-import { AuthProvider } from '@/src/client/providers/AuthProvider';
 import { currentUserAction } from '@/src/server/actions/auth/current-user.action';
+
+import { AuthProvider } from '@/src/client/providers/AuthProvider';
 import { SidebarProvider } from '@/src/client/providers/SidebarProvider';
+import VaultUnlockGuard from '@/src/client/guards/VaultUnlockGuard';
 
 import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';
 import SidebarDrawer from '@/src/client/components/layout/sidebar/SidebarDrawer';
@@ -33,21 +35,23 @@ export default async function ProtectedLayout({
             }}
         >
             <SidebarProvider>
-                <div className="min-h-screen bg-background flex">
-                    <div className="hidden lg:block">
-                        <Sidebar />
-                    </div>
+                <VaultUnlockGuard>
+                    <div className="flex min-h-screen bg-background">
+                        <div className="hidden lg:block">
+                            <Sidebar />
+                        </div>
 
-                    <SidebarDrawer />
+                        <SidebarDrawer />
 
-                    <div className="flex-1 flex flex-col min-h-screen pb-20 lg:pb-0">
-                        <main className="flex-1">{children}</main>
+                        <div className="flex min-h-screen flex-1 flex-col pb-20 lg:pb-0">
+                            <main className="flex-1">{children}</main>
 
-                        <div className="lg:hidden">
-                            <BottomBar />
+                            <div className="lg:hidden">
+                                <BottomBar />
+                            </div>
                         </div>
                     </div>
-                </div>
+                </VaultUnlockGuard>
             </SidebarProvider>
         </AuthProvider>
     );

@@ -1,13 +1,5 @@
-import {
-    PrismaClient,
-    RecoveryType,
-    User,
-} from '@/src/generated/prisma/client';
-import {
-    CreateRecoveryMethodData,
-    CreateUserData,
-    UpdateRecoveryMethodData,
-} from '../../types/repository/auth';
+import { PrismaClient, User } from '@/src/generated/prisma/client';
+import { CreateUserData } from '../../types/repository/auth';
 
 export class AuthRepository {
     constructor(private readonly prisma: PrismaClient) {}
@@ -19,7 +11,7 @@ export class AuthRepository {
                 email: data.email,
                 passwordHash: data.passwordHash,
                 encryptedVaultKey: data.encryptedVaultKey,
-                isRecoverable: data.isRecoverable ?? false,
+                isRecoverable: data.isRecoverable ?? true,
             },
         });
     }
@@ -36,17 +28,6 @@ export class AuthRepository {
         return this.prisma.user.findUnique({
             where: {
                 id,
-            },
-        });
-    }
-
-    async findUserWithRecoveryMethods(id: string) {
-        return this.prisma.user.findUnique({
-            where: {
-                id,
-            },
-            include: {
-                recoveryMethods: true,
             },
         });
     }
@@ -109,32 +90,6 @@ export class AuthRepository {
         return this.prisma.user.delete({
             where: {
                 id: userId,
-            },
-        });
-    }
-
-    async createRecoveryMethod(data: CreateRecoveryMethodData) {
-        return this.prisma.recoveryMethod.create({
-            data,
-        });
-    }
-
-    async updateRecoveryMethod(id: string, data: UpdateRecoveryMethodData) {
-        return this.prisma.recoveryMethod.update({
-            where: {
-                id,
-            },
-            data,
-        });
-    }
-
-    async findRecoveryMethod(userId: string, type: RecoveryType) {
-        return this.prisma.recoveryMethod.findUnique({
-            where: {
-                userId_type: {
-                    userId,
-                    type,
-                },
             },
         });
     }

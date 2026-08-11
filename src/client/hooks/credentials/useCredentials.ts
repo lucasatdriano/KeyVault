@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getCredentialsAction } from '@/src/server/actions/credentials/get-credentials.action';
@@ -79,7 +80,17 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         updateCredential: updateCredentialStore,
     } = useCredentialsStore();
 
-    const pagination = usePagination({
+    const {
+        currentPage,
+        itemsPerPage,
+        totalPages,
+        totalItems,
+        goToPage,
+        resetPagination,
+        setTotalItems,
+        decrementTotalItems,
+        incrementTotalItems,
+    } = usePagination({
         initialPage,
         initialItemsPerPage,
     });
@@ -94,7 +105,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         async (
             search?: string,
             category?: string,
-            page: number = pagination.currentPage,
+            page: number = currentPage,
         ) => {
             if (!vaultKey) {
                 return;
@@ -115,9 +126,10 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 }
 
                 setLocalCredentials(data);
-                pagination.setTotalItems(data.length);
+                setTotalItems(data.length);
                 setIsLoading(false);
                 setIsCacheUsed(true);
+
                 return;
             }
 
@@ -137,18 +149,21 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                     categoryId:
                         category && category !== '' ? category : undefined,
                     page,
-                    limit: pagination.itemsPerPage,
+                    limit: itemsPerPage,
                 });
 
                 if (!result.success || !result.data) {
                     return;
                 }
 
-                pagination.setTotalItems(result.data.total);
+                setTotalItems(result.data.total);
 
                 const decrypted = await Promise.all(
                     result.data.data.map((credential) =>
-                        decryptCredential({ credential, vaultKey }),
+                        decryptCredential({
+                            credential,
+                            vaultKey,
+                        }),
                     ),
                 );
 
@@ -172,52 +187,58 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         },
         [
             vaultKey,
-            pagination,
+            currentPage,
+            itemsPerPage,
             favorite,
             deleted,
             isCacheValid,
             cachedCredentials,
             cachedDeleted,
             cachedFavorites,
+            setTotalItems,
             syncCredentials,
             syncDeletedCredentials,
             syncFavoriteCredentials,
         ],
     );
 
+    useEffect(() => {
+        if (!vaultKey) {
+            return;
+        }
+
+        loadCredentials();
+    }, [vaultKey, loadCredentials]);
+
     const refresh = useCallback(async () => {
         invalidateCache();
-        await loadCredentials(
-            searchQuery,
-            selectedCategory,
-            pagination.currentPage,
-        );
+        await loadCredentials(searchQuery, selectedCategory, currentPage);
     }, [
         loadCredentials,
         searchQuery,
         selectedCategory,
-        pagination.currentPage,
+        currentPage,
         invalidateCache,
     ]);
 
     const handleSearch = useCallback(
         async (query: string) => {
             setSearchQuery(query);
-            pagination.resetPagination();
+            resetPagination();
             invalidateCache();
             await loadCredentials(query, selectedCategory, 1);
         },
-        [loadCredentials, selectedCategory, pagination, invalidateCache],
+        [loadCredentials, selectedCategory, resetPagination, invalidateCache],
     );
 
     const handleFilterChange = useCallback(
         async (category: string) => {
             setSelectedCategory(category);
-            pagination.resetPagination();
+            resetPagination();
             invalidateCache();
             await loadCredentials(searchQuery, category, 1);
         },
-        [loadCredentials, searchQuery, pagination, invalidateCache],
+        [loadCredentials, searchQuery, resetPagination, invalidateCache],
     );
 
     const handleCopy = useCallback(
@@ -362,7 +383,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
                 addCredentialStore(tempCredential);
                 setLocalCredentials((prev) => [tempCredential, ...prev]);
-                pagination.incrementTotalItems();
+                incrementTotalItems();
 
                 setTimeout(async () => {
                     await refresh();
@@ -382,7 +403,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 setIsCreating(false);
             }
         },
-        [vaultKey, addCredentialStore, refresh, pagination],
+        [vaultKey, addCredentialStore, refresh, incrementTotalItems],
     );
 
     const handleUpdateCredential = useCallback(
@@ -503,7 +524,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 setLocalCredentials((prev) =>
                     prev.filter((c) => c.id !== credential.id),
                 );
-                pagination.decrementTotalItems();
+                decrementTotalItems();
 
                 const result = await deleteCredentialAction(credential.id);
 
@@ -521,7 +542,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 return false;
             }
         },
-        [deleteCredentialStore, refresh, pagination],
+        [deleteCredentialStore, refresh, decrementTotalItems],
     );
 
     const handleRestore = useCallback(
@@ -533,7 +554,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                     setLocalCredentials((prev) =>
                         prev.filter((c) => c.id !== id),
                     );
-                    pagination.decrementTotalItems();
+                    decrementTotalItems();
                 }
 
                 const result = await restoreCredentialAction(id);
@@ -552,7 +573,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                     await loadCredentials(
                         searchQuery,
                         selectedCategory,
-                        pagination.currentPage,
+                        currentPage,
                     );
                 }, 300);
 
@@ -573,16 +594,17 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
             loadCredentials,
             searchQuery,
             selectedCategory,
-            pagination,
+            currentPage,
+            decrementTotalItems,
         ],
     );
 
     const handlePageChange = useCallback(
         (page: number) => {
-            pagination.goToPage(page);
+            goToPage(page);
             loadCredentials(searchQuery, selectedCategory, page);
         },
-        [pagination, loadCredentials, searchQuery, selectedCategory],
+        [goToPage, loadCredentials, searchQuery, selectedCategory],
     );
 
     return {
@@ -594,7 +616,11 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         selectedCategory,
         isCacheUsed,
 
-        pagination,
+        currentPage,
+        totalPages,
+        totalItems,
+        itemsPerPage,
+        goToPage,
 
         loadCredentials,
         handlePageChange,

@@ -24,7 +24,11 @@ export default function FavoritePage() {
         credentials,
         isLoading,
         isUpdating,
-        pagination,
+        currentPage,
+        itemsPerPage,
+        totalItems,
+        totalPages,
+        goToPage,
         handleSearch,
         handleFilterChange,
         handleCopy,
@@ -150,11 +154,11 @@ export default function FavoritePage() {
 
                         {!isLoading && credentials.length > 0 && (
                             <Pagination
-                                currentPage={pagination.currentPage}
-                                totalPages={pagination.totalPages}
-                                totalItems={pagination.totalItems}
-                                itemsPerPage={pagination.itemsPerPage}
-                                onPageChange={pagination.goToPage}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalItems={totalItems}
+                                itemsPerPage={itemsPerPage}
+                                onPageChange={goToPage}
                             />
                         )}
                     </>

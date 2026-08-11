@@ -3,36 +3,36 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-    User,
-    Mail,
-    Calendar,
-    Award,
-    Clock,
-    Key,
-    Database,
-    ChevronRight,
-    Download,
+    UserIcon,
+    MailIcon,
+    CalendarIcon,
+    ClockIcon,
+    KeyIcon,
+    DatabaseIcon,
+    ChevronRightIcon,
+    DownloadIcon,
+    BadgeCheckIcon,
 } from 'lucide-react';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Header from '@/src/client/components/layout/header/Header';
 import { useAuth } from '@/src/client/hooks/auth/useAuth';
+import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
 
 const userData = {
     name: 'Alex Ferreira',
     email: 'alex.ferreira@gmail.com',
-    initials: 'AF',
     memberSince: '15 de janeiro de 2024',
     plan: 'Free',
     lastAccess: 'Hoje, 10:30',
     credentialsCount: 8,
+    recoveryMethods: 2,
 };
 
 export default function AccountPage() {
     const { user } = useAuth();
     const router = useRouter();
     const [isEditing, setIsEditing] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [formData, setFormData] = useState({
         name: user.name,
         email: user.email,
@@ -51,18 +51,13 @@ export default function AccountPage() {
         console.log('Exportando dados...');
     };
 
-    const handleDeleteAccount = () => {
-        console.log('Excluindo conta...');
-        setShowDeleteModal(false);
-    };
-
     return (
         <div className="space-y-6">
             <Header variant="account" />
 
             <div className="flex items-center gap-4 px-6">
                 <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-primary to-secondary flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-primary/20">
-                    {userData.initials}
+                    {getInitials(userData.name)}
                 </div>
                 <div>
                     <p className="text-2xl font-bold text-foreground">
@@ -88,7 +83,7 @@ export default function AccountPage() {
                                     name: e.target.value,
                                 })
                             }
-                            leftIcon={<User className="w-5 h-5" />}
+                            leftIcon={<UserIcon className="w-5 h-5" />}
                         />
                         <InputTextForm
                             label="E-mail"
@@ -100,7 +95,7 @@ export default function AccountPage() {
                                     email: e.target.value,
                                 })
                             }
-                            leftIcon={<Mail className="w-5 h-5" />}
+                            leftIcon={<MailIcon className="w-5 h-5" />}
                         />
                         <div className="flex gap-3">
                             <Button onClick={handleSave}>
@@ -123,7 +118,7 @@ export default function AccountPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
-                            <User className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
+                            <UserIcon className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
                             <div>
                                 <p className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
                                     Nome
@@ -135,7 +130,7 @@ export default function AccountPage() {
                         </div>
 
                         <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
-                            <Mail className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
+                            <MailIcon className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
                             <div>
                                 <p className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
                                     E-mail
@@ -147,10 +142,10 @@ export default function AccountPage() {
                         </div>
 
                         <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
-                            <Calendar className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
+                            <CalendarIcon className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
                             <div>
                                 <p className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
-                                    Membro desde
+                                    Conta criada em
                                 </p>
                                 <p className="text-foreground font-medium">
                                     {userData.memberSince}
@@ -159,19 +154,7 @@ export default function AccountPage() {
                         </div>
 
                         <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
-                            <Award className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
-                            <div>
-                                <p className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
-                                    Plano
-                                </p>
-                                <p className="text-foreground font-medium">
-                                    {userData.plan}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
-                            <Clock className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
+                            <ClockIcon className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
                             <div>
                                 <p className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
                                     Último acesso
@@ -183,7 +166,19 @@ export default function AccountPage() {
                         </div>
 
                         <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
-                            <Database className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
+                            <BadgeCheckIcon className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
+                                    Métodos de recuperação
+                                </p>
+                                <p className="text-foreground font-medium">
+                                    {userData.recoveryMethods}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                            <DatabaseIcon className="w-5 h-5 text-foreground/30 shrink-0 mt-0.5" />
                             <div>
                                 <p className="text-xs text-foreground/40 uppercase tracking-wider font-medium">
                                     Credenciais salvas
@@ -206,7 +201,7 @@ export default function AccountPage() {
                     <div className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer group">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                                <Key className="w-5 h-5 text-primary" />
+                                <KeyIcon className="w-5 h-5 text-primary" />
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-foreground">
@@ -222,14 +217,14 @@ export default function AccountPage() {
                             className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
                         >
                             Alterar
-                            <ChevronRight className="w-4 h-4" />
+                            <ChevronRightIcon className="w-4 h-4" />
                         </button>
                     </div>
 
                     <div className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer group">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                                <Mail className="w-5 h-5 text-blue-500" />
+                                <MailIcon className="w-5 h-5 text-blue-500" />
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-foreground">
@@ -245,14 +240,14 @@ export default function AccountPage() {
                             className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
                         >
                             Alterar
-                            <ChevronRight className="w-4 h-4" />
+                            <ChevronRightIcon className="w-4 h-4" />
                         </button>
                     </div>
 
                     <div className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-all cursor-pointer group">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-                                <Download className="w-5 h-5 text-green-500" />
+                                <DownloadIcon className="w-5 h-5 text-green-500" />
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-foreground">
@@ -269,7 +264,7 @@ export default function AccountPage() {
                             className="text-sm text-primary font-medium hover:underline flex items-center gap-1"
                         >
                             Exportar
-                            <ChevronRight className="w-4 h-4" />
+                            <ChevronRightIcon className="w-4 h-4" />
                         </button>
                     </div>
                 </div>

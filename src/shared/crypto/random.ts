@@ -44,3 +44,13 @@ export function generateUUID(): string {
 
     return crypto.randomUUID();
 }
+
+export async function generateSha256(data: string): Promise<string> {
+    const crypto = getCrypto();
+
+    const encoded = new TextEncoder().encode(data);
+
+    const hash = await crypto.subtle.digest('SHA-256', encoded);
+
+    return bytesToHex(new Uint8Array(hash));
+}

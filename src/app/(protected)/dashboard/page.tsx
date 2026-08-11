@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { KeyIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -25,7 +25,11 @@ export default function DashboardPage() {
         isLoading,
         isCreating,
         isUpdating,
-        pagination,
+        currentPage,
+        itemsPerPage,
+        totalItems,
+        totalPages,
+        goToPage,
         handleSearch,
         handleFilterChange,
         handleCopy,
@@ -34,7 +38,6 @@ export default function DashboardPage() {
         handleCreateCredential,
         handleUpdateCredential,
         refresh,
-        loadCredentials,
         selectedCategory,
     } = useCredentials({
         initialPage: 1,
@@ -45,11 +48,6 @@ export default function DashboardPage() {
         useState<Credential | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-
-    useEffect(() => {
-        loadCredentials();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const handleNewCredential = () => {
         setIsNewModalOpen(true);
@@ -161,11 +159,11 @@ export default function DashboardPage() {
 
                         {!isLoading && credentials.length > 0 && (
                             <Pagination
-                                currentPage={pagination.currentPage}
-                                totalPages={pagination.totalPages}
-                                totalItems={pagination.totalItems}
-                                itemsPerPage={pagination.itemsPerPage}
-                                onPageChange={pagination.goToPage}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalItems={totalItems}
+                                itemsPerPage={itemsPerPage}
+                                onPageChange={goToPage}
                             />
                         )}
                     </>

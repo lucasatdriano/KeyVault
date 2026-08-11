@@ -1,6 +1,7 @@
 import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 import { hashPassword, verifyPassword } from '../../crypto/passwordHasher';
+
 import {
     ChangePasswordData,
     LoginData,
@@ -8,27 +9,41 @@ import {
     LoginResult,
     RegisterResult,
 } from '../../types/service/auth';
+
 import { JWTService } from './jwt.service';
 import { AuditService } from '../audit.service';
 import { AuthRepository } from '../../database/repositories/auth.repository';
+
 import {
     deleteAccessToken,
     getAccessToken,
     setAccessToken,
 } from '../../auth/cookies';
+
 import { changeMasterPassword } from '@/src/shared/crypto/vault';
+
 import { AuditAction, User } from '@/src/generated/prisma/client';
+
 import {
     validateChangePasswordData,
     validateLoginData,
     validateRegisterData,
 } from '../../validators/auth/auth.validator';
+
 import { AuditContext } from '../../types/service/audit';
 import { CategoryService } from '../category.service';
+import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
+
+import { EmailVerificationRepository } from '../../database/repositories/emailVerification.repository';
+import { EmailService } from './email.service';
 
 export class AuthService {
+    private readonly EMAIL_VERIFICATION_DURATION = 15 * 60 * 1000;
+
     constructor(
         private readonly authRepository: AuthRepository,
+        private readonly emailVerificationRepository: EmailVerificationRepository,
+        private readonly emailService: EmailService,
         private readonly jwtService: JWTService,
         private readonly auditService: AuditService,
         private readonly categoryService: CategoryService,
@@ -47,6 +62,7 @@ export class AuthService {
         if (existingUser) {
             throw new Error('Email já cadastrado.');
         }
+
         const passwordHash = await hashPassword({
             password: data.password,
             params: DEFAULT_ARGON2_PARAMS,
@@ -55,23 +71,31 @@ export class AuthService {
         const user = await this.authRepository.createUser({
             name: data.name,
             email: data.email,
-            emailVerified: true,
-            passwordHash: passwordHash,
+            passwordHash,
             encryptedVaultKey: JSON.stringify(data.encryptedVaultKey),
         });
 
         await this.categoryService.createMany(user.id, data.categories);
 
-        const duration =
-            data.sessionExpiration ?? ACCESS_TOKEN_DURATION.MINUTES_30;
+        const verificationToken = generateRandomHex(32);
 
-        const token = await this.jwtService.generateAccessToken(
-            user.id,
-            user.email,
-            duration,
+        const tokenHash = await generateSha256(verificationToken);
+
+        const expiresAt = new Date(
+            Date.now() + this.EMAIL_VERIFICATION_DURATION,
         );
 
-        await setAccessToken(token, duration);
+        await this.emailVerificationRepository.create({
+            userId: user.id,
+            tokenHash,
+            expiresAt,
+        });
+
+        await this.emailService.sendEmailVerification(
+            user.email,
+            user.name,
+            verificationToken,
+        );
 
         await this.auditService.createLog({
             userId: user.id,
@@ -101,16 +125,12 @@ export class AuthService {
             throw new Error('Email ou senha inválidos.');
         }
 
-        const passwordData = user.passwordHash;
-
         const validPassword = await verifyPassword({
             password: data.password,
-            hash: passwordData,
+            hash: user.passwordHash,
         });
 
-        const validEmail = user.emailVerified;
-
-        if (!validPassword || !validEmail) {
+        if (!validPassword || !user.emailVerified) {
             throw new Error('Email ou senha inválidos.');
         }
 
@@ -141,7 +161,7 @@ export class AuthService {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                emailVerified: true,
+                emailVerified: user.emailVerified,
             },
             encryptedVaultKey: JSON.parse(user.encryptedVaultKey),
         };
@@ -215,11 +235,9 @@ export class AuthService {
             throw new Error('Usuário não encontrado.');
         }
 
-        const passwordData = user.passwordHash;
-
         const validPassword = await verifyPassword({
             password: data.currentPassword,
-            hash: passwordData,
+            hash: user.passwordHash,
         });
 
         if (!validPassword) {
@@ -262,16 +280,84 @@ export class AuthService {
         await deleteAccessToken();
     }
 
-    async verifyEmail(userId: string, audit?: AuditContext): Promise<void> {
-        await this.authRepository.updateEmailVerification(userId, true);
+    async verifyEmail(token: string, audit?: AuditContext): Promise<void> {
+        if (!token) {
+            throw new Error('Token de verificação não informado.');
+        }
+
+        const tokenHash = await generateSha256(token);
+
+        const verification =
+            await this.emailVerificationRepository.findByTokenHash(tokenHash);
+
+        if (!verification) {
+            throw new Error('Token de verificação inválido.');
+        }
+
+        if (verification.expiresAt < new Date()) {
+            throw new Error('Token de verificação expirado.');
+        }
+
+        const user = await this.authRepository.findUserById(
+            verification.userId,
+        );
+
+        if (!user) {
+            throw new Error('Usuário não encontrado.');
+        }
+
+        if (user.emailVerified) {
+            return;
+        }
+
+        await this.authRepository.updateEmailVerification(user.id, true);
+
+        await this.emailVerificationRepository.markAsUsed(verification.id);
 
         await this.auditService.createLog({
-            userId,
+            userId: user.id,
             action: AuditAction.VERIFY_EMAIL,
             browser: audit?.browser,
             os: audit?.os,
             device: audit?.device,
             ip: audit?.ip,
         });
+    }
+
+    async resendEmailVerification(email: string): Promise<void> {
+        const normalizedEmail = email.trim().toLowerCase();
+
+        const user = await this.authRepository.findUserByEmail(normalizedEmail);
+
+        if (!user) {
+            throw new Error(
+                'Não foi possível reenviar o e-mail de verificação.',
+            );
+        }
+
+        if (user.emailVerified) {
+            throw new Error('O e-mail já foi verificado.');
+        }
+
+        await this.emailVerificationRepository.invalidateByUserId(user.id);
+
+        const verificationToken = generateRandomHex(32);
+        const tokenHash = await generateSha256(verificationToken);
+
+        const expiresAt = new Date(
+            Date.now() + this.EMAIL_VERIFICATION_DURATION,
+        );
+
+        await this.emailVerificationRepository.create({
+            userId: user.id,
+            tokenHash,
+            expiresAt,
+        });
+
+        await this.emailService.sendEmailVerification(
+            user.email,
+            user.name,
+            verificationToken,
+        );
     }
 }

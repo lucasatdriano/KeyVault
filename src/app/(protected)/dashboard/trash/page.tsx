@@ -17,7 +17,11 @@ export default function TrashPage() {
     const {
         credentials: trashItems,
         isLoading,
-        pagination,
+        currentPage,
+        itemsPerPage,
+        totalItems,
+        totalPages,
+        goToPage,
         handleSearch,
         handleRestore,
         loadCredentials,
@@ -61,11 +65,11 @@ export default function TrashPage() {
                             ))}
 
                             <Pagination
-                                currentPage={pagination.currentPage}
-                                totalPages={pagination.totalPages}
-                                totalItems={pagination.totalItems}
-                                itemsPerPage={pagination.itemsPerPage}
-                                onPageChange={pagination.goToPage}
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                totalItems={totalItems}
+                                itemsPerPage={itemsPerPage}
+                                onPageChange={goToPage}
                             />
                         </div>
                     ) : (

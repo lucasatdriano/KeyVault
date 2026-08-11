@@ -27,16 +27,22 @@ enum AuditAction {
   EXPORT_DATA
   IMPORT_DATA
 
+  ENABLE_RECOVERY_METHOD
+  DISABLE_RECOVERY_METHOD
+
+  GENERATE_RECOVERY_KEY
   RESET_PASSWORD
   RECOVERY
+
+  UPDATE_PROFILE
+  CHANGE_EMAIL
 }
 
 enum RecoveryType {
   EMAIL
-  GOOGLE
   QUESTIONS
+  RECOVERY_KEY
 }
-
 
 model User {
   id                  String   @id @default(cuid())
@@ -53,10 +59,30 @@ model User {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  emailVerifications  EmailVerification[]
   credentials         Credential[]
   categories          Category[]
   auditLogs           AuditLog[]
   recoveryMethods     RecoveryMethod[]
+  recoveryQuestions   RecoveryQuestion[]
+  recoverySessions    RecoverySession[]
+}
+
+model EmailVerification {
+    id         String   @id @default(cuid())
+
+    userId     String
+    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    tokenHash  String   @db.Char(64)
+    expiresAt  DateTime
+    usedAt     DateTime?
+
+    createdAt  DateTime @default(now())
+
+    @@index([userId])
+    @@index([tokenHash])
+    @@index([expiresAt])
 }
 
 model Credential {
@@ -136,20 +162,80 @@ model AuditLog {
 }
 
 model RecoveryMethod {
-  id                String   @id @default(cuid())
+  id         String       @id @default(cuid())
 
+  userId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type       RecoveryType
+  enabled    Boolean      @default(false)
+
+  secretHash String?      @db.Text
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model RecoverySession {
+  id             String   @id @default(cuid())
+  
+  userId         String
+  user           User     @relation( fields: [userId], references: [id], onDelete: Cascade)
+
+  currentStep    Int      @default(0)
+  completedSteps Int      @default(0)
+
+  tokenHash      String   @db.Text
+
+  expiresAt      DateTime
+  completedAt    DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  challenges     RecoveryChallenge[]
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+model RecoveryChallenge {
+  id          String          @id @default(cuid())
+  
+  sessionId   String
+  session     RecoverySession @relation( fields: [sessionId], references: [id], onDelete: Cascade)
+
+  type        RecoveryType
+
+  tokenHash   String          @db.Text
+
+  expiresAt   DateTime
+  completedAt DateTime?
+
+  createdAt   DateTime        @default(now())
+
+  @@index([sessionId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+model RecoveryQuestion {
+  id                String   @id @default(cuid())
+  
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type              RecoveryType
-  enabled           Boolean  @default(true)
+  questionCipherText String  @db.Text
+  questionIv         String  @db.Text
 
-  encryptedVaultKey String?  @db.Text
-  recoverySalt      String?  @db.Text
+  answerHash        String   @db.Text
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  @@unique([userId, type])
   @@index([userId])
 }
