@@ -57,7 +57,7 @@ export default function InputTextForm({
 
             <div className="relative">
                 {leftIcon && (
-                    <div className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-foreground/30">
+                    <div className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground/80">
                         {leftIcon}
                     </div>
                 )}
@@ -75,7 +75,7 @@ export default function InputTextForm({
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="cursor-pointer text-foreground/30 transition-colors hover:text-foreground/60"
+                                className="cursor-pointer text-muted-foreground/80 transition-colors hover:text-muted-foreground"
                                 disabled={disabled}
                             >
                                 {showPassword ? (

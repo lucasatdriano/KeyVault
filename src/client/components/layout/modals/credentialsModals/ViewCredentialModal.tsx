@@ -17,10 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import {
-    Credential,
-    UpdateCredentialData,
-} from '@/src/shared/types/credential';
+import { Credential, CredentialFormData } from '@/src/shared/types/credential';
 
 import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
 import {
@@ -35,6 +32,7 @@ import Button from '@/src/client/components/ui/buttons/Button';
 import ModalBase from '../ModalBase';
 import { formatDateTime } from '@/src/client/utils/formatters/date';
 import { useCategories } from '@/src/client/hooks/categories/useCategories';
+import { validateCredentialForm } from '@/src/client/validators/credential.validator';
 
 interface ViewCredentialModalProps {
     isOpen: boolean;
@@ -44,8 +42,8 @@ interface ViewCredentialModalProps {
     onCopy?: (text: string, credentialId: string) => void;
     onUpdate?: (
         credential: Credential,
-        formData: UpdateCredentialData,
-    ) => Promise<{ success: boolean; error?: string }>;
+        formData: CredentialFormData,
+    ) => Promise<void>;
     isUpdating?: boolean;
 }
 
@@ -69,23 +67,23 @@ export default function ViewCredentialModal({
     const [isEditing, setIsEditing] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-    const [formData, setFormData] = useState<{
-        title: string;
-        username: string;
-        email: string;
-        password: string;
-        url: string;
-        notes: string;
-        category: string;
-    } | null>(null);
-
-    const [errors, setErrors] = useState({
+    const [formData, setFormData] = useState<CredentialFormData>({
         title: '',
         username: '',
         email: '',
         password: '',
         url: '',
-        category: '',
+        categoryId: '',
+        notes: '',
+    });
+
+    const [errors, setErrors] = useState({
+        title: '',
+        categoryId: '',
+        username: '',
+        email: '',
+        password: '',
+        url: '',
         notes: '',
     });
 
@@ -101,22 +99,22 @@ export default function ViewCredentialModal({
         if (credential) {
             setFormData({
                 title: credential.title,
+                categoryId: credential.categoryId || '',
                 username: credential.username || '',
                 email: credential.email || '',
                 password: credential.password,
                 url: credential.url || '',
                 notes: credential.notes || '',
-                category: credential.category || 'Outros',
             });
         }
 
         setErrors({
             title: '',
+            categoryId: '',
             username: '',
             email: '',
             password: '',
             url: '',
-            category: '',
             notes: '',
         });
     }, [credential]);
@@ -130,52 +128,48 @@ export default function ViewCredentialModal({
         onCopy?.(text, credential.id);
     };
 
-    const handleSave = async () => {
-        const newErrors = {
-            title: formData.title ? '' : 'Título é obrigatório',
-            username: '',
-            email: '',
-            password: formData.password ? '' : 'Senha é obrigatória',
-            url: '',
-            category: '',
-            notes: '',
-        };
+    const handleSave = async (e: React.FormEvent) => {
+        e.preventDefault();
 
-        if (newErrors.title || newErrors.password) {
-            setErrors(newErrors);
+        const validationErrors = validateCredentialForm(formData);
+
+        if (Object.keys(validationErrors).length > 0) {
+            setErrors({
+                title: validationErrors.title ?? '',
+                username: validationErrors.username ?? '',
+                email: validationErrors.email ?? '',
+                password: validationErrors.password ?? '',
+                url: validationErrors.url ?? '',
+                categoryId: validationErrors.categoryId ?? '',
+                notes: validationErrors.notes ?? '',
+            });
+
             return;
         }
 
         setErrors({
             title: '',
+            categoryId: '',
             username: '',
             email: '',
             password: '',
             url: '',
-            category: '',
             notes: '',
         });
 
         try {
-            const result = await onUpdate?.(credential, formData);
+            await onUpdate?.(credential, formData);
 
-            if (result?.success) {
-                toast.success('Credencial atualizada com sucesso!');
-                setIsEditing(false);
-                onEdit?.();
-            } else {
-                toast.error(result?.error || 'Erro ao atualizar credencial.');
-            }
+            onEdit?.();
+            onClose();
         } catch (error) {
             console.error(error);
             toast.error('Erro ao atualizar credencial.');
         }
     };
 
-    const handleChange = (field: keyof typeof formData, value: string) => {
-        if (!formData || !field) {
-            return;
-        }
+    const handleChange = (field: keyof CredentialFormData, value: string) => {
+        if (!formData) return;
 
         setFormData({
             ...formData,
@@ -193,21 +187,21 @@ export default function ViewCredentialModal({
 
         setFormData({
             title: credential.title,
+            categoryId: credential.categoryId || '',
             username: credential.username || '',
             email: credential.email || '',
             password: credential.password,
             url: credential.url || '',
             notes: credential.notes || '',
-            category: credential.category || 'Outros',
         });
 
         setErrors({
             title: '',
+            categoryId: '',
             username: '',
             email: '',
             password: '',
             url: '',
-            category: '',
             notes: '',
         });
     };
@@ -327,11 +321,11 @@ export default function ViewCredentialModal({
                         label="Categoria"
                         options={categoryOptions}
                         placeholder="Selecione uma categoria"
-                        value={formData.category}
+                        value={formData.categoryId!}
                         onChange={(e) =>
-                            handleChange('category', e.target.value)
+                            handleChange('categoryId', e.target.value)
                         }
-                        error={errors.category}
+                        error={errors.categoryId}
                     />
 
                     <InputTextAreaForm

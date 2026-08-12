@@ -1,13 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HeartIcon } from 'lucide-react';
+import { toast } from 'sonner';
 
-import {
-    Credential,
-    UpdateCredentialData,
-} from '@/src/shared/types/credential';
+import { Credential, CredentialFormData } from '@/src/shared/types/credential';
 
 import { useCredentials } from '@/src/client/hooks/credentials/useCredentials';
 import { formatDateTime } from '@/src/client/utils/formatters/date';
@@ -36,7 +34,6 @@ export default function FavoritePage() {
         handleDelete,
         handleUpdateCredential,
         refresh,
-        loadCredentials,
         selectedCategory,
     } = useCredentials({
         initialPage: 1,
@@ -47,11 +44,6 @@ export default function FavoritePage() {
     const [selectedCredential, setSelectedCredential] =
         useState<Credential | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
-    useEffect(() => {
-        loadCredentials();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const handleCardClick = (credential: Credential) => {
         setSelectedCredential(credential);
@@ -66,7 +58,7 @@ export default function FavoritePage() {
 
     const handleUpdateCredentialWrapper = async (
         credential: Credential,
-        formData: UpdateCredentialData,
+        formData: CredentialFormData,
     ) => {
         const result = await handleUpdateCredential(credential, formData);
 
@@ -74,9 +66,10 @@ export default function FavoritePage() {
             if (result.data && selectedCredential?.id === credential.id) {
                 setSelectedCredential(result.data);
             }
-            return { success: true };
+            setIsViewModalOpen(false);
+            toast.success('Credencial atualizada com sucesso!');
         } else {
-            return { success: false, error: result.error };
+            console.error(result.error || 'Erro ao atualizar credencial');
         }
     };
 

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { GlobeIcon, KeyIcon, LockIcon, MailIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { CreateCredentialData } from '@/src/shared/types/credential';
+import { CredentialFormData } from '@/src/shared/types/credential';
 
 import { validateCredentialForm } from '@/src/client/validators/credential.validator';
 import Button from '@/src/client/components/ui/buttons/Button';
@@ -17,7 +17,7 @@ import { useCategories } from '@/src/client/hooks/categories/useCategories';
 interface NewCredentialModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave?: (data: CreateCredentialData) => Promise<void>;
+    onSave?: (data: CredentialFormData) => Promise<void>;
     isLoading?: boolean;
 }
 
@@ -35,7 +35,7 @@ export default function NewCredentialModal({
         autoLoad: false,
     });
 
-    const [formData, setFormData] = useState<CreateCredentialData>({
+    const [formData, setFormData] = useState<CredentialFormData>({
         title: '',
         username: '',
         email: '',
@@ -63,11 +63,13 @@ export default function NewCredentialModal({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
-    const handleChange = (field: keyof CreateCredentialData, value: string) => {
-        setFormData((prev) => ({
-            ...prev,
+    const handleChange = (field: keyof CredentialFormData, value: string) => {
+        if (!formData) return;
+
+        setFormData({
+            ...formData,
             [field]: value,
-        }));
+        });
     };
 
     const resetForm = () => {
@@ -92,7 +94,7 @@ export default function NewCredentialModal({
         });
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
 
         const validationErrors = validateCredentialForm(formData);
@@ -160,7 +162,7 @@ export default function NewCredentialModal({
                     </Button>
 
                     <Button
-                        onClick={handleSubmit}
+                        onClick={handleSave}
                         isLoading={isLoading}
                         loadingText="Salvando..."
                         fullWidth
@@ -171,7 +173,7 @@ export default function NewCredentialModal({
                 </div>
             }
         >
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSave} className="space-y-4">
                 <InputTextForm
                     label="Título"
                     placeholder="GitHub"

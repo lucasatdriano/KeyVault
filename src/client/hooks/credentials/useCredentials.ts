@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/set-state-in-effect */
+
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -14,11 +15,7 @@ import { encryptString } from '@/src/shared/crypto/cipher';
 import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
 import { bytesToBase64 } from '@/src/shared/crypto/encoding';
 import { generateSalt } from '@/src/shared/crypto/random';
-import {
-    Credential,
-    CreateCredentialData,
-    UpdateCredentialData,
-} from '@/src/shared/types/credential';
+import { Credential, CredentialFormData } from '@/src/shared/types/credential';
 
 import { useVaultStore } from '@/src/client/store/vault.store';
 import { useCredentialsStore } from '@/src/client/store/credential.store';
@@ -67,12 +64,19 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         credentials: cachedCredentials,
         deletedCredentials: cachedDeleted,
         favoriteCredentials: cachedFavorites,
+
+        credentialsCacheInitialized,
+        favoriteCacheInitialized,
+        deletedCacheInitialized,
+
         syncCredentials,
         syncDeletedCredentials,
         syncFavoriteCredentials,
+
         isCacheStale,
         lastFetch,
         invalidateCache,
+
         toggleFavorite: toggleFavoriteStore,
         deleteCredential: deleteCredentialStore,
         restoreCredential: restoreCredentialStore,
@@ -96,9 +100,15 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
     });
 
     const isCacheValid = useCallback(() => {
-        if (isCacheStale) return false;
-        if (!lastFetch) return false;
-        return Date.now() - lastFetch < 5 * 60 * 1000; // 5m
+        if (isCacheStale) {
+            return false;
+        }
+
+        if (!lastFetch) {
+            return false;
+        }
+
+        return Date.now() - lastFetch < 5 * 60 * 1000;
     }, [isCacheStale, lastFetch]);
 
     const loadCredentials = useCallback(
@@ -111,11 +121,33 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 return;
             }
 
-            const useCache =
-                page === 1 && !search && !category && isCacheValid();
+            /*
+             * Define qual cache estamos utilizando.
+             */
+            const cacheInitialized = deleted
+                ? deletedCacheInitialized
+                : favorite
+                  ? favoriteCacheInitialized
+                  : credentialsCacheInitialized;
 
-            if (useCache) {
-                let data: Credential[] = [];
+            /*
+             * Só podemos utilizar o cache quando:
+             *
+             * 1. Estamos na primeira página
+             * 2. Não existe busca
+             * 3. Não existe filtro de categoria
+             * 4. O cache ainda é válido
+             * 5. O cache específico dessa página já foi inicializado
+             */
+            const canUseCache =
+                page === 1 &&
+                !search &&
+                !category &&
+                isCacheValid() &&
+                cacheInitialized;
+
+            if (canUseCache) {
+                let data: Credential[];
 
                 if (deleted) {
                     data = cachedDeleted;
@@ -133,6 +165,10 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 return;
             }
 
+            /*
+             * Cache não pode ser utilizado.
+             * Vamos buscar os dados no servidor.
+             */
             setIsLoading(true);
             setIsCacheUsed(false);
 
@@ -169,6 +205,16 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
                 setLocalCredentials(decrypted);
 
+                /*
+                 * Só atualizamos o cache quando:
+                 *
+                 * - estamos na primeira página
+                 * - não existe busca
+                 * - não existe filtro de categoria
+                 *
+                 * Assim o cache sempre representa a listagem completa
+                 * daquele tipo.
+                 */
                 if (page === 1 && !search && !category) {
                     if (deleted) {
                         syncDeletedCredentials(decrypted);
@@ -191,11 +237,19 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
             itemsPerPage,
             favorite,
             deleted,
+
             isCacheValid,
+
             cachedCredentials,
             cachedDeleted,
             cachedFavorites,
+
+            credentialsCacheInitialized,
+            favoriteCacheInitialized,
+            deletedCacheInitialized,
+
             setTotalItems,
+
             syncCredentials,
             syncDeletedCredentials,
             syncFavoriteCredentials,
@@ -212,6 +266,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
     const refresh = useCallback(async () => {
         invalidateCache();
+
         await loadCredentials(searchQuery, selectedCategory, currentPage);
     }, [
         loadCredentials,
@@ -226,6 +281,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
             setSearchQuery(query);
             resetPagination();
             invalidateCache();
+
             await loadCredentials(query, selectedCategory, 1);
         },
         [loadCredentials, selectedCategory, resetPagination, invalidateCache],
@@ -236,6 +292,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
             setSelectedCategory(category);
             resetPagination();
             invalidateCache();
+
             await loadCredentials(searchQuery, category, 1);
         },
         [loadCredentials, searchQuery, resetPagination, invalidateCache],
@@ -267,8 +324,13 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 toggleFavoriteStore(id);
 
                 setLocalCredentials((prev) =>
-                    prev.map((c) =>
-                        c.id === id ? { ...c, favorite: !c.favorite } : c,
+                    prev.map((credential) =>
+                        credential.id === id
+                            ? {
+                                  ...credential,
+                                  favorite: !credential.favorite,
+                              }
+                            : credential,
                     ),
                 );
 
@@ -276,11 +338,18 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
                 if (!result.success) {
                     toggleFavoriteStore(id);
+
                     setLocalCredentials((prev) =>
-                        prev.map((c) =>
-                            c.id === id ? { ...c, favorite: !c.favorite } : c,
+                        prev.map((credential) =>
+                            credential.id === id
+                                ? {
+                                      ...credential,
+                                      favorite: !credential.favorite,
+                                  }
+                                : credential,
                         ),
                     );
+
                     toast.error(result.error);
                     return;
                 }
@@ -288,11 +357,18 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 toast.success(result.message);
             } catch {
                 toggleFavoriteStore(id);
+
                 setLocalCredentials((prev) =>
-                    prev.map((c) =>
-                        c.id === id ? { ...c, favorite: !c.favorite } : c,
+                    prev.map((credential) =>
+                        credential.id === id
+                            ? {
+                                  ...credential,
+                                  favorite: !credential.favorite,
+                              }
+                            : credential,
                     ),
                 );
+
                 toast.error('Erro ao atualizar favorito.');
             }
         },
@@ -301,13 +377,14 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
     const handleCreateCredential = useCallback(
         async (
-            formData: CreateCredentialData,
+            formData: CredentialFormData,
         ): Promise<CreateCredentialResult> => {
             const validationErrors = validateCredentialForm(formData);
 
             if (Object.keys(validationErrors).length > 0) {
                 const errorMessages =
                     Object.values(validationErrors).filter(Boolean);
+
                 return {
                     success: false,
                     error: errorMessages[0] || 'Dados inválidos',
@@ -364,6 +441,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 }
 
                 const now = new Date().toISOString();
+
                 const tempCredential: Credential = {
                     id: crypto.randomUUID(),
                     userId: '',
@@ -382,7 +460,9 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 };
 
                 addCredentialStore(tempCredential);
+
                 setLocalCredentials((prev) => [tempCredential, ...prev]);
+
                 incrementTotalItems();
 
                 setTimeout(async () => {
@@ -395,6 +475,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 };
             } catch (error) {
                 console.error('Erro ao criar credencial:', error);
+
                 return {
                     success: false,
                     error: 'Erro ao criar credencial.',
@@ -409,13 +490,14 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
     const handleUpdateCredential = useCallback(
         async (
             credential: Credential,
-            formData: UpdateCredentialData,
+            formData: CredentialFormData,
         ): Promise<UpdateCredentialResult> => {
             const validationErrors = validateCredentialForm(formData);
 
             if (Object.keys(validationErrors).length > 0) {
                 const errorMessages =
                     Object.values(validationErrors).filter(Boolean);
+
                 return {
                     success: false,
                     error: errorMessages[0] || 'Dados inválidos',
@@ -447,6 +529,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 );
 
                 let resourceSearchHash: string | null = null;
+
                 if (formData.title !== credential.title) {
                     resourceSearchHash = await generateResourceSearchHash(
                         formData.title,
@@ -458,7 +541,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
                 const result = await updateCredentialAction({
                     id: credential.id,
-                    categoryId: credential.categoryId || null,
+                    categoryId: formData.categoryId || null,
                     cipherText: encrypted.cipherText,
                     iv: encrypted.iv,
                     salt,
@@ -476,6 +559,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 }
 
                 const now = new Date().toISOString();
+
                 const updatedCredential: Credential = {
                     ...credential,
                     title: formData.title,
@@ -489,9 +573,12 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 };
 
                 updateCredentialStore(credential.id, updatedCredential);
+
                 setLocalCredentials((prev) =>
-                    prev.map((c) =>
-                        c.id === credential.id ? updatedCredential : c,
+                    prev.map((current) =>
+                        current.id === credential.id
+                            ? updatedCredential
+                            : current,
                     ),
                 );
 
@@ -505,6 +592,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 };
             } catch (error) {
                 console.error('Erro ao atualizar credencial:', error);
+
                 return {
                     success: false,
                     error: 'Erro ao atualizar credencial.',
@@ -522,8 +610,9 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 deleteCredentialStore(credential.id);
 
                 setLocalCredentials((prev) =>
-                    prev.filter((c) => c.id !== credential.id),
+                    prev.filter((current) => current.id !== credential.id),
                 );
+
                 decrementTotalItems();
 
                 const result = await deleteCredentialAction(credential.id);
@@ -552,8 +641,9 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
                 if (deleted) {
                     setLocalCredentials((prev) =>
-                        prev.filter((c) => c.id !== id),
+                        prev.filter((credential) => credential.id !== id),
                     );
+
                     decrementTotalItems();
                 }
 
@@ -570,6 +660,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
                 setTimeout(async () => {
                     invalidateCache();
+
                     await loadCredentials(
                         searchQuery,
                         selectedCategory,
@@ -582,6 +673,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 deleteCredentialStore(id);
                 await refresh();
                 toast.error('Erro ao restaurar credencial.');
+
                 return false;
             }
         },
@@ -602,6 +694,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
     const handlePageChange = useCallback(
         (page: number) => {
             goToPage(page);
+
             loadCredentials(searchQuery, selectedCategory, page);
         },
         [goToPage, loadCredentials, searchQuery, selectedCategory],
@@ -609,9 +702,11 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
     return {
         credentials: localCredentials,
+
         isLoading,
         isCreating,
         isUpdating,
+
         searchQuery,
         selectedCategory,
         isCacheUsed,

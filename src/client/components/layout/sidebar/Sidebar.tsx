@@ -14,6 +14,7 @@ import { sidebarSections } from './Sidebar.config';
 import { logoutAction } from '@/src/server/actions/auth/logout.action';
 import { useVaultStore } from '@/src/client/store/vault.store';
 import { useAuth } from '@/src/client/hooks/auth/useAuth';
+import { useAuthStore } from '@/src/client/store/auth.store';
 
 interface SidebarProps {
     mobile?: boolean;
@@ -41,14 +42,14 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
         'CREDENCIAIS',
         'CONTA',
     ]);
-
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-
     const [counts, setCounts] = useState({
         total: 0,
         favorites: 0,
         deleted: 0,
     });
+
+    const setIsLoggingOut = useAuthStore((state) => state.setIsLoggingOut);
+    const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
 
     useEffect(() => {
         setCounts({
@@ -82,9 +83,7 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
     };
 
     const handleLogout = async () => {
-        if (isLoggingOut) {
-            return;
-        }
+        if (isLoggingOut) return;
 
         setIsLoggingOut(true);
 
@@ -100,8 +99,9 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
 
             router.replace('/login');
             router.refresh();
-        } finally {
+        } catch (error) {
             setIsLoggingOut(false);
+            console.error(error);
         }
     };
 

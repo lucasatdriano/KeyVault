@@ -6,6 +6,10 @@ interface CredentialsStore {
     deletedCredentials: Credential[];
     favoriteCredentials: Credential[];
 
+    credentialsCacheInitialized: boolean;
+    favoriteCacheInitialized: boolean;
+    deletedCacheInitialized: boolean;
+
     lastFetch: number | null;
     isCacheStale: boolean;
 
@@ -39,6 +43,10 @@ export const useCredentialsStore = create<CredentialsStore>((set, get) => ({
     credentials: [],
     deletedCredentials: [],
     favoriteCredentials: [],
+
+    credentialsCacheInitialized: false,
+    favoriteCacheInitialized: false,
+    deletedCacheInitialized: false,
 
     lastFetch: null,
     isCacheStale: true,
@@ -216,6 +224,7 @@ export const useCredentialsStore = create<CredentialsStore>((set, get) => ({
     syncCredentials: (serverCredentials) => {
         set({
             credentials: serverCredentials,
+            credentialsCacheInitialized: true,
             lastFetch: Date.now(),
             isCacheStale: false,
         });
@@ -224,6 +233,7 @@ export const useCredentialsStore = create<CredentialsStore>((set, get) => ({
     syncDeletedCredentials: (serverDeleted) => {
         set({
             deletedCredentials: serverDeleted,
+            deletedCacheInitialized: true,
             lastFetch: Date.now(),
             isCacheStale: false,
         });
@@ -232,6 +242,7 @@ export const useCredentialsStore = create<CredentialsStore>((set, get) => ({
     syncFavoriteCredentials: (serverFavorites) => {
         set({
             favoriteCredentials: serverFavorites,
+            favoriteCacheInitialized: true,
             lastFetch: Date.now(),
             isCacheStale: false,
         });

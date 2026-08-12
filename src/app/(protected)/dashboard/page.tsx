@@ -4,11 +4,7 @@ import { useState } from 'react';
 import { KeyIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import {
-    Credential,
-    CreateCredentialData,
-    UpdateCredentialData,
-} from '@/src/shared/types/credential';
+import { Credential, CredentialFormData } from '@/src/shared/types/credential';
 
 import { useCredentials } from '@/src/client/hooks/credentials/useCredentials';
 import { formatDateTime } from '@/src/client/utils/formatters/date';
@@ -65,7 +61,7 @@ export default function DashboardPage() {
     };
 
     const handleNewCredentialSave = async (
-        credentialData: CreateCredentialData,
+        credentialData: CredentialFormData,
     ) => {
         const result = await handleCreateCredential(credentialData);
 
@@ -73,13 +69,13 @@ export default function DashboardPage() {
             setIsNewModalOpen(false);
             toast.success('Credencial criada com sucesso!');
         } else {
-            toast.error(result.error || 'Erro ao criar credencial');
+            console.error(result.error || 'Erro ao criar credencial');
         }
     };
 
     const handleUpdateCredentialWrapper = async (
         credential: Credential,
-        formData: UpdateCredentialData,
+        formData: CredentialFormData,
     ) => {
         const result = await handleUpdateCredential(credential, formData);
 
@@ -87,9 +83,10 @@ export default function DashboardPage() {
             if (result.data && selectedCredential?.id === credential.id) {
                 setSelectedCredential(result.data);
             }
-            return { success: true };
+            setIsViewModalOpen(false);
+            toast.success('Credencial atualizada com sucesso!');
         } else {
-            return { success: false, error: result.error };
+            console.error(result.error || 'Erro ao atualizar credencial');
         }
     };
 

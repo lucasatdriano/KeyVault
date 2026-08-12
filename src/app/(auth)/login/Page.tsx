@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MailIcon, KeyIcon, LogInIcon } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,6 +17,7 @@ import { LoginClient } from './components/LoginClient';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
+import { useAuthStore } from '@/src/client/store/auth.store';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -31,6 +32,11 @@ export default function LoginPage() {
     });
 
     const setVaultKey = useVaultStore((state) => state.setVaultKey);
+    const setIsLoggingOut = useAuthStore((state) => state.setIsLoggingOut);
+
+    useEffect(() => {
+        setIsLoggingOut(false);
+    }, [setIsLoggingOut]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

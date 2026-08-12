@@ -62,7 +62,7 @@ export default function InputSelectForm({
 
             <div className="relative">
                 {leftIcon && (
-                    <div className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-foreground/30 pointer-events-none">
+                    <div className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-muted-foreground/80 pointer-events-none">
                         {leftIcon}
                     </div>
                 )}

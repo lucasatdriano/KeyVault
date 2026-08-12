@@ -18,17 +18,7 @@ export interface Credential {
     updatedAt: string;
 }
 
-export interface CreateCredentialData {
-    title: string;
-    categoryId?: string | null;
-    username?: string;
-    email?: string;
-    password: string;
-    url?: string;
-    notes?: string;
-}
-
-export interface UpdateCredentialData {
+export interface CredentialFormData {
     title: string;
     categoryId?: string | null;
     username?: string;

@@ -1,6 +1,6 @@
-import { CreateCredentialData } from '@/src/shared/types/credential';
+import { CredentialFormData } from '@/src/shared/types/credential';
 
-export function validateCredentialForm(data: CreateCredentialData) {
+export function validateCredentialForm(data: CredentialFormData) {
     const errors: Record<string, string> = {};
 
     if (!data.title.trim()) {
