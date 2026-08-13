@@ -1,11 +1,12 @@
-export function formatDateOnly(date: string) {
-    const [year, month, day] = date.split('-');
+export function formatDateOnly(date: string | Date) {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
 
-    return new Date(
-        Number(year),
-        Number(month) - 1,
-        Number(day),
-    ).toLocaleDateString('pt-BR', {
+    if (isNaN(dateObj.getTime())) {
+        console.error('Data inválida:', date);
+        return 'Data inválida';
+    }
+
+    return dateObj.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: 'long',
         year: 'numeric',

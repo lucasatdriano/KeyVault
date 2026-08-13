@@ -12,4 +12,6 @@ export interface LoginFormData {
 
 export interface ChangePasswordFormData {
     newPassword: string;
+    currentPassword: string;
+    confirmPassword: string;
 }

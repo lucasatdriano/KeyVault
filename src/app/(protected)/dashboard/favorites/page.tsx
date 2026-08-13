@@ -62,15 +62,19 @@ export default function FavoritePage() {
     ) => {
         const result = await handleUpdateCredential(credential, formData);
 
-        if (result.success) {
-            if (result.data && selectedCredential?.id === credential.id) {
-                setSelectedCredential(result.data);
-            }
-            setIsViewModalOpen(false);
-            toast.success('Credencial atualizada com sucesso!');
-        } else {
-            console.error(result.error || 'Erro ao atualizar credencial');
+        if (!result.success) {
+            toast.error(result.error || 'Erro ao atualizar credencial.');
+
+            return;
         }
+
+        if (result.data && selectedCredential?.id === credential.id) {
+            setSelectedCredential(result.data);
+        }
+
+        setIsViewModalOpen(false);
+
+        toast.success('Credencial atualizada com sucesso!');
     };
 
     const handleDeleteWrapper = async (credential: Credential) => {

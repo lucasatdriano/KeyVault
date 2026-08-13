@@ -1,18 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { GlobeIcon, KeyIcon, LockIcon, MailIcon, PlusIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { CredentialFormData } from '@/src/shared/types/credential';
 
 import { validateCredentialForm } from '@/src/client/validators/credential.validator';
+import { useCategories } from '@/src/client/hooks/categories/useCategories';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
 import InputTextAreaForm from '@/src/client/components/ui/inputs/InputTextAreaForm';
 import ModalBase from '../ModalBase';
-import { useCategories } from '@/src/client/hooks/categories/useCategories';
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 
 interface NewCredentialModalProps {
     isOpen: boolean;
@@ -27,13 +28,7 @@ export default function NewCredentialModal({
     onSave,
     isLoading = false,
 }: NewCredentialModalProps) {
-    const {
-        categories,
-        isLoading: isLoadingCategories,
-        loadCategories,
-    } = useCategories({
-        autoLoad: false,
-    });
+    const { categories, isLoading: isLoadingCategories } = useCategories();
 
     const [formData, setFormData] = useState<CredentialFormData>({
         title: '',
@@ -45,7 +40,7 @@ export default function NewCredentialModal({
         notes: '',
     });
 
-    const [errors, setErrors] = useState({
+    const [errors, setErrors] = useState<ValidationErrors<CredentialFormData>>({
         title: '',
         username: '',
         email: '',
@@ -55,21 +50,11 @@ export default function NewCredentialModal({
         notes: '',
     });
 
-    useEffect(() => {
-        if (isOpen) {
-            loadCategories();
-        }
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]);
-
     const handleChange = (field: keyof CredentialFormData, value: string) => {
-        if (!formData) return;
-
-        setFormData({
-            ...formData,
+        setFormData((prev) => ({
+            ...prev,
             [field]: value,
-        });
+        }));
     };
 
     const resetForm = () => {
@@ -99,17 +84,7 @@ export default function NewCredentialModal({
 
         const validationErrors = validateCredentialForm(formData);
 
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors({
-                title: validationErrors.title ?? '',
-                username: validationErrors.username ?? '',
-                email: validationErrors.email ?? '',
-                password: validationErrors.password ?? '',
-                url: validationErrors.url ?? '',
-                categoryId: validationErrors.categoryId ?? '',
-                notes: validationErrors.notes ?? '',
-            });
-
+        if (hasValidationErrors(validationErrors)) {
             return;
         }
 

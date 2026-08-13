@@ -5,6 +5,7 @@ import { currentUserAction } from '@/src/server/actions/auth/current-user.action
 
 import { AuthProvider } from '@/src/client/providers/AuthProvider';
 import { SidebarProvider } from '@/src/client/providers/SidebarProvider';
+import { SessionExpiredHandler } from '@/src/client/components/layout/handlers/SessionExpiredHandler';
 import VaultUnlockGuard from '@/src/client/guards/VaultUnlockGuard';
 
 import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';
@@ -31,11 +32,14 @@ export default async function ProtectedLayout({
                 name: user.name,
                 email: user.email,
                 emailVerified: user.emailVerified,
-                createdAt: String(user.createdAt),
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
             }}
         >
             <SidebarProvider>
                 <VaultUnlockGuard>
+                    <SessionExpiredHandler />
+
                     <div className="flex min-h-screen bg-background">
                         <div className="hidden lg:block">
                             <Sidebar />

@@ -1,14 +1,14 @@
 import { create } from 'zustand';
-import { User } from '../../shared/types/user';
+import { Profile } from '../../shared/types/profile';
 
 interface AuthState {
-    user: User | null;
+    user: Profile | null;
     isLoading: boolean;
     isLoggingOut: boolean;
 }
 
 interface AuthActions {
-    setUser: (user: User | null) => void;
+    setUser: (user: Profile | null) => void;
     setLoading: (loading: boolean) => void;
     setIsLoggingOut: (value: boolean) => void;
     clear: () => void;

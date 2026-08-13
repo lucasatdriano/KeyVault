@@ -3,11 +3,12 @@ import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.cons
 import { hashPassword, verifyPassword } from '../../crypto/passwordHasher';
 
 import {
-    ChangePasswordData,
     LoginData,
     RegisterData,
     LoginResult,
     RegisterResult,
+    ChangePasswordData,
+    VerifyEmailResult,
 } from '../../types/service/auth';
 
 import { JWTService } from './jwt.service';
@@ -89,13 +90,14 @@ export class AuthService {
             userId: user.id,
             tokenHash,
             expiresAt,
+            isEmailChange: false,
         });
 
-        await this.emailService.sendEmailVerification(
-            user.email,
-            user.name,
-            verificationToken,
-        );
+        // await this.emailService.sendEmailVerification(
+        //     user.email,
+        //     user.name,
+        //     verificationToken,
+        // );
 
         await this.auditService.createLog({
             userId: user.id,
@@ -113,6 +115,7 @@ export class AuthService {
                 email: user.email,
                 emailVerified: user.emailVerified,
             },
+            verificationToken,
         };
     }
 
@@ -224,12 +227,13 @@ export class AuthService {
     }
 
     async changePassword(
+        userId: string,
         data: ChangePasswordData,
         audit?: AuditContext,
     ): Promise<void> {
         validateChangePasswordData(data);
 
-        const user = await this.authRepository.findUserById(data.userId);
+        const user = await this.authRepository.findUserById(userId);
 
         if (!user) {
             throw new Error('Usuário não encontrado.');
@@ -258,10 +262,7 @@ export class AuthService {
             params: DEFAULT_ARGON2_PARAMS,
         });
 
-        await this.authRepository.updatePassword(
-            user.id,
-            JSON.stringify(newPasswordHash),
-        );
+        await this.authRepository.updatePassword(user.id, newPasswordHash);
 
         await this.authRepository.updateVaultKey(
             user.id,
@@ -280,7 +281,10 @@ export class AuthService {
         await deleteAccessToken();
     }
 
-    async verifyEmail(token: string, audit?: AuditContext): Promise<void> {
+    async verifyEmail(
+        token: string,
+        audit?: AuditContext,
+    ): Promise<VerifyEmailResult> {
         if (!token) {
             throw new Error('Token de verificação não informado.');
         }
@@ -307,7 +311,10 @@ export class AuthService {
         }
 
         if (user.emailVerified) {
-            return;
+            return {
+                userId: user.id,
+                requiresLogout: false,
+            };
         }
 
         await this.authRepository.updateEmailVerification(user.id, true);
@@ -322,6 +329,11 @@ export class AuthService {
             device: audit?.device,
             ip: audit?.ip,
         });
+
+        return {
+            userId: user.id,
+            requiresLogout: verification.isEmailChange,
+        };
     }
 
     async resendEmailVerification(email: string): Promise<void> {
@@ -352,6 +364,7 @@ export class AuthService {
             userId: user.id,
             tokenHash,
             expiresAt,
+            isEmailChange: true,
         });
 
         await this.emailService.sendEmailVerification(

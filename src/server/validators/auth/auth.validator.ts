@@ -38,10 +38,6 @@ export function validateLoginData(data: LoginData): void {
 }
 
 export function validateChangePasswordData(data: ChangePasswordData): void {
-    if (!data.userId || typeof data.userId !== 'string') {
-        throw new Error('userId inválido');
-    }
-
     if (!data.currentPassword || typeof data.currentPassword !== 'string') {
         throw new Error('Senha atual é obrigatória');
     }

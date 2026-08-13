@@ -20,7 +20,6 @@ import { Credential, CredentialFormData } from '@/src/shared/types/credential';
 import { useVaultStore } from '@/src/client/store/vault.store';
 import { useCredentialsStore } from '@/src/client/store/credential.store';
 import { usePagination } from '@/src/client/hooks/ui/usePagination';
-import { validateCredentialForm } from '@/src/client/validators/credential.validator';
 import { decryptCredential } from '@/src/client/utils/credentials/credential-decryption';
 
 interface UseCredentialsOptions {
@@ -121,24 +120,12 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 return;
             }
 
-            /*
-             * Define qual cache estamos utilizando.
-             */
             const cacheInitialized = deleted
                 ? deletedCacheInitialized
                 : favorite
                   ? favoriteCacheInitialized
                   : credentialsCacheInitialized;
 
-            /*
-             * Só podemos utilizar o cache quando:
-             *
-             * 1. Estamos na primeira página
-             * 2. Não existe busca
-             * 3. Não existe filtro de categoria
-             * 4. O cache ainda é válido
-             * 5. O cache específico dessa página já foi inicializado
-             */
             const canUseCache =
                 page === 1 &&
                 !search &&
@@ -165,10 +152,6 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
                 return;
             }
 
-            /*
-             * Cache não pode ser utilizado.
-             * Vamos buscar os dados no servidor.
-             */
             setIsLoading(true);
             setIsCacheUsed(false);
 
@@ -205,16 +188,6 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
 
                 setLocalCredentials(decrypted);
 
-                /*
-                 * Só atualizamos o cache quando:
-                 *
-                 * - estamos na primeira página
-                 * - não existe busca
-                 * - não existe filtro de categoria
-                 *
-                 * Assim o cache sempre representa a listagem completa
-                 * daquele tipo.
-                 */
                 if (page === 1 && !search && !category) {
                     if (deleted) {
                         syncDeletedCredentials(decrypted);
@@ -379,18 +352,6 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         async (
             formData: CredentialFormData,
         ): Promise<CreateCredentialResult> => {
-            const validationErrors = validateCredentialForm(formData);
-
-            if (Object.keys(validationErrors).length > 0) {
-                const errorMessages =
-                    Object.values(validationErrors).filter(Boolean);
-
-                return {
-                    success: false,
-                    error: errorMessages[0] || 'Dados inválidos',
-                };
-            }
-
             if (!vaultKey) {
                 return {
                     success: false,
@@ -492,18 +453,6 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
             credential: Credential,
             formData: CredentialFormData,
         ): Promise<UpdateCredentialResult> => {
-            const validationErrors = validateCredentialForm(formData);
-
-            if (Object.keys(validationErrors).length > 0) {
-                const errorMessages =
-                    Object.values(validationErrors).filter(Boolean);
-
-                return {
-                    success: false,
-                    error: errorMessages[0] || 'Dados inválidos',
-                };
-            }
-
             if (!vaultKey) {
                 return {
                     success: false,

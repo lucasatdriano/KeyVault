@@ -12,6 +12,7 @@ export class EmailVerificationRepository {
                 userId: data.userId,
                 tokenHash: data.tokenHash,
                 expiresAt: data.expiresAt,
+                isEmailChange: data.isEmailChange,
             },
         });
     }

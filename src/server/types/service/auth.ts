@@ -28,9 +28,13 @@ export interface LoginData {
 }
 
 export interface ChangePasswordData {
-    userId: string;
     currentPassword: string;
     newPassword: string;
+}
+
+export interface ChangeEmailData {
+    newEmail: string;
+    password: string;
 }
 
 export interface RegisterResult {
@@ -40,6 +44,7 @@ export interface RegisterResult {
         email: string;
         emailVerified: boolean;
     };
+    verificationToken: string;
 }
 
 export interface LoginResult {
@@ -50,6 +55,11 @@ export interface LoginResult {
         emailVerified: boolean;
     };
     encryptedVaultKey: EncryptedVault;
+}
+
+export interface VerifyEmailResult {
+    userId: string;
+    requiresLogout: boolean;
 }
 
 export interface ChangePasswordResult {

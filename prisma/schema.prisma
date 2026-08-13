@@ -68,16 +68,17 @@ model User {
 }
 
 model EmailVerification {
-    id         String   @id @default(cuid())
+    id              String    @id @default(cuid())
+     
+    userId          String
+    user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+     
+    tokenHash       String    @db.Char(64)
+    expiresAt       DateTime
+    usedAt          DateTime?
+    isEmailChange   Boolean    @default(false)
 
-    userId     String
-    user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    tokenHash  String   @db.Char(64)
-    expiresAt  DateTime
-    usedAt     DateTime?
-
-    createdAt  DateTime @default(now())
+    createdAt       DateTime   @default(now())
 
     @@index([userId])
     @@index([tokenHash])

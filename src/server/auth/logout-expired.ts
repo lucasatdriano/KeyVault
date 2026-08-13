@@ -12,5 +12,7 @@ export async function handleExpiredSession(
 
     response.cookies.delete(ACCESS_TOKEN_COOKIE_NAME);
 
+    response.headers.set('x-session-expired', 'true');
+
     return response;
 }

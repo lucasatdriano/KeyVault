@@ -1,5 +1,5 @@
 import { PrismaClient, User } from '@/src/generated/prisma/client';
-import { UpdateUserData } from '../../types/repository/user';
+import { ChangeUserData } from '@/src/shared/types/profile';
 
 export class UserRepository {
     constructor(private readonly prisma: PrismaClient) {}
@@ -20,7 +20,7 @@ export class UserRepository {
         });
     }
 
-    async update(userId: string, data: UpdateUserData): Promise<User> {
+    async update(userId: string, data: ChangeUserData): Promise<User> {
         return this.prisma.user.update({
             where: {
                 id: userId,

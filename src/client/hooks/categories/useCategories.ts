@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useCallback, useState, useEffect } from 'react';
+
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
@@ -32,7 +33,8 @@ export function useCategories(options: UseCategoriesOptions = {}) {
     const isCacheValid = useCallback(() => {
         if (isCacheStale) return false;
         if (!lastFetch) return false;
-        return Date.now() - lastFetch < 5 * 60 * 1000; // 5m
+
+        return Date.now() - lastFetch < 5 * 60 * 1000;
     }, [isCacheStale, lastFetch]);
 
     const loadCategories = useCallback(async () => {
@@ -59,7 +61,10 @@ export function useCategories(options: UseCategoriesOptions = {}) {
 
             const decrypted = await Promise.all(
                 result.data.map((category) =>
-                    decryptCategory({ category, vaultKey }),
+                    decryptCategory({
+                        category,
+                        vaultKey,
+                    }),
                 ),
             );
 
@@ -84,39 +89,44 @@ export function useCategories(options: UseCategoriesOptions = {}) {
 
     const getCategoryById = useCallback(
         (id: string) => {
-            return categories.find((cat) => cat.id === id);
+            return categories.find((category) => category.id === id);
         },
         [categories],
     );
 
     const getCategoryByName = useCallback(
         (name: string) => {
-            return categories.find((cat) => cat.name === name);
+            return categories.find((category) => category.name === name);
         },
         [categories],
     );
 
     const getCategoryOptions = useCallback(() => {
         return [
-            { value: '', label: 'Todas as categorias' },
-            ...categories.map((cat) => ({
-                value: cat.id,
-                label: cat.name,
+            {
+                value: '',
+                label: 'Todas as categorias',
+            },
+            ...categories.map((category) => ({
+                value: category.id,
+                label: category.name,
             })),
         ];
     }, [categories]);
 
     const getCategorySelectOptions = useCallback(() => {
-        return categories.map((cat) => ({
-            value: cat.id,
-            label: cat.name,
+        return categories.map((category) => ({
+            value: category.id,
+            label: category.name,
         }));
     }, [categories]);
 
     useEffect(() => {
-        if (autoLoad && vaultKey) {
-            loadCategories();
+        if (!vaultKey || !autoLoad) {
+            return;
         }
+
+        loadCategories();
     }, [autoLoad, vaultKey, loadCategories]);
 
     return {

@@ -18,6 +18,7 @@ import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
 import { useAuthStore } from '@/src/client/store/auth.store';
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 
 export default function LoginPage() {
     const router = useRouter();
@@ -26,11 +27,10 @@ export default function LoginPage() {
         email: '',
         password: '',
     });
-    const [errors, setErrors] = useState<LoginFormData>({
+    const [errors, setErrors] = useState<ValidationErrors<LoginFormData>>({
         email: '',
         password: '',
     });
-
     const setVaultKey = useVaultStore((state) => state.setVaultKey);
     const setIsLoggingOut = useAuthStore((state) => state.setIsLoggingOut);
 
@@ -46,19 +46,14 @@ export default function LoginPage() {
             password: formData.password,
         });
 
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors({
-                email: validationErrors.email ?? '',
-                password: validationErrors.password ?? '',
-            });
+        setErrors({
+            email: validationErrors.email ?? '',
+            password: validationErrors.password ?? '',
+        });
 
+        if (hasValidationErrors(validationErrors)) {
             return;
         }
-
-        setErrors({
-            email: '',
-            password: '',
-        });
 
         setIsLoading(true);
 

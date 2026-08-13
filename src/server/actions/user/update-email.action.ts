@@ -1,27 +1,23 @@
 'use server';
 
-import { User } from '@/src/generated/prisma/client';
 import { authService, userService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
 import { getAuditContext } from '../../utils/audit-context';
+import { ChangeEmailData, RegisterResult } from '../../types/service/auth';
 
-export async function updateUserNameAction(
-    name: string,
-): Promise<ActionResult<User | null>> {
+export async function updateEmailAction(
+    data: ChangeEmailData,
+): Promise<ActionResult<RegisterResult | null>> {
     try {
         const user = await authService.requireAuth();
         const audit = await getAuditContext();
 
-        const updatedUser = await userService.updateProfile(
-            user.id,
-            { name },
-            audit,
-        );
+        const result = await userService.updateEmail(user.id, data, audit);
 
         return {
             success: true,
-            message: 'Nome atualizado com sucesso.',
-            data: updatedUser,
+            message: 'E-mail atualizado com sucesso.',
+            data: result,
         };
     } catch (error) {
         return {
@@ -29,7 +25,7 @@ export async function updateUserNameAction(
             error:
                 error instanceof Error
                     ? error.message
-                    : 'Erro interno ao atualizar nome.',
+                    : 'Erro interno ao atualizar e-mail.',
             data: null,
         };
     }

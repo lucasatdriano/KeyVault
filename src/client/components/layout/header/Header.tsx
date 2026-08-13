@@ -1,7 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
-
 import { HeaderVariant } from '@/src/client/types/layout/header';
 import { useCategories } from '@/src/client/hooks/categories/useCategories';
 
@@ -33,24 +31,15 @@ export default function Header({
 }: HeaderProps) {
     const config = headerVariants[variant];
 
-    const {
-        categories,
-        isLoading: isLoadingCategories,
-        loadCategories,
-    } = useCategories({ autoLoad: false });
+    const shouldLoadCategories =
+        config.type === 'search' &&
+        config.showFilter &&
+        !customFilterOptions &&
+        variant !== 'audit';
 
-    useEffect(() => {
-        const shouldLoadCategories =
-            config.type === 'search' &&
-            config.showFilter &&
-            !customFilterOptions &&
-            variant !== 'audit';
-
-        if (shouldLoadCategories) {
-            loadCategories();
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [config.type, config.showFilter, customFilterOptions, variant]);
+    const { categories, isLoading: isLoadingCategories } = useCategories({
+        autoLoad: shouldLoadCategories,
+    });
 
     const subtitle =
         typeof config.defaultSubtitle === 'function'

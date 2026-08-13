@@ -36,7 +36,10 @@ export const authService = new AuthService(
 
 export const userService = new UserService(
     userRepository,
+    authRepository,
     recoveryRepository,
+    emailVerificationRepository,
+    emailService,
     auditService,
 );
 

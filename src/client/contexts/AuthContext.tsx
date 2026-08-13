@@ -1,10 +1,11 @@
 'use client';
 
+import { Profile } from '@/src/shared/types/profile';
 import { createContext } from 'react';
-import { User } from '@/src/shared/types/user';
 
 interface AuthContextValue {
-    user: User;
+    user: Profile;
+    updateUser: (userData: Partial<Profile>) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

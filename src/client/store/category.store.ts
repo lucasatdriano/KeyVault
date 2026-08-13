@@ -1,6 +1,5 @@
 import { DecryptedCategory } from '@/src/shared/types/category';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 interface CategoriesStore {
     cachedCategories: DecryptedCategory[];
@@ -9,43 +8,31 @@ interface CategoriesStore {
 
     syncCategories: (categories: DecryptedCategory[]) => void;
     invalidateCache: () => void;
-    clearCache: () => void;
+    clearStore: () => void;
 }
 
-export const useCategoriesStore = create<CategoriesStore>()(
-    persist(
-        (set) => ({
+export const useCategoriesStore = create<CategoriesStore>((set) => ({
+    cachedCategories: [],
+    lastFetch: null,
+    isCacheStale: true,
+
+    syncCategories: (categories) => {
+        set({
+            cachedCategories: categories,
+            lastFetch: Date.now(),
+            isCacheStale: false,
+        });
+    },
+
+    invalidateCache: () => {
+        set({ isCacheStale: true });
+    },
+
+    clearStore: () => {
+        set({
             cachedCategories: [],
             lastFetch: null,
             isCacheStale: true,
-
-            syncCategories: (categories) => {
-                set({
-                    cachedCategories: categories,
-                    lastFetch: Date.now(),
-                    isCacheStale: false,
-                });
-            },
-
-            invalidateCache: () => {
-                set({ isCacheStale: true });
-            },
-
-            clearCache: () => {
-                set({
-                    cachedCategories: [],
-                    lastFetch: null,
-                    isCacheStale: true,
-                });
-            },
-        }),
-        {
-            name: 'categories-storage',
-            partialize: (state) => ({
-                cachedCategories: state.cachedCategories,
-                lastFetch: state.lastFetch,
-                isCacheStale: state.isCacheStale,
-            }),
-        },
-    ),
-);
+        });
+    },
+}));

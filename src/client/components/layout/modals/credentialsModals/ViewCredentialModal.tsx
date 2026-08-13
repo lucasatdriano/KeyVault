@@ -25,14 +25,15 @@ import {
     getCategoryColor,
 } from '@/src/client/utils/credentials/credential-category';
 
+import { formatDateTime } from '@/src/client/utils/formatters/date';
+import { useCategories } from '@/src/client/hooks/categories/useCategories';
+import { validateCredentialForm } from '@/src/client/validators/credential.validator';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
 import InputTextAreaForm from '@/src/client/components/ui/inputs/InputTextAreaForm';
 import Button from '@/src/client/components/ui/buttons/Button';
 import ModalBase from '../ModalBase';
-import { formatDateTime } from '@/src/client/utils/formatters/date';
-import { useCategories } from '@/src/client/hooks/categories/useCategories';
-import { validateCredentialForm } from '@/src/client/validators/credential.validator';
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 
 interface ViewCredentialModalProps {
     isOpen: boolean;
@@ -56,16 +57,13 @@ export default function ViewCredentialModal({
     onUpdate,
     isUpdating = false,
 }: ViewCredentialModalProps) {
-    const {
-        isLoading: isLoadingCategories,
-        loadCategories,
-        getCategorySelectOptions,
-    } = useCategories({
-        autoLoad: false,
-    });
-
     const [isEditing, setIsEditing] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    const { isLoading: isLoadingCategories, getCategorySelectOptions } =
+        useCategories({
+            autoLoad: isEditing,
+        });
 
     const [formData, setFormData] = useState<CredentialFormData>({
         title: '',
@@ -77,7 +75,7 @@ export default function ViewCredentialModal({
         notes: '',
     });
 
-    const [errors, setErrors] = useState({
+    const [errors, setErrors] = useState<ValidationErrors<CredentialFormData>>({
         title: '',
         categoryId: '',
         username: '',
@@ -86,14 +84,6 @@ export default function ViewCredentialModal({
         url: '',
         notes: '',
     });
-
-    useEffect(() => {
-        if (isEditing) {
-            loadCategories();
-        }
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isEditing]);
 
     useEffect(() => {
         if (credential) {
@@ -133,29 +123,19 @@ export default function ViewCredentialModal({
 
         const validationErrors = validateCredentialForm(formData);
 
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors({
-                title: validationErrors.title ?? '',
-                username: validationErrors.username ?? '',
-                email: validationErrors.email ?? '',
-                password: validationErrors.password ?? '',
-                url: validationErrors.url ?? '',
-                categoryId: validationErrors.categoryId ?? '',
-                notes: validationErrors.notes ?? '',
-            });
+        setErrors({
+            title: validationErrors.title ?? '',
+            categoryId: validationErrors.categoryId ?? '',
+            username: validationErrors.username ?? '',
+            email: validationErrors.email ?? '',
+            password: validationErrors.password ?? '',
+            url: validationErrors.url ?? '',
+            notes: validationErrors.notes ?? '',
+        });
 
+        if (hasValidationErrors(validationErrors)) {
             return;
         }
-
-        setErrors({
-            title: '',
-            categoryId: '',
-            username: '',
-            email: '',
-            password: '',
-            url: '',
-            notes: '',
-        });
 
         try {
             await onUpdate?.(credential, formData);

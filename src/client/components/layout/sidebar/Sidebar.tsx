@@ -1,7 +1,6 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOutIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 
@@ -11,10 +10,8 @@ import { useSidebar } from '@/src/client/hooks/ui/useSidebar';
 import { useCredentialsStore } from '@/src/client/store/credential.store';
 
 import { sidebarSections } from './Sidebar.config';
-import { logoutAction } from '@/src/server/actions/auth/logout.action';
-import { useVaultStore } from '@/src/client/store/vault.store';
 import { useAuth } from '@/src/client/hooks/auth/useAuth';
-import { useAuthStore } from '@/src/client/store/auth.store';
+import { useLogout } from '@/src/client/hooks/auth/useLogout';
 
 interface SidebarProps {
     mobile?: boolean;
@@ -23,47 +20,17 @@ interface SidebarProps {
 export default function Sidebar({ mobile = false }: SidebarProps) {
     const { close } = useSidebar();
     const { user } = useAuth();
-
     const router = useRouter();
     const pathname = usePathname();
 
-    const clearVault = useVaultStore.getState().clearVault;
+    const { logout, isLoggingOut } = useLogout();
 
-    const {
-        getCredentialsLength,
-        getFavoritesLength,
-        getDeletedLength,
-        credentials,
-        favoriteCredentials,
-        deletedCredentials,
-    } = useCredentialsStore();
+    const { credentialsCount, favoritesCount, deletedCount } =
+        useCredentialsStore();
 
     const [expandedSections, setExpandedSections] = useState<string[]>([
         'CREDENCIAIS',
         'CONTA',
-    ]);
-    const [counts, setCounts] = useState({
-        total: 0,
-        favorites: 0,
-        deleted: 0,
-    });
-
-    const setIsLoggingOut = useAuthStore((state) => state.setIsLoggingOut);
-    const isLoggingOut = useAuthStore((state) => state.isLoggingOut);
-
-    useEffect(() => {
-        setCounts({
-            total: getCredentialsLength(),
-            favorites: getFavoritesLength(),
-            deleted: getDeletedLength(),
-        });
-    }, [
-        credentials,
-        favoriteCredentials,
-        deletedCredentials,
-        getCredentialsLength,
-        getFavoritesLength,
-        getDeletedLength,
     ]);
 
     const toggleSection = (title: string) => {
@@ -82,39 +49,16 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
         }
     };
 
-    const handleLogout = async () => {
-        if (isLoggingOut) return;
-
-        setIsLoggingOut(true);
-
-        try {
-            const result = await logoutAction();
-
-            if (!result.success) {
-                console.error(result.error);
-                return;
-            }
-
-            clearVault();
-
-            router.replace('/login');
-            router.refresh();
-        } catch (error) {
-            setIsLoggingOut(false);
-            console.error(error);
-        }
-    };
-
     const isActive = (href: string) => pathname === href;
 
     const getItemCount = (itemLabel: string): number | undefined => {
         switch (itemLabel) {
             case 'Minhas Credenciais':
-                return counts.total;
+                return credentialsCount;
             case 'Favoritos':
-                return counts.favorites;
+                return favoritesCount;
             case 'Lixeira':
-                return counts.deleted;
+                return deletedCount;
             default:
                 return undefined;
         }
@@ -214,7 +158,7 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
                         </div>
 
                         <button
-                            onClick={handleLogout}
+                            onClick={() => logout('/login')}
                             disabled={isLoggingOut}
                             className="cursor-pointer rounded-lg p-1.5 text-error/40 transition-colors hover:bg-error/5 hover:text-error/70 disabled:cursor-not-allowed disabled:opacity-50"
                         >

@@ -65,12 +65,15 @@ export default function DashboardPage() {
     ) => {
         const result = await handleCreateCredential(credentialData);
 
-        if (result.success) {
-            setIsNewModalOpen(false);
-            toast.success('Credencial criada com sucesso!');
-        } else {
-            console.error(result.error || 'Erro ao criar credencial');
+        if (!result.success) {
+            toast.error(result.error || 'Erro ao criar credencial.');
+
+            return;
         }
+
+        setIsNewModalOpen(false);
+
+        toast.success('Credencial criada com sucesso!');
     };
 
     const handleUpdateCredentialWrapper = async (
@@ -79,15 +82,19 @@ export default function DashboardPage() {
     ) => {
         const result = await handleUpdateCredential(credential, formData);
 
-        if (result.success) {
-            if (result.data && selectedCredential?.id === credential.id) {
-                setSelectedCredential(result.data);
-            }
-            setIsViewModalOpen(false);
-            toast.success('Credencial atualizada com sucesso!');
-        } else {
-            console.error(result.error || 'Erro ao atualizar credencial');
+        if (!result.success) {
+            toast.error(result.error || 'Erro ao atualizar credencial.');
+
+            return;
         }
+
+        if (result.data && selectedCredential?.id === credential.id) {
+            setSelectedCredential(result.data);
+        }
+
+        setIsViewModalOpen(false);
+
+        toast.success('Credencial atualizada com sucesso!');
     };
 
     const handleDeleteWrapper = async (credential: Credential) => {
