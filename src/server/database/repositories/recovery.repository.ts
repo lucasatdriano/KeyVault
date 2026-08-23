@@ -6,7 +6,6 @@ import {
     RecoverySession,
     RecoveryType,
 } from '@/src/generated/prisma/client';
-
 import {
     CreateRecoveryChallengeData,
     CreateRecoveryMethodData,

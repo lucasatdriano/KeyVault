@@ -5,7 +5,6 @@ export type HeaderVariant =
     | 'favorites'
     | 'trash'
     | 'account'
-    | 'security'
     | 'recovery'
     | 'audit'
     | 'settings';

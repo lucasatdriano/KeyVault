@@ -5,7 +5,6 @@ import {
     StarIcon,
     Trash2Icon,
     UserIcon,
-    ShieldIcon,
     SettingsIcon,
 } from 'lucide-react';
 import { HeaderConfig, HeaderVariant } from '@/src/client/types/layout/header';
@@ -53,15 +52,6 @@ export const headerVariants: Record<HeaderVariant, HeaderConfig> = {
         bgColor: 'bg-primary/10',
         defaultTitle: 'Conta',
         defaultSubtitle: 'Gerencie suas informações',
-        type: 'simple',
-    },
-
-    security: {
-        icon: ShieldIcon,
-        iconClass: 'text-success',
-        bgColor: 'bg-success/10',
-        defaultTitle: 'Segurança',
-        defaultSubtitle: 'Proteja sua conta',
         type: 'simple',
     },
 

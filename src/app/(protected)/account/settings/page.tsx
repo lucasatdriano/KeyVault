@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Shield,
@@ -20,7 +21,6 @@ import Header from '@/src/client/components/layout/header/Header';
 
 export default function SettingsPage() {
     const router = useRouter();
-    const [showPassword, setShowPassword] = useState(false);
     const [showExportModal, setShowExportModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -31,6 +31,11 @@ export default function SettingsPage() {
         clearClipboard: true,
         showPasswordsByDefault: false,
     });
+    const [lastSync, setLastSync] = useState<Date | null>(null);
+
+    useEffect(() => {
+        setLastSync(new Date());
+    }, []);
 
     const hidePasswordOptions = [
         { value: '3', label: '3 segundos' },
@@ -194,34 +199,6 @@ export default function SettingsPage() {
                             />
                         </button>
                     </div>
-
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
-                        <div>
-                            <p className="text-sm font-medium text-foreground">
-                                Mostrar senhas por padrão
-                            </p>
-                            <p className="text-xs text-foreground/40">
-                                Exibir senhas sem necessidade de clicar em
-                                revelar
-                            </p>
-                        </div>
-                        <button
-                            onClick={() =>
-                                handleToggleSetting('showPasswordsByDefault')
-                            }
-                            className={`
-                                relative w-12 h-7 rounded-full transition-all duration-200
-                                ${settings.showPasswordsByDefault ? 'bg-primary' : 'bg-white/20'}
-                            `}
-                        >
-                            <div
-                                className={`
-                                    absolute top-1 w-5 h-5 rounded-full bg-white transition-all duration-200
-                                    ${settings.showPasswordsByDefault ? 'left-6' : 'left-1'}
-                                `}
-                            />
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -293,7 +270,7 @@ export default function SettingsPage() {
                             Versão
                         </span>
                         <span className="text-sm font-medium text-foreground">
-                            2.1.0
+                            1.0.0
                         </span>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-xl bg-white/5">
@@ -309,16 +286,23 @@ export default function SettingsPage() {
                             Derivação de chave
                         </span>
                         <span className="text-sm font-medium text-foreground">
-                            PBKDF2-SHA256
+                            Argon2id
                         </span>
                     </div>
                     <div className="flex items-center justify-between p-3 rounded-xl bg-white/5">
                         <span className="text-sm text-foreground/60">
                             Última sincronização
                         </span>
+
                         <span className="text-sm font-medium text-foreground flex items-center gap-1">
                             <RefreshCw className="w-3 h-3 text-green-500" />
-                            Agora
+
+                            {lastSync
+                                ? lastSync.toLocaleString('pt-BR', {
+                                      dateStyle: 'short',
+                                      timeStyle: 'short',
+                                  })
+                                : '—'}
                         </span>
                     </div>
                 </div>

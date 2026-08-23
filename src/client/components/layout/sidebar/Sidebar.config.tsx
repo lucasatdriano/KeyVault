@@ -4,7 +4,6 @@ import {
     FingerprintIcon,
     KeyIcon,
     SettingsIcon,
-    ShieldIcon,
     StarIcon,
     Trash2Icon,
     UserIcon,
@@ -38,11 +37,6 @@ export const sidebarSections: SidebarSection[] = [
                 icon: UserIcon,
                 label: 'Conta',
                 href: '/account',
-            },
-            {
-                icon: ShieldIcon,
-                label: 'Segurança',
-                href: '/account/security',
             },
             {
                 icon: FingerprintIcon,

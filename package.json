@@ -1,16 +1,16 @@
 {
     "name": "keyvault",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "private": true,
     "type": "module",
     "scripts": {
         "dev": "next dev",
-        "build": "next build",
+        "build": "next build && prisma generate",
         "start": "next start",
         "lint": "eslint",
+        "clean": "rimraf node_modules dist .next src/generated",
         "seed": "npx tsx --env-file=.env prisma/seed.ts",
-        "prisma-generate": "npx prisma generate",
-        "prisma-init": "npx prisma init"
+        "prisma-generate": "prisma generate"
     },
     "dependencies": {
         "@hookform/resolvers": "^5.4.0",

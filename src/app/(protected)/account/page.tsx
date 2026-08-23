@@ -409,7 +409,13 @@ export default function AccountPage() {
                                     Credenciais
                                 </p>
                                 <p className="text-foreground font-medium">
-                                    {profile.credentialsCount} senhas
+                                    {profile.credentialsCount === 0
+                                        ? 'Nenhuma senha'
+                                        : `${profile.credentialsCount} ${
+                                              profile.credentialsCount > 1
+                                                  ? 'Senhas'
+                                                  : 'Senha'
+                                          }`}
                                 </p>
                             </div>
                         </div>
@@ -421,7 +427,13 @@ export default function AccountPage() {
                                     Recuperação
                                 </p>
                                 <p className="text-foreground font-medium">
-                                    {profile.recoveryMethods} métodos
+                                    {profile.recoveryMethods === 0
+                                        ? 'Nenhum método'
+                                        : `${profile.recoveryMethods} ${
+                                              profile.recoveryMethods > 1
+                                                  ? 'Métodos'
+                                                  : 'Método'
+                                          }`}
                                 </p>
                             </div>
                         </div>
