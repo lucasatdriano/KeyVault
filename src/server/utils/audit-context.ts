@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+
 import { AuditContext } from '../types/service/audit';
 
 export async function getAuditContext(): Promise<AuditContext> {

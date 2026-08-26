@@ -1,12 +1,15 @@
 import { AuditAction, AuditLog } from '@/src/generated/prisma/client';
+
+import { PaginatedResponse } from '@/src/shared/types/pagination';
+
 import { AuditRepository } from '../database/repositories/audit.repository';
+import { validateAuditData } from '../validators/auth/audit.validator';
+import { validateUserId } from '../validators/user/user.validator';
 import {
     AuditLogWithCredential,
     CreateAuditLogData,
     FindUserLogsOptions,
 } from '../types/repository/audit';
-import { validateAuditData } from '../validators/auth/audit.validator';
-import { PaginatedResponse } from '@/src/shared/types/pagination';
 
 export class AuditService {
     constructor(private readonly auditRepository: AuditRepository) {}
@@ -21,9 +24,7 @@ export class AuditService {
         userId: string,
         options: FindUserLogsOptions = {},
     ): Promise<PaginatedResponse<AuditLogWithCredential>> {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         const result = await this.auditRepository.findByUser(userId, options);
 
@@ -60,9 +61,7 @@ export class AuditService {
     }
 
     async getActionStatistics(userId: string) {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         return this.auditRepository.countByAction(userId);
     }

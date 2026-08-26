@@ -1,5 +1,4 @@
 /* eslint-disable react-hooks/set-state-in-effect */
-
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -8,6 +7,7 @@ import { DecryptedCategory } from '@/src/shared/types/category';
 import { useVaultStore } from '@/src/client/store/vault.store';
 import { decryptCategory } from '../../utils/categories/category-decryption';
 import { useCategoriesStore } from '../../store/category.store';
+import { sortCategoriesByOrder } from '../../utils/categories/category-sort';
 
 interface UseCategoriesOptions {
     autoLoad?: boolean;
@@ -43,7 +43,8 @@ export function useCategories(options: UseCategoriesOptions = {}) {
         }
 
         if (isCacheValid()) {
-            setCategories(cachedCategories);
+            const sortedCache = sortCategoriesByOrder(cachedCategories);
+            setCategories(sortedCache);
             setIsCacheUsed(true);
             return;
         }
@@ -68,9 +69,7 @@ export function useCategories(options: UseCategoriesOptions = {}) {
                 ),
             );
 
-            const sorted = decrypted.sort((a, b) =>
-                a.name.localeCompare(b.name),
-            );
+            const sorted = sortCategoriesByOrder(decrypted);
 
             setCategories(sorted);
             syncCategories(sorted);

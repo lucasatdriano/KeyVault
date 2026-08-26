@@ -1,6 +1,7 @@
 'use server';
 
 import { Category } from '@/src/generated/prisma/client';
+
 import { authService, categoryService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
 

@@ -18,15 +18,14 @@ import { createVaultKey, encryptVaultKey } from '@/src/shared/crypto/vault';
 import { encryptString } from '@/src/shared/crypto/cipher';
 import { RegisterFormData } from '@/src/shared/types/auth';
 
-import { validateRegisterForm } from '@/src/client/validators/auth.validator';
 import { DEFAULT_CATEGORIES } from '@/src/client/constants/categories';
+import { validateRegisterForm } from '@/src/client/validators/auth.validator';
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 
 import EmailVerificationModal from '@/src/client/components/layout/modals/authModals/EmailVerificationModal';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
-
-import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 
 export default function RegisterPage() {
     const router = useRouter();

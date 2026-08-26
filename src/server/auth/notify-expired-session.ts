@@ -1,5 +1,6 @@
-import { API_ROUTES } from '@/src/shared/constants/api/api-routes.constants';
 import { NextRequest } from 'next/server';
+
+import { API_ROUTES } from '@/src/shared/constants/api/api-routes.constants';
 
 export async function notifyExpiredSession(
     request: NextRequest,

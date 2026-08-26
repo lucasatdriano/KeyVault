@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { ACCESS_TOKEN_COOKIE_NAME } from '@/src/shared/constants/auth/cookies.constants';
+
 import { notifyExpiredSession } from './notify-expired-session';
 
 export async function handleExpiredSession(

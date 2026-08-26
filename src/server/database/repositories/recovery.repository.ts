@@ -6,12 +6,15 @@ import {
     RecoverySession,
     RecoveryType,
 } from '@/src/generated/prisma/client';
+
 import {
     CreateRecoveryChallengeData,
     CreateRecoveryMethodData,
     CreateRecoveryQuestionData,
     CreateRecoverySessionData,
+    RecoverySessionWithChallenges,
     UpdateRecoveryMethodData,
+    UpdateRecoverySessionData,
 } from '../../types/repository/recovery';
 
 export class RecoveryRepository {
@@ -68,6 +71,29 @@ export class RecoveryRepository {
     ): Promise<RecoveryMethod> {
         return this.prisma.recoveryMethod.create({
             data,
+        });
+    }
+
+    async createDefaultMethods(userId: string): Promise<void> {
+        await this.prisma.recoveryMethod.createMany({
+            data: [
+                {
+                    userId,
+                    type: RecoveryType.EMAIL,
+                    enabled: false,
+                },
+                {
+                    userId,
+                    type: RecoveryType.QUESTIONS,
+                    enabled: false,
+                },
+                {
+                    userId,
+                    type: RecoveryType.RECOVERY_KEY,
+                    enabled: false,
+                },
+            ],
+            skipDuplicates: true,
         });
     }
 
@@ -130,37 +156,43 @@ export class RecoveryRepository {
         });
     }
 
-    async findSession(id: string): Promise<RecoverySession | null> {
+    async findSession(
+        id: string,
+    ): Promise<RecoverySessionWithChallenges | null> {
         return this.prisma.recoverySession.findUnique({
             where: {
                 id,
             },
             include: {
-                challenges: true,
+                challenges: {
+                    orderBy: {
+                        step: 'asc',
+                    },
+                },
             },
         });
     }
 
     async findSessionByTokenHash(
         tokenHash: string,
-    ): Promise<RecoverySession | null> {
+    ): Promise<RecoverySessionWithChallenges | null> {
         return this.prisma.recoverySession.findFirst({
             where: {
                 tokenHash,
             },
             include: {
-                challenges: true,
+                challenges: {
+                    orderBy: {
+                        step: 'asc',
+                    },
+                },
             },
         });
     }
 
     async updateSession(
         id: string,
-        data: {
-            currentStep?: number;
-            completedSteps?: number;
-            completedAt?: Date | null;
-        },
+        data: UpdateRecoverySessionData,
     ): Promise<RecoverySession> {
         return this.prisma.recoverySession.update({
             where: {
@@ -198,12 +230,47 @@ export class RecoveryRepository {
         });
     }
 
+    async findChallengeByStep(
+        sessionId: string,
+        step: number,
+    ): Promise<RecoveryChallenge | null> {
+        return this.prisma.recoveryChallenge.findUnique({
+            where: {
+                sessionId_step: {
+                    sessionId,
+                    step,
+                },
+            },
+        });
+    }
+
     async findChallengeByTokenHash(
         tokenHash: string,
     ): Promise<RecoveryChallenge | null> {
         return this.prisma.recoveryChallenge.findFirst({
             where: {
                 tokenHash,
+            },
+        });
+    }
+
+    async findActiveSessionByTokenHash(
+        tokenHash: string,
+    ): Promise<RecoverySessionWithChallenges | null> {
+        return this.prisma.recoverySession.findFirst({
+            where: {
+                tokenHash,
+                expiresAt: {
+                    gt: new Date(),
+                },
+                completedAt: null,
+            },
+            include: {
+                challenges: {
+                    orderBy: {
+                        step: 'asc',
+                    },
+                },
             },
         });
     }

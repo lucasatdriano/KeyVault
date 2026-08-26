@@ -1,7 +1,10 @@
 import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
-import { hashPassword, verifyPassword } from '../../crypto/passwordHasher';
 
+import { AuthRepository } from '../../database/repositories/auth.repository';
+import { hashPassword, verifyPassword } from '../../crypto/passwordHasher';
+import { AuditService } from '../audit.service';
+import { JWTService } from './jwt.service';
 import {
     LoginData,
     RegisterData,
@@ -10,10 +13,6 @@ import {
     ChangePasswordData,
     VerifyEmailResult,
 } from '../../types/service/auth';
-
-import { JWTService } from './jwt.service';
-import { AuditService } from '../audit.service';
-import { AuthRepository } from '../../database/repositories/auth.repository';
 
 import {
     deleteAccessToken,
@@ -37,6 +36,7 @@ import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
 
 import { EmailVerificationRepository } from '../../database/repositories/emailVerification.repository';
 import { EmailService } from './email.service';
+import { RecoverySettingsService } from '../recovery/recovery-settings.service';
 
 export class AuthService {
     private readonly EMAIL_VERIFICATION_DURATION = 15 * 60 * 1000;
@@ -47,6 +47,7 @@ export class AuthService {
         private readonly emailService: EmailService,
         private readonly jwtService: JWTService,
         private readonly auditService: AuditService,
+        private readonly recoverySettingsService: RecoverySettingsService,
         private readonly categoryService: CategoryService,
     ) {}
 
@@ -76,6 +77,8 @@ export class AuthService {
             encryptedVaultKey: JSON.stringify(data.encryptedVaultKey),
         });
 
+        await this.recoverySettingsService.createDefaultMethods(user.id);
+
         await this.categoryService.createMany(user.id, data.categories);
 
         const verificationToken = generateRandomHex(32);
@@ -92,12 +95,6 @@ export class AuthService {
             expiresAt,
             isEmailChange: false,
         });
-
-        // await this.emailService.sendEmailVerification(
-        //     user.email,
-        //     user.name,
-        //     verificationToken,
-        // );
 
         await this.auditService.createLog({
             userId: user.id,

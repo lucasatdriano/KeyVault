@@ -1,6 +1,7 @@
 'use server';
 
 import { User } from '@/src/generated/prisma/client';
+
 import { authService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
 

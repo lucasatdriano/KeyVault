@@ -1,8 +1,9 @@
 'use server';
 
+import { Credential } from '@/src/generated/prisma/client';
+
 import { authService, credentialService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
-import { Credential } from '@/src/generated/prisma/client';
 import { CreateCredentialData } from '../../types/repository/credential';
 import { getAuditContext } from '../../utils/audit-context';
 

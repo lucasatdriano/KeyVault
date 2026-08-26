@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { authService } from '@/src/server/containers/services';
-import { getAuditContext } from '@/src/server/utils/audit-context';
 import {
     INTERNAL_API,
     INTERNAL_API_SECRET,
 } from '@/src/shared/constants/api/api.constants';
+
+import { authService } from '@/src/server/containers/services';
+import { getAuditContext } from '@/src/server/utils/audit-context';
 
 export async function logoutExpiredController(request: NextRequest) {
     const auth = request.headers.get(INTERNAL_API.HEADER);

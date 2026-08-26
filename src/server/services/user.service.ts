@@ -1,19 +1,20 @@
 import { AuditAction, User } from '@/src/generated/prisma/client';
 
-import { UserRepository } from '../database/repositories/user.repository';
-import { RecoveryRepository } from '../database/repositories/recovery.repository';
-import { AuditService } from './audit.service';
-
-import { AuditContext } from '../types/service/audit';
-import { validateNameData } from '../validators/user/name.validator';
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
-import { EmailService } from './auth/email.service';
-import { AuthRepository } from '../database/repositories/auth.repository';
-import { EmailVerificationRepository } from '../database/repositories/emailVerification.repository';
-import { validateEmailData } from '../validators/user/email.validator';
-import { verifyPassword } from '../crypto/passwordHasher';
-import { ChangeEmailData, RegisterResult } from '../types/service/auth';
 import { ChangeUserData } from '@/src/shared/types/profile';
+
+import { EmailVerificationRepository } from '../database/repositories/emailVerification.repository';
+import { RecoveryRepository } from '../database/repositories/recovery.repository';
+import { UserRepository } from '../database/repositories/user.repository';
+import { AuthRepository } from '../database/repositories/auth.repository';
+import { verifyPassword } from '../crypto/passwordHasher';
+import { validateNameData } from '../validators/user/name.validator';
+import { validateEmailData } from '../validators/user/email.validator';
+import { validateUserId } from '../validators/user/user.validator';
+import { EmailService } from './auth/email.service';
+import { AuditService } from './audit.service';
+import { ChangeEmailData, RegisterResult } from '../types/service/auth';
+import { AuditContext } from '../types/service/audit';
 
 export class UserService {
     private readonly EMAIL_VERIFICATION_DURATION = 15 * 60 * 1000;
@@ -28,9 +29,7 @@ export class UserService {
     ) {}
 
     async getProfile(userId: string) {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         const user = await this.userRepository.findById(userId);
 
@@ -39,7 +38,7 @@ export class UserService {
         }
 
         const recoveryMethods =
-            await this.recoveryRepository.findMethodsByUserId(userId);
+            await this.recoveryRepository.findEnabledMethods(userId);
 
         return {
             user: {
@@ -59,9 +58,7 @@ export class UserService {
         data: ChangeUserData,
         audit?: AuditContext,
     ): Promise<User> {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         const user = await this.userRepository.findById(userId);
 
@@ -103,9 +100,7 @@ export class UserService {
         data: ChangeEmailData,
         audit?: AuditContext,
     ): Promise<RegisterResult> {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         if (data.newEmail === undefined) {
             throw new Error('Nenhuma alteração informada.');

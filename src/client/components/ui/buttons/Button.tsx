@@ -18,6 +18,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     fullWidth?: boolean;
     isLoading?: boolean;
     leftIcon?: ReactNode;
+    rightIcon?: ReactNode;
     loadingText?: string;
 }
 
@@ -29,6 +30,7 @@ export default function Button({
     fullWidth = false,
     isLoading = false,
     leftIcon,
+    rightIcon,
     loadingText,
     className = '',
     disabled,
@@ -86,6 +88,10 @@ export default function Button({
             )}
 
             {!isLoading && children}
+
+            {!isLoading && rightIcon && (
+                <span className="shrink-0">{rightIcon}</span>
+            )}
         </button>
     );
 }

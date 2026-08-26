@@ -1,17 +1,26 @@
 export const DEFAULT_CATEGORIES = [
     { name: 'Streamings' },
-    { name: 'Finanças' },
     { name: 'Redes Sociais' },
     { name: 'Jogos' },
+    { name: 'Aplicativos' },
+    { name: 'Finanças' },
     { name: 'Lojas' },
     { name: 'Saúde' },
     { name: 'Instituições' },
     { name: 'Corporativos' },
     { name: 'Técnicos' },
-    { name: 'Aplicativos' },
     { name: 'Acesso Físico' },
     { name: 'Outros' },
 ];
+
+export const CATEGORY_ORDER_MAP: Record<string, number> =
+    DEFAULT_CATEGORIES.reduce(
+        (acc, category, index) => {
+            acc[category.name] = index;
+            return acc;
+        },
+        {} as Record<string, number>,
+    );
 
 export const CATEGORY_COLORS: Record<string, string> = {
     Streamings: 'from-red-500 to-red-600',

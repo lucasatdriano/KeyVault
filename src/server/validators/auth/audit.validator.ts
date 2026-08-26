@@ -1,10 +1,10 @@
 import { AuditAction } from '@/src/generated/prisma/client';
+
 import { CreateAuditLogData } from '../../types/repository/audit';
+import { validateUserId } from '../user/user.validator';
 
 export function validateAuditData(data: CreateAuditLogData): void {
-    if (!data.userId || typeof data.userId !== 'string') {
-        throw new Error('userId inválido');
-    }
+    validateUserId(data.userId);
 
     if (!Object.values(AuditAction).includes(data.action)) {
         throw new Error('Ação de auditoria inválida');

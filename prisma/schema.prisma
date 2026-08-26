@@ -204,23 +204,28 @@ model RecoverySession {
 }
 
 model RecoveryChallenge {
-  id          String          @id @default(cuid())
-  
-  sessionId   String
-  session     RecoverySession @relation( fields: [sessionId], references: [id], onDelete: Cascade)
+    id          String          @id @default(cuid())
 
-  type        RecoveryType
+    sessionId   String
+    session     RecoverySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  tokenHash   String          @db.Text
+    type        RecoveryType
 
-  expiresAt   DateTime
-  completedAt DateTime?
+    step        Int
 
-  createdAt   DateTime        @default(now())
+    tokenHash   String?         @db.Text
 
-  @@index([sessionId])
-  @@index([tokenHash])
-  @@index([expiresAt])
+    expiresAt   DateTime
+    completedAt DateTime?
+
+    createdAt   DateTime @default(now())
+
+    @@unique([sessionId, type])
+    @@unique([sessionId, step])
+
+    @@index([sessionId])
+    @@index([tokenHash])
+    @@index([expiresAt])
 }
 
 model RecoveryQuestion {

@@ -55,7 +55,7 @@ export default function EmailVerificationModal({
 
                     <p className="text-foreground/60 text-sm mt-2">
                         Clique no botão abaixo para continuar com a verificação
-                        do seu novo e-mail.
+                        do seu e-mail.
                     </p>
                 </div>
 

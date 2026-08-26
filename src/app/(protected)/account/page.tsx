@@ -32,6 +32,7 @@ import { updateEmailAction } from '@/src/server/actions/user/update-email.action
 import EmailVerificationModal from '@/src/client/components/layout/modals/authModals/EmailVerificationModal';
 import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
 import { useRouter } from 'next/navigation';
+
 interface ProfileDisplay {
     name: string;
     email: string;
@@ -67,6 +68,7 @@ export default function AccountPage() {
                 if (result.success && result.data) {
                     const { user: userData, recoveryMethods } = result.data;
 
+                    console.log();
                     const profileData: ProfileDisplay = {
                         name: userData.name,
                         email: userData.email,

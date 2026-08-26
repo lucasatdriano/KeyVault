@@ -1,12 +1,13 @@
 'use server';
 
+import { PaginatedResponse } from '@/src/shared/types/pagination';
+
 import { authService, credentialService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
 import {
     CredentialWithCategory,
     FindCredentialsOptions,
 } from '../../types/repository/credential';
-import { PaginatedResponse } from '@/src/shared/types/pagination';
 
 export async function getCredentialsAction(
     params: FindCredentialsOptions = {},

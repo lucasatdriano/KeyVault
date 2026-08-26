@@ -1,5 +1,6 @@
-import { JWTPayload } from '@/src/shared/types/jwt-payload';
 import { jwtVerify, decodeJwt, errors } from 'jose';
+
+import { JWTPayload } from '@/src/shared/types/jwt-payload';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 

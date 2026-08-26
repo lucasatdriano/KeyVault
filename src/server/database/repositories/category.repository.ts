@@ -1,4 +1,5 @@
 import { Category, PrismaClient } from '@/src/generated/prisma/client';
+
 import {
     CreateCategoryData,
     UpdateCategoryData,

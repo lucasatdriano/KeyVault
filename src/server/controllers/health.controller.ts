@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { prisma } from '../database/prisma/prisma';
 
 export async function healthController() {

@@ -1,4 +1,5 @@
 import { Category, Credential } from '@/src/generated/prisma/client';
+
 import { PaginationQuery } from '@/src/shared/types/pagination';
 
 export interface CreateCredentialData {

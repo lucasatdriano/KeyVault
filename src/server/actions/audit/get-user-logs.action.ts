@@ -1,8 +1,9 @@
 'use server';
 
+import { PaginatedResponse } from '@/src/shared/types/pagination';
+
 import { authService, auditService } from '../../containers/services';
 import { ActionResult } from '../../types/action';
-import { PaginatedResponse } from '@/src/shared/types/pagination';
 import {
     AuditLogWithCredential,
     FindUserLogsOptions,

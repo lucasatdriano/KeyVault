@@ -1,19 +1,22 @@
 import { Credential } from '@/src/generated/prisma/client';
 import { AuditAction } from '@/src/generated/prisma/client';
-import { CredentialRepository } from '../database/repositories/credential.repository';
+
 import { PaginatedResponse } from '@/src/shared/types/pagination';
+
+import { CredentialRepository } from '../database/repositories/credential.repository';
+import {
+    validateCreateCredentialData,
+    validateUpdateCredentialData,
+} from '../validators/credential/credential.validator';
+import { validateUserId } from '../validators/user/user.validator';
 import { AuditService } from './audit.service';
+import { AuditContext } from '../types/service/audit';
 import {
     CreateCredentialData,
     CredentialWithCategory,
     FindCredentialsOptions,
     UpdateCredentialData,
 } from '../types/repository/credential';
-import {
-    validateCreateCredentialData,
-    validateUpdateCredentialData,
-} from '../validators/credential/credential.validator';
-import { AuditContext } from '../types/service/audit';
 
 export class CredentialService {
     constructor(
@@ -55,9 +58,7 @@ export class CredentialService {
         userId: string,
         options: FindCredentialsOptions = {},
     ): Promise<PaginatedResponse<CredentialWithCategory>> {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         if (options.page && options.page < 1) {
             throw new Error('Página inválida.');
@@ -188,9 +189,7 @@ export class CredentialService {
     }
 
     async countUserCredentials(userId: string): Promise<number> {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         return this.credentialRepository.countByUser(userId);
     }

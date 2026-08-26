@@ -4,11 +4,13 @@ import {
     Prisma,
     PrismaClient,
 } from '@/src/generated/prisma/client';
+
+import { PaginatedResponse } from '@/src/shared/types/pagination';
+
 import {
     CreateAuditLogData,
     FindUserLogsOptions,
 } from '../../types/repository/audit';
-import { PaginatedResponse } from '@/src/shared/types/pagination';
 
 export class AuditRepository {
     constructor(private readonly prisma: PrismaClient) {}

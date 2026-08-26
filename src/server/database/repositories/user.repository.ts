@@ -1,4 +1,5 @@
 import { PrismaClient, User } from '@/src/generated/prisma/client';
+
 import { ChangeUserData } from '@/src/shared/types/profile';
 
 export class UserRepository {

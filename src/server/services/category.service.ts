@@ -1,5 +1,7 @@
 import { Category } from '@/src/generated/prisma/client';
+
 import { CategoryRepository } from '../database/repositories/category.repository';
+import { validateUserId } from '../validators/user/user.validator';
 import {
     CreateCategoryData,
     UpdateCategoryData,
@@ -9,9 +11,7 @@ export class CategoryService {
     constructor(private readonly categoryRepository: CategoryRepository) {}
 
     async create(data: CreateCategoryData): Promise<Category> {
-        if (!data.userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(data.userId);
 
         if (!data.cipherText) {
             throw new Error('Categoria inválida.');
@@ -24,9 +24,7 @@ export class CategoryService {
         userId: string,
         categories: Omit<CreateCategoryData, 'userId'>[],
     ): Promise<void> {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         if (!categories.length) {
             return;
@@ -50,9 +48,7 @@ export class CategoryService {
     }
 
     async getUserCategories(userId: string): Promise<Category[]> {
-        if (!userId) {
-            throw new Error('userId inválido.');
-        }
+        validateUserId(userId);
 
         return this.categoryRepository.findByUser(userId);
     }

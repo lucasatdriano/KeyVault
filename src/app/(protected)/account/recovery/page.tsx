@@ -1,466 +1,386 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    Shield,
-    Mail,
-    CheckCircle,
-    AlertTriangle,
-    Key,
-    ShieldCheck,
-    ChevronRight,
-    Copy,
-    HelpCircle,
-    AlertCircle,
-    Check,
-    Globe,
+    AlertTriangleIcon,
+    CheckCircleIcon,
     HelpCircleIcon,
+    ShieldCheckIcon,
 } from 'lucide-react';
-import Button from '@/src/client/components/ui/buttons/Button';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import { toast } from 'sonner';
+
+import { getRecoveryMethodsAction } from '@/src/server/actions/recovery/get-recovery-methods.action';
+import { enableRecoveryMethodAction } from '@/src/server/actions/recovery/enable-recovery-method.action';
+import { disableRecoveryMethodAction } from '@/src/server/actions/recovery/disable-recovery-method.action';
+import { configureRecoveryQuestionsAction } from '@/src/server/actions/recovery/configure-recovery-questions.action';
+import { generateRecoveryKeyAction } from '@/src/server/actions/recovery/generate-recovery-key.action';
+
+import { encryptString } from '@/src/shared/crypto/cipher';
+
+import { useVaultStore } from '@/src/client/store/vault.store';
+import { recoveryMethodConfig } from './components/recovery-method.config';
+
 import Header from '@/src/client/components/layout/header/Header';
 import InfoCard from '@/src/client/components/ui/cards/InfoCard';
 
-const recoveryMethods = [
-    {
-        id: '1',
-        name: 'E-mail de recuperação',
-        description: 'Receba um link de recuperação no seu e-mail cadastrado.',
-        type: 'email',
-        value: 'alex.ferreira@gmail.com',
-        risk: 'Baixo',
-        riskLevel: 'low',
-        riskDescription: 'requer acesso ao e-mail cadastrado',
-        isActive: true,
-        icon: Mail,
-    },
-    {
-        id: '2',
-        name: 'Login com Google',
-        description: 'Use sua conta Google para verificar sua identidade.',
-        type: 'google',
-        value: 'alex.ferreira@gmail.com',
-        risk: 'Médio',
-        riskLevel: 'medium',
-        riskDescription: 'requer acesso à conta Google',
-        isActive: false,
-        icon: Globe,
-    },
-    {
-        id: '3',
-        name: 'Perguntas de segurança',
-        description: 'Responda perguntas configuradas por você.',
-        type: 'questions',
-        value: '3 perguntas configuradas',
-        risk: 'Médio',
-        riskLevel: 'medium',
-        riskDescription: 'requer conhecimento das respostas',
-        isActive: false,
-        icon: HelpCircle,
-    },
-];
+import QuizFormModal from '@/src/client/components/layout/modals/recoveryModals/CreateQuestionsRecoveryModal';
+import RecoveryKeyModal from '@/src/client/components/layout/modals/recoveryModals/RecoveryKeyModal';
+
+import RecoveryMethodCard from './components/RecoveryMethodCard';
+import { RecoveryType } from '@/src/shared/types/recovery';
+
+interface RecoveryMethod {
+    id: string;
+    type: RecoveryType;
+    enabled: boolean;
+    secretHash?: string | null;
+}
+
+interface QuizQuestion {
+    id?: string;
+    question: string;
+    answer: string;
+}
 
 export default function RecoveryPage() {
-    const router = useRouter();
-    const [showRecoveryKey, setShowRecoveryKey] = useState(false);
-    const [showSetupModal, setShowSetupModal] = useState(false);
-    const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+    const [methods, setMethods] = useState<RecoveryMethod[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const activeMethods = recoveryMethods.filter((m) => m.isActive);
+    const [showRecoveryKeyModal, setShowRecoveryKeyModal] = useState(false);
+
+    const [showQuestionsModal, setShowQuestionsModal] = useState(false);
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const vaultKey = useVaultStore((state) => state.vaultKey);
+
+    const loadMethods = useCallback(async () => {
+        try {
+            setIsLoading(true);
+
+            const result = await getRecoveryMethodsAction();
+
+            if (!result.success || !result.data) {
+                toast.error(
+                    result.error ?? 'Erro ao carregar métodos de recuperação.',
+                );
+
+                return;
+            }
+
+            setMethods(result.data);
+        } catch {
+            toast.error('Erro ao carregar métodos de recuperação.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadMethods();
+    }, [loadMethods]);
+
+    const activeMethods = useMemo(
+        () => methods.filter((method) => method.enabled),
+        [methods],
+    );
+
     const recoveryLevel =
-        activeMethods.length >= 3
+        activeMethods.length >= 2
             ? 'Alto'
-            : activeMethods.length >= 2
+            : activeMethods.length >= 1
               ? 'Médio'
               : 'Baixo';
+
     const recoveryLevelColor =
-        activeMethods.length >= 3
+        activeMethods.length >= 2
             ? 'text-green-500'
-            : activeMethods.length >= 2
+            : activeMethods.length >= 1
               ? 'text-yellow-500'
               : 'text-error';
+
     const recoveryLevelBg =
-        activeMethods.length >= 3
+        activeMethods.length >= 2
             ? 'bg-green-500/10'
-            : activeMethods.length >= 2
+            : activeMethods.length >= 1
               ? 'bg-yellow-500/10'
               : 'bg-error/10';
 
-    const handleActivateMethod = (id: string) => {
-        console.log('Ativar método:', id);
+    const getMethod = (type: RecoveryType) =>
+        methods.find((method) => method.type === type);
+
+    const recoveryKeyMethod = getMethod(RecoveryType.RECOVERY_KEY);
+
+    const hasRecoveryKey = Boolean(
+        recoveryKeyMethod?.enabled && recoveryKeyMethod?.secretHash,
+    );
+
+    const handleEnableMethod = async (type: RecoveryType) => {
+        if (type === RecoveryType.QUESTIONS) {
+            setShowQuestionsModal(true);
+
+            return;
+        }
+
+        if (type === RecoveryType.RECOVERY_KEY) {
+            setShowRecoveryKeyModal(true);
+
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+
+            const result = await enableRecoveryMethodAction(type);
+
+            if (!result.success) {
+                toast.error(result.error ?? 'Erro ao ativar método.');
+
+                return;
+            }
+
+            toast.success('Método de recuperação ativado com sucesso.');
+
+            await loadMethods();
+        } catch {
+            toast.error('Erro ao ativar método de recuperação.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const handleConfigureMethod = (id: string) => {
-        setSelectedMethod(id);
-        setShowSetupModal(true);
+    const handleDisableMethod = async (type: RecoveryType) => {
+        try {
+            setIsSubmitting(true);
+
+            const result = await disableRecoveryMethodAction(type);
+
+            if (!result.success) {
+                toast.error(result.error ?? 'Erro ao desativar método.');
+
+                return;
+            }
+
+            toast.success('Método de recuperação desativado.');
+
+            await loadMethods();
+        } catch {
+            toast.error('Erro ao desativar método de recuperação.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const handleRemoveMethod = (id: string) => {
-        console.log('Remover método:', id);
+    const handleConfigureQuestions = async (questions: QuizQuestion[]) => {
+        if (!vaultKey) {
+            toast.error('Não foi possível acessar a chave do cofre.');
+
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+
+            const encryptedQuestions = await Promise.all(
+                questions.map(async (question) => {
+                    const encrypted = await encryptString(
+                        question.question,
+                        vaultKey,
+                    );
+
+                    return {
+                        questionCipherText: encrypted.cipherText,
+                        questionIv: encrypted.iv,
+                        answer: question.answer.trim().toLowerCase(),
+                    };
+                }),
+            );
+
+            const result =
+                await configureRecoveryQuestionsAction(encryptedQuestions);
+
+            if (!result.success) {
+                toast.error(result.error ?? 'Erro ao configurar perguntas.');
+
+                return;
+            }
+
+            toast.success('Perguntas de segurança configuradas com sucesso.');
+
+            setShowQuestionsModal(false);
+
+            await loadMethods();
+        } catch {
+            toast.error('Erro ao configurar perguntas de segurança.');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const handleViewRecoveryKey = () => {
-        setShowRecoveryKey(true);
+    const handleGenerateRecoveryKey = async (): Promise<string> => {
+        const result = await generateRecoveryKeyAction();
+
+        if (!result.success || !result.data) {
+            throw new Error(
+                result.error ?? 'Erro ao gerar chave de recuperação.',
+            );
+        }
+
+        return result.data;
     };
 
-    const handleCopyRecoveryKey = () => {
-        navigator.clipboard.writeText('KEYVAULT-XK7M-P9R2-WQ4N');
-        console.log('Recovery key copiada');
+    const handleConfigureMethod = (type: RecoveryType) => {
+        if (type === RecoveryType.QUESTIONS) {
+            setShowQuestionsModal(true);
+
+            return;
+        }
+
+        if (type === RecoveryType.RECOVERY_KEY) {
+            setShowRecoveryKeyModal(true);
+        }
     };
 
-    const getRiskBadgeColor = (riskLevel: string) => {
-        const colors: Record<string, string> = {
-            low: 'bg-green-500/20 text-green-500 border-green-500/30',
-            medium: 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30',
-            high: 'bg-error/20 text-error border-error/30',
-        };
+    if (isLoading) {
         return (
-            colors[riskLevel] || 'bg-white/5 text-foreground/40 border-white/10'
+            <div className="space-y-6">
+                <Header variant="recovery" />
+
+                <div className="mx-4 rounded-2xl border border-white/10 bg-white/5 p-6">
+                    <p className="text-sm text-foreground/40">
+                        Carregando métodos de recuperação...
+                    </p>
+                </div>
+            </div>
         );
-    };
+    }
 
     return (
-        <div className="space-y-6">
-            <Header variant="recovery" />
+        <>
+            <div className="space-y-6">
+                <Header variant="recovery" />
 
-            <div className="bg-white/5 rounded-2xl border border-white/10 p-6 mx-4">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <div
-                            className={`w-12 h-12 rounded-xl ${recoveryLevelBg} flex items-center justify-center`}
-                        >
-                            <ShieldCheck
-                                className={`w-6 h-6 ${recoveryLevelColor}`}
-                            />
-                        </div>
-                        <div>
-                            <h2 className="text-sm font-semibold text-foreground/40 uppercase tracking-wider">
-                                Nível de Recuperação
-                            </h2>
-                            <p
-                                className={`text-2xl font-bold ${recoveryLevelColor}`}
-                            >
-                                {recoveryLevel}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <p className="text-xs text-foreground/40">
-                            {activeMethods.length} de {recoveryMethods.length}{' '}
-                            métodos ativos
-                        </p>
-                    </div>
-                </div>
-
-                <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                    <div className="flex items-start gap-3">
-                        {activeMethods.length >= 2 ? (
-                            <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                        ) : (
-                            <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
-                        )}
-                        <div>
-                            <p className="text-sm text-foreground/60">
-                                {activeMethods.length >= 2
-                                    ? 'Bom! Adicione mais um método para aumentar a segurança de recuperação.'
-                                    : 'Adicione mais métodos de recuperação para aumentar a segurança da sua conta.'}
-                            </p>
-                            <p className="text-xs text-foreground/30 mt-1">
-                                Recomendamos ativar ao menos 2 métodos
-                                independentes.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="space-y-4 mx-4">
-                {recoveryMethods.map((method) => {
-                    const Icon = method.icon;
-                    const isActive = method.isActive;
-
-                    return (
-                        <div
-                            key={method.id}
-                            className={`
-                                bg-white/5 rounded-2xl border p-5 transition-all
-                                ${
-                                    isActive
-                                        ? 'border-primary/30 hover:border-primary/50'
-                                        : 'border-white/10 hover:border-white/20'
-                                }
-                            `}
-                        >
-                            <div className="flex flex-col md:flex-row md:items-start gap-4">
-                                <div className="flex items-start gap-4 flex-1">
-                                    <div
-                                        className={`
-                                        w-12 h-12 rounded-xl flex items-center justify-center shrink-0
-                                        ${
-                                            isActive
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'bg-white/5 text-foreground/30'
-                                        }
-                                    `}
-                                    >
-                                        <Icon className="w-6 h-6" />
-                                    </div>
-
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3 flex-wrap">
-                                            <h3 className="text-base font-semibold text-foreground">
-                                                {method.name}
-                                            </h3>
-                                            <span
-                                                className={`
-                                                px-2 py-0.5 rounded-full text-[10px] font-medium border
-                                                ${
-                                                    isActive
-                                                        ? 'bg-green-500/20 text-green-500 border-green-500/30'
-                                                        : 'bg-white/5 text-foreground/30 border-white/10'
-                                                }
-                                            `}
-                                            >
-                                                {isActive ? 'Ativo' : 'Inativo'}
-                                            </span>
-                                            <span
-                                                className={`
-                                                px-2 py-0.5 rounded-full text-[10px] font-medium border
-                                                ${getRiskBadgeColor(method.riskLevel)}
-                                            `}
-                                            >
-                                                {method.risk} risco
-                                            </span>
-                                        </div>
-
-                                        <p className="text-sm text-foreground/60 mt-1">
-                                            {method.description}
-                                        </p>
-
-                                        {method.value && (
-                                            <p className="text-xs text-foreground/40 mt-1">
-                                                {method.value}
-                                            </p>
-                                        )}
-
-                                        <p className="text-xs text-foreground/30 mt-2 flex items-center gap-1">
-                                            <AlertCircle className="w-3 h-3" />
-                                            {method.riskDescription}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 shrink-0">
-                                    {isActive ? (
-                                        <>
-                                            <button
-                                                onClick={() =>
-                                                    handleConfigureMethod(
-                                                        method.id,
-                                                    )
-                                                }
-                                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-all"
-                                            >
-                                                Configurar
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    handleRemoveMethod(
-                                                        method.id,
-                                                    )
-                                                }
-                                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-error/10 text-error hover:bg-error/20 transition-all"
-                                            >
-                                                Remover
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <button
-                                            onClick={() =>
-                                                handleActivateMethod(method.id)
-                                            }
-                                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-white hover:bg-primary/90 transition-all"
-                                        >
-                                            Ativar
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            <div className="bg-white/5 rounded-2xl border border-white/10 p-6 mx-4">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
-                        <Key className="w-5 h-5 text-yellow-500" />
-                    </div>
-                    <div>
-                        <h2 className="text-sm font-semibold text-foreground/40 uppercase tracking-wider">
-                            Recovery Key
-                        </h2>
-                        <p className="text-xs text-foreground/40">
-                            Uma chave de 32 caracteres gerada no cadastro.
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-3">
-                    <button
-                        onClick={handleViewRecoveryKey}
-                        className="flex-1 flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all border border-white/10"
-                    >
+                <div className="mx-4 rounded-2xl border border-white/10 bg-white/5 p-6">
+                    <div className="mb-4 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
-                                <ShieldCheck className="w-5 h-5 text-yellow-500" />
+                            <div
+                                className={`flex h-12 w-12 items-center justify-center rounded-xl ${recoveryLevelBg}`}
+                            >
+                                <ShieldCheckIcon
+                                    className={`h-6 w-6 ${recoveryLevelColor}`}
+                                />
                             </div>
-                            <div className="text-left">
-                                <p className="text-sm font-medium text-foreground">
-                                    Ver recovery key
-                                </p>
-                                <p className="text-xs text-foreground/40">
-                                    Sua chave de recuperação de emergência
+
+                            <div>
+                                <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground/40">
+                                    Nível de Recuperação
+                                </h2>
+
+                                <p
+                                    className={`text-2xl font-bold ${recoveryLevelColor}`}
+                                >
+                                    {recoveryLevel}
                                 </p>
                             </div>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-foreground/30" />
-                    </button>
+
+                        <div className="text-right">
+                            <p className="text-xs text-foreground/40">
+                                {activeMethods.length} de{' '}
+                                {Object.keys(recoveryMethodConfig).length}{' '}
+                                métodos ativos
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+                        <div className="flex items-start gap-3">
+                            {activeMethods.length >= 2 ? (
+                                <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
+                            ) : (
+                                <AlertTriangleIcon className="mt-0.5 h-5 w-5 shrink-0 text-yellow-500" />
+                            )}
+
+                            <div>
+                                <p className="text-sm text-foreground/60">
+                                    {activeMethods.length >= 2
+                                        ? 'Bom! Adicione mais um método para aumentar a segurança da recuperação.'
+                                        : 'Adicione mais métodos de recuperação para aumentar a segurança da sua conta.'}
+                                </p>
+
+                                <p className="mt-1 text-xs text-foreground/30">
+                                    Recomendamos ativar ao menos 2 métodos
+                                    independentes.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <div className="mx-4 space-y-4">
+                    {Object.values(recoveryMethodConfig).map((config) => {
+                        const method = getMethod(config.type);
+
+                        const isActive = method?.enabled ?? false;
+
+                        return (
+                            <RecoveryMethodCard
+                                key={config.type}
+                                config={config}
+                                isActive={isActive}
+                                isSubmitting={isSubmitting}
+                                onEnable={() => handleEnableMethod(config.type)}
+                                onDisable={() =>
+                                    handleDisableMethod(config.type)
+                                }
+                                onConfigure={
+                                    config.type !== RecoveryType.EMAIL
+                                        ? () =>
+                                              handleConfigureMethod(config.type)
+                                        : undefined
+                                }
+                            />
+                        );
+                    })}
+                </div>
+
+                <InfoCard
+                    icon={HelpCircleIcon}
+                    title="Como funciona a recuperação?"
+                    variant="primary"
+                >
+                    <>
+                        Se você esquecer sua senha mestre, os métodos ativos
+                        acima permitirão verificar sua identidade e criar uma
+                        nova senha.{' '}
+                        <span className="text-foreground/40">
+                            Recomendamos ativar ao menos 2 métodos
+                            independentes.
+                        </span>
+                    </>
+                </InfoCard>
             </div>
 
-            <InfoCard
-                icon={HelpCircleIcon}
-                title="Como funciona a recuperação?"
-                variant="primary"
-            >
-                <>
-                    Se você esquecer sua senha mestre, os métodos ativos acima
-                    permitirão verificar sua identidade e criar uma nova senha.
-                    <span className="text-foreground/40">
-                        {' '}
-                        Recomendamos ativar ao menos 2 métodos independentes.
-                    </span>
-                </>
-            </InfoCard>
+            <RecoveryKeyModal
+                isOpen={showRecoveryKeyModal}
+                onClose={(shouldReload) => {
+                    setShowRecoveryKeyModal(false);
+                    if (shouldReload) {
+                        loadMethods();
+                    }
+                }}
+                hasRecoveryKey={hasRecoveryKey}
+                onGenerate={handleGenerateRecoveryKey}
+            />
 
-            {showRecoveryKey && (
-                <>
-                    <div
-                        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-                        onClick={() => setShowRecoveryKey(false)}
-                    />
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="relative w-full max-w-md bg-background/95 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-300">
-                            <div className="flex justify-center mb-4">
-                                <div className="w-16 h-16 rounded-full bg-yellow-500/10 flex items-center justify-center border-2 border-yellow-500/20">
-                                    <Key className="w-8 h-8 text-yellow-500" />
-                                </div>
-                            </div>
-
-                            <h2 className="text-xl font-bold text-foreground text-center mb-2">
-                                Recovery Key
-                            </h2>
-                            <p className="text-foreground/60 text-sm text-center mb-4">
-                                Guarde esta chave em um local seguro. Ela
-                                permite recuperar sua conta em caso de perda de
-                                acesso.
-                            </p>
-
-                            <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
-                                <p className="font-mono text-center text-lg text-foreground tracking-wider select-all">
-                                    KEYVAULT-XK7M-P9R2-WQ4N
-                                </p>
-                            </div>
-
-                            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-3 mb-4">
-                                <div className="flex items-start gap-2">
-                                    <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
-                                    <p className="text-xs text-yellow-500/80">
-                                        Nunca compartilhe esta chave. Ela
-                                        concede acesso à sua conta.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={handleCopyRecoveryKey}
-                                    className="flex-1 bg-primary text-white font-medium py-3 rounded-xl hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                                >
-                                    <Copy className="w-4 h-4" />
-                                    Copiar
-                                </button>
-                                <button
-                                    onClick={() => setShowRecoveryKey(false)}
-                                    className="flex-1 bg-white/5 text-foreground font-medium py-3 rounded-xl hover:bg-white/10 transition-all"
-                                >
-                                    Fechar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {showSetupModal && (
-                <>
-                    <div
-                        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-                        onClick={() => setShowSetupModal(false)}
-                    />
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="relative w-full max-w-md bg-background/95 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl p-6 animate-in slide-in-from-bottom-4 duration-300">
-                            <div className="flex justify-center mb-4">
-                                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
-                                    <Shield className="w-8 h-8 text-primary" />
-                                </div>
-                            </div>
-
-                            <h2 className="text-xl font-bold text-foreground text-center mb-2">
-                                Configurar método
-                            </h2>
-                            <p className="text-foreground/60 text-sm text-center mb-6">
-                                Configure as informações necessárias para este
-                                método de recuperação.
-                            </p>
-
-                            <div className="space-y-4">
-                                <InputTextForm
-                                    label="Valor"
-                                    placeholder="Digite o valor..."
-                                    leftIcon={<Mail className="w-5 h-5" />}
-                                />
-                                <InputTextForm
-                                    label="Confirmar"
-                                    placeholder="Digite novamente..."
-                                    leftIcon={<Check className="w-5 h-5" />}
-                                />
-                            </div>
-
-                            <div className="flex gap-3 mt-6">
-                                <Button
-                                    onClick={() => setShowSetupModal(false)}
-                                    variant="secondary"
-                                    fullWidth
-                                >
-                                    Cancelar
-                                </Button>
-                                <Button
-                                    onClick={() => {
-                                        setShowSetupModal(false);
-                                        console.log('Método configurado');
-                                    }}
-                                    fullWidth
-                                >
-                                    Salvar
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
-        </div>
+            <QuizFormModal
+                isOpen={showQuestionsModal}
+                onClose={() => setShowQuestionsModal(false)}
+                onSave={handleConfigureQuestions}
+                maxQuestions={3}
+                isLoading={isSubmitting}
+            />
+        </>
     );
 }

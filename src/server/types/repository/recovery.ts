@@ -1,3 +1,7 @@
+import {
+    RecoveryChallenge,
+    RecoverySession,
+} from '@/src/generated/prisma/client';
 import { RecoveryType } from '@/src/generated/prisma/enums';
 
 export interface CreateRecoveryMethodData {
@@ -38,6 +42,18 @@ export interface UpdateRecoverySessionData {
 export interface CreateRecoveryChallengeData {
     sessionId: string;
     type: RecoveryType;
-    tokenHash: string;
+    step: number;
+    tokenHash?: string | null;
     expiresAt: Date;
+}
+
+export type RecoverySessionWithChallenges = RecoverySession & {
+    challenges: RecoveryChallenge[];
+};
+
+// service
+export interface RecoveryQuestionData {
+    questionCipherText: string;
+    questionIv: string;
+    answer: string;
 }
