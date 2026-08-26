@@ -11,8 +11,8 @@ import {
     CredentialWithCategory,
     FindCredentialsOptions,
     UpdateCredentialData,
-} from '../../types/repository/credential';
-import { getThirtyDaysAgo } from '../../utils/date';
+} from '@/src/server/types/repository/credential';
+import { getThirtyDaysAgo } from '@/src/server/utils/date';
 
 export class CredentialRepository {
     constructor(private readonly prisma: PrismaClient) {}

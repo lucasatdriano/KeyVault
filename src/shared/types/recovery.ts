@@ -1,6 +1,7 @@
 export const RecoveryType = {
     EMAIL: 'EMAIL',
     QUESTIONS: 'QUESTIONS',
+    RECOVERY_PASSWORD: 'RECOVERY_PASSWORD',
     RECOVERY_KEY: 'RECOVERY_KEY',
 } as const;
 

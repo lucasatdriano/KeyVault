@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import {
     ACCESS_TOKEN_COOKIE_NAME,
     COOKIE_OPTIONS,
-} from '../../shared/constants/auth/cookies.constants';
+} from '@/src/shared/constants/auth/cookies.constants';
 
 export async function getAccessToken(): Promise<string | undefined> {
     const cookieStore = await cookies();

@@ -1,6 +1,6 @@
 import { PrismaClient, User } from '@/src/generated/prisma/client';
 
-import { CreateUserData } from '../../types/repository/auth';
+import { CreateUserData } from '@/src/server/types/repository/auth';
 
 export class AuthRepository {
     constructor(private readonly prisma: PrismaClient) {}

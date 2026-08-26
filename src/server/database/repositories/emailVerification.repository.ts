@@ -1,6 +1,6 @@
 import { EmailVerification, PrismaClient } from '@/src/generated/prisma/client';
 
-import { CreateEmailVerificationData } from '../../types/repository/emailVerification';
+import { CreateEmailVerificationData } from '@/src/server/types/repository/emailVerification';
 
 export class EmailVerificationRepository {
     constructor(private readonly prisma: PrismaClient) {}

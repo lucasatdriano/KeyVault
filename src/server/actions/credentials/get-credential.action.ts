@@ -2,8 +2,8 @@
 
 import { Credential } from '@/src/generated/prisma/client';
 
-import { credentialService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
+import { credentialService } from '@/src/server/containers/services';
+import { ActionResult } from '@/src/server/types/action';
 
 export async function getCredentialAction(
     id: string,

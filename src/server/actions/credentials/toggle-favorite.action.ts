@@ -2,8 +2,11 @@
 
 import { Credential } from '@/src/generated/prisma/client';
 
-import { authService, credentialService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
+import {
+    authService,
+    credentialService,
+} from '@/src/server/containers/services';
+import { ActionResult } from '@/src/server/types/action';
 
 export async function toggleFavoriteAction(
     id: string,

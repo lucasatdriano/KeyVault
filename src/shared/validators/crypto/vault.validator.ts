@@ -2,7 +2,7 @@ import {
     CRYPTO_VERSION,
     VAULT_KEY_LENGTH,
 } from '@/src/shared/constants/crypto/vault.constants';
-import { EncryptedVault } from '../../types/crypto/vault';
+import { EncryptedVault } from '@/src/shared/types/crypto/vault';
 
 export function validateVaultKey(vaultKey: Uint8Array): void {
     if (!(vaultKey instanceof Uint8Array)) {

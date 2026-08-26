@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
-import { emailVerificationTemplate } from '../../email/templates/verificationEmail.template';
-import { recoveryEmailTemplate } from '../../email/templates/recoveryEmail.template';
+import { emailVerificationTemplate } from '@/src/server/email/templates/verificationEmail.template';
+import { recoveryEmailTemplate } from '@/src/server/email/templates/recoveryEmail.template';
 
 export class EmailService {
     private readonly resend: Resend;

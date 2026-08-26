@@ -2,8 +2,8 @@
 
 import { User } from '@/src/generated/prisma/client';
 
-import { authService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
+import { authService } from '@/src/server/containers/services';
+import { ActionResult } from '@/src/server/types/action';
 
 export async function currentUserAction(): Promise<ActionResult<User | null>> {
     try {

@@ -1,10 +1,10 @@
 'use server';
 
-import { deleteAccessToken } from '../../auth/cookies';
-import { authService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
-import { VerifyEmailResult } from '../../types/service/auth';
-import { getAuditContext } from '../../utils/audit-context';
+import { deleteAccessToken } from '@/src/server/auth/cookies';
+import { authService } from '@/src/server/containers/services';
+import { getAuditContext } from '@/src/server/utils/audit-context';
+import { ActionResult } from '@/src/server/types/action';
+import { VerifyEmailResult } from '@/src/server/types/service/auth';
 
 export async function verifyEmailAction(
     token: string,

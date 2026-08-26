@@ -1,4 +1,4 @@
-import { EncryptedField } from '../../types/crypto/cipher';
+import { EncryptedField } from '@/src/shared/types/crypto/cipher';
 
 export function validateEncrypt(value: string, vaultKey: Uint8Array): void {
     if (typeof value !== 'string') {

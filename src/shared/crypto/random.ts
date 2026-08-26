@@ -54,3 +54,11 @@ export async function generateSha256(data: string): Promise<string> {
 
     return bytesToHex(new Uint8Array(hash));
 }
+
+export function generateRecoveryKey(): string {
+    const segments = Array.from({ length: 3 }, () =>
+        generateRandomHex(3).toUpperCase(),
+    );
+
+    return `KV-${segments.join('-')}`;
+}

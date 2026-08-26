@@ -1,6 +1,6 @@
 import { AuditAction } from '@/src/generated/prisma/client';
 
-import { CreateAuditLogData } from '../../types/repository/audit';
+import { CreateAuditLogData } from '@/src/server/types/repository/audit';
 import { validateUserId } from '../user/user.validator';
 
 export function validateAuditData(data: CreateAuditLogData): void {

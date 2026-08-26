@@ -40,7 +40,15 @@ enum AuditAction {
 enum RecoveryType {
   EMAIL
   QUESTIONS
+  RECOVERY_PASSWORD
   RECOVERY_KEY
+}
+
+enum RecoverySessionStatus {
+  ACTIVE
+  COMPLETED
+  FAILED
+  EXPIRED
 }
 
 model User {
@@ -180,52 +188,58 @@ model RecoveryMethod {
 }
 
 model RecoverySession {
-  id             String   @id @default(cuid())
-  
+  id             String                @id @default(cuid())
+
   userId         String
-  user           User     @relation( fields: [userId], references: [id], onDelete: Cascade)
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  currentStep    Int      @default(0)
-  completedSteps Int      @default(0)
+  currentStep    Int                   @default(0)
+  completedSteps Int                   @default(0)
 
-  tokenHash      String   @db.Text
+  tokenHash      String                @db.Text
+
+  status         RecoverySessionStatus @default(ACTIVE)
 
   expiresAt      DateTime
   completedAt    DateTime?
 
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
   challenges     RecoveryChallenge[]
 
   @@index([userId])
   @@index([tokenHash])
   @@index([expiresAt])
+  @@index([status])
 }
 
 model RecoveryChallenge {
-    id          String          @id @default(cuid())
+  id          String          @id @default(cuid())
 
-    sessionId   String
-    session     RecoverySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId   String
+  session     RecoverySession @relation( fields: [sessionId], references: [id], onDelete: Cascade)
 
-    type        RecoveryType
+  type        RecoveryType
 
-    step        Int
+  step        Int
 
-    tokenHash   String?         @db.Text
+  tokenHash   String?         @db.Text
 
-    expiresAt   DateTime
-    completedAt DateTime?
+  attempts    Int             @default(0)
+  maxAttempts Int             @default(5)
 
-    createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  completedAt DateTime?
 
-    @@unique([sessionId, type])
-    @@unique([sessionId, step])
+  createdAt   DateTime        @default(now())
 
-    @@index([sessionId])
-    @@index([tokenHash])
-    @@index([expiresAt])
+  @@unique([sessionId, type])
+  @@unique([sessionId, step])
+
+  @@index([sessionId])
+  @@index([tokenHash])
+  @@index([expiresAt])
 }
 
 model RecoveryQuestion {

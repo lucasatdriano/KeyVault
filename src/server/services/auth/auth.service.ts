@@ -1,10 +1,32 @@
+import { AuditAction, User } from '@/src/generated/prisma/client';
+
+import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
+import { changeMasterPassword } from '@/src/shared/crypto/vault';
 import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 
-import { AuthRepository } from '../../database/repositories/auth.repository';
-import { hashPassword, verifyPassword } from '../../crypto/passwordHasher';
-import { AuditService } from '../audit.service';
-import { JWTService } from './jwt.service';
+import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
+import { EmailVerificationRepository } from '@/src/server/database/repositories/emailVerification.repository';
+import {
+    hashPassword,
+    verifyPassword,
+} from '@/src/server/crypto/passwordHasher';
+import {
+    deleteAccessToken,
+    getAccessToken,
+    setAccessToken,
+} from '@/src/server/auth/cookies';
+import {
+    validateChangePasswordData,
+    validateLoginData,
+    validateRegisterData,
+} from '@/src/server/validators/auth/auth.validator';
+import { AuditService } from '@/src/server/services/audit.service';
+import { CategoryService } from '@/src/server/services/category.service';
+import { EmailService } from '@/src/server/services/auth/email.service';
+import { JWTService } from '@/src/server/services/auth/jwt.service';
+import { RecoverySettingsService } from '@/src/server/services/recovery/recovery-settings.service';
+import { AuditContext } from '@/src/server/types/service/audit';
 import {
     LoginData,
     RegisterData,
@@ -12,31 +34,7 @@ import {
     RegisterResult,
     ChangePasswordData,
     VerifyEmailResult,
-} from '../../types/service/auth';
-
-import {
-    deleteAccessToken,
-    getAccessToken,
-    setAccessToken,
-} from '../../auth/cookies';
-
-import { changeMasterPassword } from '@/src/shared/crypto/vault';
-
-import { AuditAction, User } from '@/src/generated/prisma/client';
-
-import {
-    validateChangePasswordData,
-    validateLoginData,
-    validateRegisterData,
-} from '../../validators/auth/auth.validator';
-
-import { AuditContext } from '../../types/service/audit';
-import { CategoryService } from '../category.service';
-import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
-
-import { EmailVerificationRepository } from '../../database/repositories/emailVerification.repository';
-import { EmailService } from './email.service';
-import { RecoverySettingsService } from '../recovery/recovery-settings.service';
+} from '@/src/server/types/service/auth';
 
 export class AuthService {
     private readonly EMAIL_VERIFICATION_DURATION = 15 * 60 * 1000;

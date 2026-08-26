@@ -1,5 +1,6 @@
 import { AuditAction } from '@/src/generated/prisma/client';
-import { ACTION_MAP } from '../../constants/actionAudit';
+
+import { ACTION_MAP } from '@/src/client/constants/actionAudit';
 
 export function mapAuditSearch(search: string): {
     action?: AuditAction;

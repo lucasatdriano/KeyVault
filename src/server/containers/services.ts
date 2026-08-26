@@ -1,22 +1,23 @@
 import {
     auditRepository,
-    authRepository,
     categoryRepository,
-    credentialRepository,
-    emailVerificationRepository,
     recoveryRepository,
+    emailVerificationRepository,
+    authRepository,
     userRepository,
+    credentialRepository,
 } from './repository';
 
-import { AuditService } from '../services/audit.service';
-import { AuthService } from '../services/auth/auth.service';
 import { JWTService } from '../services/auth/jwt.service';
+import { AuditService } from '../services/audit.service';
 import { CategoryService } from '../services/category.service';
-import { CredentialService } from '../services/credential.service';
-import { UserService } from '../services/user.service';
-import { EmailService } from '../services/auth/email.service';
-import { RecoverySettingsService } from '../services/recovery/recovery-settings.service';
+import { RecoverySessionService } from '../services/recovery/recovery-session.service';
 import { RecoveryFlowService } from '../services/recovery/recovery-flow.service';
+import { RecoverySettingsService } from '../services/recovery/recovery-settings.service';
+import { EmailService } from '../services/auth/email.service';
+import { AuthService } from '../services/auth/auth.service';
+import { UserService } from '../services/user.service';
+import { CredentialService } from '../services/credential.service';
 
 export const jwtService = new JWTService(process.env.JWT_SECRET);
 
@@ -24,9 +25,14 @@ export const auditService = new AuditService(auditRepository);
 
 export const categoryService = new CategoryService(categoryRepository);
 
+export const recoverySessionService = new RecoverySessionService(
+    recoveryRepository,
+);
+
 export const recoveryFlowService = new RecoveryFlowService(
     recoveryRepository,
     authRepository,
+    recoverySessionService,
 );
 
 export const recoverySettingsService = new RecoverySettingsService(

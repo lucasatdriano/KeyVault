@@ -3,11 +3,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getCategoriesAction } from '@/src/server/actions/category/get-categories.action';
+
 import { DecryptedCategory } from '@/src/shared/types/category';
+
+import { useCategoriesStore } from '@/src/client/store/category.store';
 import { useVaultStore } from '@/src/client/store/vault.store';
-import { decryptCategory } from '../../utils/categories/category-decryption';
-import { useCategoriesStore } from '../../store/category.store';
-import { sortCategoriesByOrder } from '../../utils/categories/category-sort';
+import { decryptCategory } from '@/src/client/utils/categories/category-decryption';
+import { sortCategoriesByOrder } from '@/src/client/utils/categories/category-sort';
 
 interface UseCategoriesOptions {
     autoLoad?: boolean;

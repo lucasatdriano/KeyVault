@@ -10,8 +10,8 @@ import {
 } from 'lucide-react';
 
 import ModalBase from '../ModalBase';
-import InputTextForm from '../../../ui/inputs/InputTextForm';
-import Button from '../../../ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import Button from '@/src/client/components/ui/buttons/Button';
 
 import { ChangePasswordFormData } from '@/src/shared/types/auth';
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';

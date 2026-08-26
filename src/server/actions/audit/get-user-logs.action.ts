@@ -2,12 +2,12 @@
 
 import { PaginatedResponse } from '@/src/shared/types/pagination';
 
-import { authService, auditService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
+import { authService, auditService } from '@/src/server/containers/services';
+import { ActionResult } from '@/src/server/types/action';
 import {
     AuditLogWithCredential,
     FindUserLogsOptions,
-} from '../../types/repository/audit';
+} from '@/src/server/types/repository/audit';
 
 export async function getUserLogsAction(
     params: FindUserLogsOptions = {},

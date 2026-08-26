@@ -4,7 +4,7 @@ import {
     MIN_HASH_LENGTH,
     MIN_SALT_LENGTH,
 } from '@/src/shared/constants/crypto/argon2.constants';
-import { Argon2Params } from '../../types/crypto/argon2';
+import { Argon2Params } from '@/src/shared/types/crypto/argon2';
 
 export function validateSalt(salt: Uint8Array): void {
     if (!(salt instanceof Uint8Array)) {

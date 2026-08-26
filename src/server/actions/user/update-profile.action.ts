@@ -2,9 +2,9 @@
 
 import { User } from '@/src/generated/prisma/client';
 
-import { authService, userService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
-import { getAuditContext } from '../../utils/audit-context';
+import { authService, userService } from '@/src/server/containers/services';
+import { getAuditContext } from '@/src/server/utils/audit-context';
+import { ActionResult } from '@/src/server/types/action';
 
 export async function updateUserNameAction(
     name: string,

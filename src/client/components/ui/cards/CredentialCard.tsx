@@ -14,7 +14,7 @@ import {
     ShieldIcon,
 } from 'lucide-react';
 import { Credential } from '@/src/shared/types/credential';
-import DeleteConfirmationModal from '../../layout/modals/credentialsModals/DeleteCredentialModal';
+import DeleteConfirmationModal from '@/src/client/components/layout/modals/credentialsModals/DeleteCredentialModal';
 import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
 import {
     getCategoryBadgeColor,

@@ -2,8 +2,8 @@
 
 import { Category } from '@/src/generated/prisma/client';
 
-import { authService, categoryService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
+import { authService, categoryService } from '@/src/server/containers/services';
+import { ActionResult } from '@/src/server/types/action';
 
 export async function getCategoriesAction(): Promise<
     ActionResult<Category[] | null>

@@ -5,17 +5,16 @@ import { RecoveryMethod } from '@/src/generated/prisma/client';
 import {
     authService,
     recoverySettingsService,
-} from '../../containers/services';
-import { ActionResult } from '../../types/action';
-import { RecoveryQuestionData } from '../../types/repository/recovery';
-import { getAuditContext } from '../../utils/audit-context';
+} from '@/src/server/containers/services';
+import { getAuditContext } from '@/src/server/utils/audit-context';
+import { ActionResult } from '@/src/server/types/action';
+import { RecoveryQuestionData } from '@/src/server/types/service/recovery';
 
 export async function configureRecoveryQuestionsAction(
     questions: RecoveryQuestionData[],
 ): Promise<ActionResult<RecoveryMethod | null>> {
     try {
         const user = await authService.requireAuth();
-
         const audit = await getAuditContext();
 
         const method = await recoverySettingsService.configureQuestions(

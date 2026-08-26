@@ -1,8 +1,11 @@
 'use server';
 
-import { authService, credentialService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
-import { getAuditContext } from '../../utils/audit-context';
+import {
+    authService,
+    credentialService,
+} from '@/src/server/containers/services';
+import { getAuditContext } from '@/src/server/utils/audit-context';
+import { ActionResult } from '@/src/server/types/action';
 
 export async function restoreCredentialAction(
     id: string,

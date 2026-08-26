@@ -10,7 +10,7 @@ import { PaginatedResponse } from '@/src/shared/types/pagination';
 import {
     CreateAuditLogData,
     FindUserLogsOptions,
-} from '../../types/repository/audit';
+} from '@/src/server/types/repository/audit';
 
 export class AuditRepository {
     constructor(private readonly prisma: PrismaClient) {}

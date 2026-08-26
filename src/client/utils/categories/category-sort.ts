@@ -1,5 +1,6 @@
 import { DecryptedCategory } from '@/src/shared/types/category';
-import { CATEGORY_ORDER_MAP } from '../../constants/categories';
+
+import { CATEGORY_ORDER_MAP } from '@/src/client/constants/categories';
 
 export const sortCategoriesByOrder = (
     categoriesToSort: DecryptedCategory[],

@@ -1,11 +1,16 @@
 import { RecoveryType } from '@/src/generated/prisma/client';
 
-import { RECOVERY_ORDER } from '@/src/shared/constants/recovery/recovery.constants';
+import {
+    RECOVERY_MAX_ATTEMPTS,
+    RECOVERY_ORDER,
+} from '@/src/shared/constants/recovery/recovery.constants';
+
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
 
-import { RecoveryRepository } from '../../database/repositories/recovery.repository';
-import { AuthRepository } from '../../database/repositories/auth.repository';
-import { verifyPassword } from '../../crypto/passwordHasher';
+import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
+import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
+import { verifyPassword } from '@/src/server/crypto/passwordHasher';
+import { RecoverySessionService } from '@/src/server/services/recovery/recovery-session.service';
 
 export class RecoveryFlowService {
     private readonly SESSION_DURATION = 15 * 60 * 1000;
@@ -13,6 +18,7 @@ export class RecoveryFlowService {
     constructor(
         private readonly recoveryRepository: RecoveryRepository,
         private readonly authRepository: AuthRepository,
+        private readonly recoverySessionService: RecoverySessionService,
     ) {}
 
     async startRecovery(email: string) {
@@ -40,7 +46,7 @@ export class RecoveryFlowService {
             throw new Error('Nenhum método de recuperação está habilitado.');
         }
 
-        await this.recoveryRepository.deleteExpiredSessions();
+        await this.recoveryRepository.expireExpiredSessions();
 
         const expiresAt = new Date(Date.now() + this.SESSION_DURATION);
 
@@ -57,11 +63,15 @@ export class RecoveryFlowService {
         });
 
         for (let step = 0; step < methods.length; step++) {
+            const type = methods[step];
+
             await this.recoveryRepository.createChallenge({
                 sessionId: session.id,
-                type: methods[step],
+                type,
                 step,
                 expiresAt,
+                attempts: 0,
+                maxAttempts: RECOVERY_MAX_ATTEMPTS[type],
             });
         }
 
@@ -75,53 +85,51 @@ export class RecoveryFlowService {
     }
 
     async getCurrentRecoveryChallenge(token: string) {
-        const { session, challenge } = await this.getCurrentChallenge(token);
+        const { session, challenge } =
+            await this.recoverySessionService.getCurrentChallenge(token);
 
         return {
             currentStep: session.currentStep,
-
             completedSteps: session.completedSteps,
-
             totalSteps: session.challenges.length,
-
             type: challenge.type,
-
+            attempts: challenge.attempts,
+            maxAttempts: challenge.maxAttempts,
+            remainingAttempts: Math.max(
+                challenge.maxAttempts - challenge.attempts,
+                0,
+            ),
             expiresAt: session.expiresAt,
         };
     }
 
     async verifyRecoveryKeyChallenge(token: string, recoveryKey: string) {
-        const { session, challenge } = await this.getCurrentChallenge(
+        return this.verifySecretChallenge(
             token,
+            recoveryKey.trim(),
             RecoveryType.RECOVERY_KEY,
+            'Chave de recuperação',
         );
+    }
 
-        const method = await this.recoveryRepository.findMethod(
-            session.userId,
-            RecoveryType.RECOVERY_KEY,
+    async verifyRecoveryPasswordChallenge(
+        token: string,
+        recoveryPassword: string,
+    ) {
+        return this.verifySecretChallenge(
+            token,
+            recoveryPassword,
+            RecoveryType.RECOVERY_PASSWORD,
+            'Senha de recuperação',
         );
-
-        if (!method || !method.enabled || !method.secretHash) {
-            throw new Error('Chave de recuperação indisponível.');
-        }
-
-        const isValid = await verifyPassword({
-            password: recoveryKey.trim(),
-            hash: method.secretHash,
-        });
-
-        if (!isValid) {
-            throw new Error('Chave de recuperação inválida.');
-        }
-
-        return this.completeCurrentChallenge(session.id, challenge.id);
     }
 
     async getRecoveryQuestionsChallenge(token: string) {
-        const { session } = await this.getCurrentChallenge(
-            token,
-            RecoveryType.QUESTIONS,
-        );
+        const { session, challenge } =
+            await this.recoverySessionService.getCurrentChallenge(
+                token,
+                RecoveryType.QUESTIONS,
+            );
 
         const questions = await this.recoveryRepository.findQuestions(
             session.userId,
@@ -133,26 +141,28 @@ export class RecoveryFlowService {
 
         return {
             currentStep: session.currentStep,
-
             completedSteps: session.completedSteps,
-
             totalSteps: session.challenges.length,
-
+            attempts: challenge.attempts,
+            maxAttempts: challenge.maxAttempts,
+            remainingAttempts: Math.max(
+                challenge.maxAttempts - challenge.attempts,
+                0,
+            ),
             questions: questions.map((question) => ({
                 id: question.id,
-
                 questionCipherText: question.questionCipherText,
-
                 questionIv: question.questionIv,
             })),
         };
     }
 
     async verifyQuestionsChallenge(token: string, answers: string[]) {
-        const { session, challenge } = await this.getCurrentChallenge(
-            token,
-            RecoveryType.QUESTIONS,
-        );
+        const { session, challenge } =
+            await this.recoverySessionService.getCurrentChallenge(
+                token,
+                RecoveryType.QUESTIONS,
+            );
 
         const questions = await this.recoveryRepository.findQuestions(
             session.userId,
@@ -167,136 +177,92 @@ export class RecoveryFlowService {
         }
 
         for (let index = 0; index < questions.length; index++) {
-            const answer = answers[index];
+            const answer = answers[index]?.trim();
 
-            if (!answer?.trim()) {
+            if (!answer) {
                 throw new Error('Todas as perguntas precisam ser respondidas.');
             }
 
-            const normalizedAnswer = answer.trim().toLowerCase();
-
             const isValid = await verifyPassword({
-                password: normalizedAnswer,
+                password: answer.toLowerCase(),
 
                 hash: questions[index].answerHash,
             });
 
             if (!isValid) {
-                throw new Error('Uma ou mais respostas estão incorretas.');
+                return this.handleFailedAttempt(
+                    session.id,
+                    challenge.id,
+                    'Uma ou mais respostas estão incorretas.',
+                );
             }
         }
 
-        return this.completeCurrentChallenge(session.id, challenge.id);
+        return this.recoverySessionService.completeCurrentChallenge(
+            session.id,
+            challenge.id,
+        );
     }
 
-    private async getCurrentChallenge(
+    private async verifySecretChallenge(
         token: string,
-        expectedType?: RecoveryType,
+        secret: string,
+        type: RecoveryType,
+        label: string,
     ) {
-        if (!token?.trim()) {
-            throw new Error('Token de recuperação inválido.');
+        if (!secret) {
+            throw new Error(`${label} é obrigatória.`);
         }
 
-        const tokenHash = await generateSha256(token);
+        const { session, challenge } =
+            await this.recoverySessionService.getCurrentChallenge(token, type);
 
-        const session =
-            await this.recoveryRepository.findActiveSessionByTokenHash(
-                tokenHash,
-            );
-
-        if (!session) {
-            throw new Error('Sessão de recuperação inválida ou expirada.');
-        }
-
-        const challenge = session.challenges.find(
-            (item) => item.step === session.currentStep,
+        const method = await this.recoveryRepository.findMethod(
+            session.userId,
+            type,
         );
 
-        if (!challenge) {
-            throw new Error(
-                'Nenhum método de recuperação pendente foi encontrado.',
-            );
+        if (!method || !method.enabled || !method.secretHash) {
+            throw new Error(`${label} indisponível.`);
         }
 
-        if (challenge.completedAt) {
-            throw new Error('Este método de recuperação já foi concluído.');
-        }
-
-        if (expectedType && challenge.type !== expectedType) {
-            throw new Error('Este não é o método de recuperação atual.');
-        }
-
-        return {
-            session,
-            challenge,
-        };
-    }
-
-    private async completeCurrentChallenge(
-        sessionId: string,
-        challengeId: string,
-    ) {
-        const session = await this.recoveryRepository.findSession(sessionId);
-
-        if (!session) {
-            throw new Error('Sessão de recuperação não encontrada.');
-        }
-
-        if (session.completedAt) {
-            throw new Error('Esta recuperação já foi concluída.');
-        }
-
-        const challenge = session.challenges.find(
-            (item) => item.id === challengeId,
-        );
-
-        if (!challenge) {
-            throw new Error('Desafio de recuperação não encontrado.');
-        }
-
-        if (challenge.completedAt) {
-            throw new Error('Este desafio já foi concluído.');
-        }
-
-        if (challenge.step !== session.currentStep) {
-            throw new Error('Este não é o desafio de recuperação atual.');
-        }
-
-        await this.recoveryRepository.completeChallenge(challenge.id);
-
-        const completedSteps = session.completedSteps + 1;
-
-        const totalSteps = session.challenges.length;
-
-        const isCompleted = completedSteps >= totalSteps;
-
-        const nextStep = isCompleted
-            ? session.currentStep
-            : session.currentStep + 1;
-
-        await this.recoveryRepository.updateSession(session.id, {
-            currentStep: nextStep,
-            completedSteps,
-
-            completedAt: isCompleted ? new Date() : null,
+        const isValid = await verifyPassword({
+            password: secret,
+            hash: method.secretHash,
         });
 
-        const nextChallenge = isCompleted
-            ? null
-            : session.challenges.find((item) => item.step === nextStep);
+        if (!isValid) {
+            return this.handleFailedAttempt(
+                session.id,
+                challenge.id,
+                `${label} inválida.`,
+            );
+        }
 
-        return {
-            completed: isCompleted,
+        return this.recoverySessionService.completeCurrentChallenge(
+            session.id,
+            challenge.id,
+        );
+    }
 
-            nextMethod: nextChallenge?.type ?? null,
+    private async handleFailedAttempt(
+        sessionId: string,
+        challengeId: string,
+        message: string,
+    ): Promise<never> {
+        const result = await this.recoverySessionService.registerFailedAttempt(
+            sessionId,
+            challengeId,
+        );
 
-            currentStep: nextStep,
+        if (result.failed) {
+            throw new Error(
+                'O número máximo de tentativas foi atingido. Inicie uma nova recuperação.',
+            );
+        }
 
-            completedSteps,
-
-            totalSteps,
-
-            expiresAt: session.expiresAt,
-        };
+        throw new Error(
+            `${message} Você ainda possui ${result.remainingAttempts} tentativa(s).`,
+        );
     }
 }

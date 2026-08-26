@@ -1,9 +1,9 @@
 'use server';
 
-import { authService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
-import { RegisterData, RegisterResult } from '../../types/service/auth';
-import { getAuditContext } from '../../utils/audit-context';
+import { authService } from '@/src/server/containers/services';
+import { getAuditContext } from '@/src/server/utils/audit-context';
+import { ActionResult } from '@/src/server/types/action';
+import { RegisterData, RegisterResult } from '@/src/server/types/service/auth';
 
 export async function registerAction(
     data: RegisterData,

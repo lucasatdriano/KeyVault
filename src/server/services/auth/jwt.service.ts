@@ -3,7 +3,7 @@ import { JWT_ALGORITHM } from '@/src/shared/constants/auth/auth.constants';
 import { JWTPayload } from '@/src/shared/types/jwt-payload';
 import { getSubtle } from '@/src/shared/crypto/webcrypto';
 
-import { VerifyTokenResult } from '../../types/service/jwt';
+import { VerifyTokenResult } from '@/src/server/types/service/jwt';
 
 export class JWTService {
     private readonly secret: string;

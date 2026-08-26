@@ -1,7 +1,7 @@
 import {
     CreateCredentialData,
     UpdateCredentialData,
-} from '../../types/repository/credential';
+} from '@/src/server/types/repository/credential';
 
 export function validateCreateCredentialData(data: CreateCredentialData): void {
     if (!data.userId) {

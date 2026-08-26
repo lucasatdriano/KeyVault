@@ -1,16 +1,16 @@
-import { AES_ALGORITHM } from '../../shared/constants/crypto/aes.constants';
+import { getSubtle, toArrayBuffer } from '@/src/shared/crypto/webcrypto';
 import {
     validateCryptoKey,
     validateKeyData,
-} from '../validators/crypto/key.validator';
-import { validateIV } from '../validators/crypto/aes.validator';
-import { getSubtle, toArrayBuffer } from '../crypto/webcrypto';
+} from '@/src/shared/validators/crypto/key.validator';
+import { validateIV } from '@/src/shared/validators/crypto/aes.validator';
+import { AES_ALGORITHM } from '@/src/shared/constants/crypto/aes.constants';
 import {
     DecryptParams,
     EncryptParams,
     ExportKeyParams,
     ImportKeyParams,
-} from '../types/crypto/aes';
+} from '@/src/shared/types/crypto/aes';
 
 export async function importAESKey(
     params: ImportKeyParams,

@@ -5,8 +5,8 @@ import { RecoveryQuestion } from '@/src/generated/prisma/client';
 import {
     authService,
     recoverySettingsService,
-} from '../../containers/services';
-import { ActionResult } from '../../types/action';
+} from '@/src/server/containers/services';
+import { ActionResult } from '@/src/server/types/action';
 
 export async function getRecoveryQuestionsAction(): Promise<
     ActionResult<RecoveryQuestion[] | null>

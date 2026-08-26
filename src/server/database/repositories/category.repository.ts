@@ -3,7 +3,7 @@ import { Category, PrismaClient } from '@/src/generated/prisma/client';
 import {
     CreateCategoryData,
     UpdateCategoryData,
-} from '../../types/repository/category';
+} from '@/src/server/types/repository/category';
 
 export class CategoryRepository {
     constructor(private readonly prisma: PrismaClient) {}

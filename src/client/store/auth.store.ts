@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { Profile } from '../../shared/types/profile';
+
+import { Profile } from '@/src/shared/types/profile';
 
 interface AuthState {
     user: Profile | null;

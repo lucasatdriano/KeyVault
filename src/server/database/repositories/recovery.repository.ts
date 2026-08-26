@@ -4,18 +4,20 @@ import {
     RecoveryMethod,
     RecoveryQuestion,
     RecoverySession,
+    RecoverySessionStatus,
     RecoveryType,
 } from '@/src/generated/prisma/client';
 
 import {
-    CreateRecoveryChallengeData,
     CreateRecoveryMethodData,
+    UpdateRecoveryMethodData,
     CreateRecoveryQuestionData,
     CreateRecoverySessionData,
-    RecoverySessionWithChallenges,
-    UpdateRecoveryMethodData,
     UpdateRecoverySessionData,
-} from '../../types/repository/recovery';
+    CreateRecoveryChallengeData,
+    UpdateRecoveryChallengeData,
+    RecoverySessionWithChallenges,
+} from '@/src/server/types/repository/recovery';
 
 export class RecoveryRepository {
     constructor(private readonly prisma: PrismaClient) {}
@@ -85,6 +87,11 @@ export class RecoveryRepository {
                 {
                     userId,
                     type: RecoveryType.QUESTIONS,
+                    enabled: false,
+                },
+                {
+                    userId,
+                    type: RecoveryType.RECOVERY_PASSWORD,
                     enabled: false,
                 },
                 {
@@ -190,6 +197,29 @@ export class RecoveryRepository {
         });
     }
 
+    async findActiveSessionByTokenHash(
+        tokenHash: string,
+    ): Promise<RecoverySessionWithChallenges | null> {
+        return this.prisma.recoverySession.findFirst({
+            where: {
+                tokenHash,
+
+                status: RecoverySessionStatus.ACTIVE,
+
+                expiresAt: {
+                    gt: new Date(),
+                },
+            },
+            include: {
+                challenges: {
+                    orderBy: {
+                        step: 'asc',
+                    },
+                },
+            },
+        });
+    }
+
     async updateSession(
         id: string,
         data: UpdateRecoverySessionData,
@@ -200,6 +230,76 @@ export class RecoveryRepository {
             },
             data,
         });
+    }
+
+    async updateSessionStatus(
+        id: string,
+        status: RecoverySessionStatus,
+    ): Promise<RecoverySession> {
+        return this.prisma.recoverySession.update({
+            where: {
+                id,
+            },
+            data: {
+                status,
+
+                completedAt:
+                    status === RecoverySessionStatus.COMPLETED
+                        ? new Date()
+                        : undefined,
+            },
+        });
+    }
+
+    async completeSession(id: string): Promise<RecoverySession> {
+        return this.prisma.recoverySession.update({
+            where: {
+                id,
+            },
+            data: {
+                status: RecoverySessionStatus.COMPLETED,
+                completedAt: new Date(),
+            },
+        });
+    }
+
+    async failSession(id: string): Promise<RecoverySession> {
+        return this.prisma.recoverySession.update({
+            where: {
+                id,
+            },
+            data: {
+                status: RecoverySessionStatus.FAILED,
+            },
+        });
+    }
+
+    async expireSession(id: string): Promise<RecoverySession> {
+        return this.prisma.recoverySession.update({
+            where: {
+                id,
+            },
+            data: {
+                status: RecoverySessionStatus.EXPIRED,
+            },
+        });
+    }
+
+    async expireExpiredSessions(): Promise<number> {
+        const result = await this.prisma.recoverySession.updateMany({
+            where: {
+                status: RecoverySessionStatus.ACTIVE,
+
+                expiresAt: {
+                    lt: new Date(),
+                },
+            },
+            data: {
+                status: RecoverySessionStatus.EXPIRED,
+            },
+        });
+
+        return result.count;
     }
 
     async deleteSession(id: string): Promise<RecoverySession> {
@@ -222,10 +322,12 @@ export class RecoveryRepository {
         sessionId: string,
         type: RecoveryType,
     ): Promise<RecoveryChallenge | null> {
-        return this.prisma.recoveryChallenge.findFirst({
+        return this.prisma.recoveryChallenge.findUnique({
             where: {
-                sessionId,
-                type,
+                sessionId_type: {
+                    sessionId,
+                    type,
+                },
             },
         });
     }
@@ -254,27 +356,6 @@ export class RecoveryRepository {
         });
     }
 
-    async findActiveSessionByTokenHash(
-        tokenHash: string,
-    ): Promise<RecoverySessionWithChallenges | null> {
-        return this.prisma.recoverySession.findFirst({
-            where: {
-                tokenHash,
-                expiresAt: {
-                    gt: new Date(),
-                },
-                completedAt: null,
-            },
-            include: {
-                challenges: {
-                    orderBy: {
-                        step: 'asc',
-                    },
-                },
-            },
-        });
-    }
-
     async completeChallenge(id: string): Promise<RecoveryChallenge> {
         return this.prisma.recoveryChallenge.update({
             where: {
@@ -286,8 +367,33 @@ export class RecoveryRepository {
         });
     }
 
-    async deleteExpiredSessions(): Promise<number> {
-        const result = await this.prisma.recoverySession.deleteMany({
+    async incrementChallengeAttempts(id: string): Promise<RecoveryChallenge> {
+        return this.prisma.recoveryChallenge.update({
+            where: {
+                id,
+            },
+            data: {
+                attempts: {
+                    increment: 1,
+                },
+            },
+        });
+    }
+
+    async updateChallenge(
+        id: string,
+        data: UpdateRecoveryChallengeData,
+    ): Promise<RecoveryChallenge> {
+        return this.prisma.recoveryChallenge.update({
+            where: {
+                id,
+            },
+            data,
+        });
+    }
+
+    async deleteExpiredChallenges(): Promise<number> {
+        const result = await this.prisma.recoveryChallenge.deleteMany({
             where: {
                 expiresAt: {
                     lt: new Date(),
@@ -298,11 +404,19 @@ export class RecoveryRepository {
         return result.count;
     }
 
-    async deleteExpiredChallenges(): Promise<number> {
-        const result = await this.prisma.recoveryChallenge.deleteMany({
+    async deleteOldSessions(before: Date): Promise<number> {
+        const result = await this.prisma.recoverySession.deleteMany({
             where: {
-                expiresAt: {
-                    lt: new Date(),
+                status: {
+                    in: [
+                        RecoverySessionStatus.COMPLETED,
+                        RecoverySessionStatus.FAILED,
+                        RecoverySessionStatus.EXPIRED,
+                    ],
+                },
+
+                updatedAt: {
+                    lt: before,
                 },
             },
         });

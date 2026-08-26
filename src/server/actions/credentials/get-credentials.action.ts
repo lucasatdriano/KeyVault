@@ -2,12 +2,15 @@
 
 import { PaginatedResponse } from '@/src/shared/types/pagination';
 
-import { authService, credentialService } from '../../containers/services';
-import { ActionResult } from '../../types/action';
 import {
-    CredentialWithCategory,
+    authService,
+    credentialService,
+} from '@/src/server/containers/services';
+import { ActionResult } from '@/src/server/types/action';
+import {
     FindCredentialsOptions,
-} from '../../types/repository/credential';
+    CredentialWithCategory,
+} from '@/src/server/types/repository/credential';
 
 export async function getCredentialsAction(
     params: FindCredentialsOptions = {},

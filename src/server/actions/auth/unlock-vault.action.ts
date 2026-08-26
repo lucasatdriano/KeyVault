@@ -1,6 +1,6 @@
 'use server';
 
-import { currentUserAction } from './current-user.action';
+import { currentUserAction } from '@/src/server/actions/auth/current-user.action';
 
 export async function unlockVaultAction() {
     const result = await currentUserAction();

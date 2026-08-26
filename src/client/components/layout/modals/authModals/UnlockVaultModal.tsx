@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { KeyIcon, LockKeyholeIcon } from 'lucide-react';
 
 import ModalBase from '../ModalBase';
-import InputTextForm from '../../../ui/inputs/InputTextForm';
-import Button from '../../../ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import Button from '@/src/client/components/ui/buttons/Button';
 
 import { useVaultStore } from '@/src/client/store/vault.store';
 

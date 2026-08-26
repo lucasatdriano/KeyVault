@@ -4,9 +4,9 @@
 import { useEffect, useState } from 'react';
 import { SearchIcon, PlusIcon, LucideIcon } from 'lucide-react';
 
-import Button from '../../ui/buttons/Button';
-import InputTextForm from '../../ui/inputs/InputTextForm';
-import InputSelectForm from '../../ui/inputs/InputSelectForm';
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
 
 interface HeaderSearchProps {
     icon: LucideIcon;
