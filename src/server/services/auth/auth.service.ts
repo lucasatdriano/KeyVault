@@ -2,7 +2,10 @@ import { AuditAction, User } from '@/src/generated/prisma/client';
 
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
 import { changeMasterPassword } from '@/src/shared/crypto/vault';
-import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constants';
+import {
+    ACCESS_TOKEN_COOKIE_DURATION,
+    ACCESS_TOKEN_DURATION,
+} from '@/src/shared/constants/auth/auth.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 
 import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
@@ -135,13 +138,16 @@ export class AuthService {
         const duration =
             data.sessionExpiration ?? ACCESS_TOKEN_DURATION.MINUTES_30;
 
+        const cookieDuration =
+            data.sessionExpiration ?? ACCESS_TOKEN_COOKIE_DURATION.MINUTES_30;
+
         const token = await this.jwtService.generateAccessToken(
             user.id,
             user.email,
             duration,
         );
 
-        await setAccessToken(token, duration);
+        await setAccessToken(token, cookieDuration);
 
         await this.auditService.createLog({
             userId: user.id,

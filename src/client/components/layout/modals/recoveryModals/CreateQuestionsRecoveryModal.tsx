@@ -16,14 +16,7 @@ import {
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
-
-interface QuizQuestion {
-    id?: string;
-    question: string;
-    answer: string;
-}
-
-const EMPTY_QUESTIONS: QuizQuestion[] = [];
+import { QuizQuestion } from '@/src/client/types/recovery';
 
 interface QuizFormModalProps {
     isOpen: boolean;
@@ -39,7 +32,7 @@ export default function QuizFormModal({
     isOpen,
     onClose,
     onSave,
-    initialQuestions = EMPTY_QUESTIONS,
+    initialQuestions = [],
     title = 'Criar perguntas de segurança',
     maxQuestions = 3,
     isLoading = false,

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isAuthRoute, isProtectedRoute } from './server/auth/routes';
-import { ACCESS_TOKEN_COOKIE_NAME } from './shared/constants/auth/cookies.constants';
-import { verifyEdgeToken } from './server/auth/verify-edge-token';
-import { handleExpiredSession } from './server/auth/logout-expired';
+
+import { isAuthRoute, isProtectedRoute } from '@/src/server/auth/routes';
+import { handleExpiredSession } from '@/src/server/auth/logout-expired';
+import { verifyEdgeToken } from '@/src/server/auth/verify-edge-token';
+
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/src/shared/constants/auth/cookies.constants';
 
 export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;

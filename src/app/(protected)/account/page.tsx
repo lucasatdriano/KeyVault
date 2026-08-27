@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     UserIcon,
     MailIcon,
@@ -16,22 +17,22 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { getProfileAction } from '@/src/server/actions/user/get-profile.action';
+import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
 import { updateUserNameAction } from '@/src/server/actions/user/update-profile.action';
-
-import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
-import { useCredentialsStore } from '@/src/client/store/credential.store';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import Header from '@/src/client/components/layout/header/Header';
-import { useAuth } from '@/src/client/hooks/auth/useAuth';
-import { formatDateOnly } from '@/src/client/utils/formatters/date';
-import ChangeEmailModal from '@/src/client/components/layout/modals/usersModals/ChangeEmailModal';
-import ChangePasswordModal from '@/src/client/components/layout/modals/usersModals/ChangePasswordModal';
 import { changePasswordAction } from '@/src/server/actions/auth/change-password.action';
 import { updateEmailAction } from '@/src/server/actions/user/update-email.action';
+import { getProfileAction } from '@/src/server/actions/user/get-profile.action';
+
+import { useCredentialsStore } from '@/src/client/store/credential.store';
+import { useAuth } from '@/src/client/hooks/auth/useAuth';
+import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+import { formatDateOnly } from '@/src/client/utils/formatters/date';
+
+import Header from '@/src/client/components/layout/header/Header';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import ChangeEmailModal from '@/src/client/components/layout/modals/usersModals/ChangeEmailModal';
+import ChangePasswordModal from '@/src/client/components/layout/modals/usersModals/ChangePasswordModal';
 import EmailVerificationModal from '@/src/client/components/layout/modals/authModals/EmailVerificationModal';
-import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
-import { useRouter } from 'next/navigation';
 
 interface ProfileDisplay {
     name: string;
@@ -43,8 +44,8 @@ interface ProfileDisplay {
 
 export default function AccountPage() {
     const router = useRouter();
-    const { credentialsCount } = useCredentialsStore();
     const { user, updateUser } = useAuth();
+    const { credentialsCount } = useCredentialsStore();
     const [profile, setProfile] = useState<ProfileDisplay | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);

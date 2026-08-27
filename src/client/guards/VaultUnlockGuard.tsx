@@ -1,9 +1,9 @@
 'use client';
 
-import UnlockVaultModal from '../components/layout/modals/authModals/UnlockVaultModal';
+import { useVaultStore } from '@/src/client/store/vault.store';
+import { useAuthStore } from '@/src/client/store/auth.store';
 
-import { useVaultStore } from '../store/vault.store';
-import { useAuthStore } from '../store/auth.store';
+import UnlockVaultModal from '@/src/client/components/layout/modals/authModals/UnlockVaultModal';
 
 export default function VaultUnlockGuard({
     children,

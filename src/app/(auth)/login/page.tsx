@@ -10,15 +10,16 @@ import { loginAction } from '@/src/server/actions/auth/login.action';
 import { decryptVaultKey } from '@/src/shared/crypto/vault';
 import { LoginFormData } from '@/src/shared/types/auth';
 
-import { validateLoginForm } from '@/src/client/validators/auth.validator';
-import { useVaultStore } from '@/src/client/store/vault.store';
+import { LoginClient } from '@/src/app/(auth)/login/components/LoginClient';
 
-import { LoginClient } from './components/LoginClient';
+import { useVaultStore } from '@/src/client/store/vault.store';
+import { useAuthStore } from '@/src/client/store/auth.store';
+import { validateLoginForm } from '@/src/client/validators/auth.validator';
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
-import { useAuthStore } from '@/src/client/store/auth.store';
-import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 
 export default function LoginPage() {
     const router = useRouter();

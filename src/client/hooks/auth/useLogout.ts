@@ -1,9 +1,11 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
-import { clearAllStores } from '@/src/client/store';
+import { useRouter } from 'next/navigation';
+
 import { logoutAction } from '@/src/server/actions/auth/logout.action';
+
+import { clearAllStores } from '@/src/client/store';
 import { useAuthStore } from '@/src/client/store/auth.store';
 
 export function useLogout() {
@@ -13,7 +15,9 @@ export function useLogout() {
 
     const logout = useCallback(
         async (redirectTo = '/login') => {
-            if (isLoggingOut) return;
+            if (isLoggingOut) {
+                return;
+            }
 
             setIsLoggingOut(true);
 
@@ -22,13 +26,15 @@ export function useLogout() {
 
                 if (!result.success) {
                     console.error(result.error);
+                    setIsLoggingOut(false);
                     return;
                 }
 
-                clearAllStores();
+                clearAllStores({
+                    preserveLogoutState: true,
+                });
 
                 router.replace(redirectTo);
-                router.refresh();
             } catch (error) {
                 console.error('Erro ao fazer logout:', error);
                 setIsLoggingOut(false);
@@ -37,5 +43,8 @@ export function useLogout() {
         [isLoggingOut, setIsLoggingOut, router],
     );
 
-    return { logout, isLoggingOut };
+    return {
+        logout,
+        isLoggingOut,
+    };
 }

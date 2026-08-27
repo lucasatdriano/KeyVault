@@ -6,6 +6,7 @@ import { currentUserAction } from '@/src/server/actions/auth/current-user.action
 import { AuthProvider } from '@/src/client/providers/AuthProvider';
 import { SidebarProvider } from '@/src/client/providers/SidebarProvider';
 import { SessionExpiredHandler } from '@/src/client/components/layout/handlers/SessionExpiredHandler';
+
 import VaultUnlockGuard from '@/src/client/guards/VaultUnlockGuard';
 
 import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';

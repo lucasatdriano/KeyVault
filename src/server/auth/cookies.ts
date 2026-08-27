@@ -13,13 +13,13 @@ export async function getAccessToken(): Promise<string | undefined> {
 
 export async function setAccessToken(
     token: string,
-    duration: number,
+    cookieDuration: number,
 ): Promise<void> {
     const cookieStore = await cookies();
 
     cookieStore.set(ACCESS_TOKEN_COOKIE_NAME, token, {
         ...COOKIE_OPTIONS,
-        maxAge: duration,
+        maxAge: cookieDuration,
     });
 }
 

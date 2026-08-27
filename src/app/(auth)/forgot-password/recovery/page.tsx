@@ -18,42 +18,27 @@ import { getRecoveryQuestionsChallengeAction } from '@/src/server/actions/recove
 import { verifyRecoveryPasswordChallengeAction } from '@/src/server/actions/recovery/flow/verify-recovery-password-challenge.action';
 import { verifyRecoveryKeyChallengeAction } from '@/src/server/actions/recovery/flow/verify-recovery-key-challenge.action';
 
+import { RecoveryType } from '@/src/shared/types/recovery';
+
+import {
+    RecoveryChallenge,
+    RecoveryQuestion,
+} from '@/src/client/types/recovery';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import Logo from '@/src/client/components/layout/logo/Logo';
-
 import RecoveryPasswordValidationModal from '@/src/client/components/layout/modals/recoveryModals/RecoveryPasswordValidationModal';
 import RecoveryKeyValidationModal from '@/src/client/components/layout/modals/recoveryModals/RecoveryKeyValidationModal';
 import QuizAnswerModal from '@/src/client/components/layout/modals/recoveryModals/AswerQuestionsRecoveryModal';
-import { RecoveryType } from '@/src/shared/types/recovery';
-
-interface RecoveryChallenge {
-    currentStep: number;
-    completedSteps: number;
-    totalSteps: number;
-    type: RecoveryType;
-    attempts: number;
-    maxAttempts: number;
-    remainingAttempts: number;
-    expiresAt: Date | string;
-}
-
-interface QuizQuestion {
-    id: string;
-    question: string;
-}
 
 export default function RecoveryPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-
     const token = searchParams.get('token');
 
     const [challenge, setChallenge] = useState<RecoveryChallenge | null>(null);
-
-    const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-
+    const [questions, setQuestions] = useState<RecoveryQuestion[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-
     const [isVerifying, setIsVerifying] = useState(false);
 
     const handleInvalidRecovery = useCallback(

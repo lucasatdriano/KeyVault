@@ -3,12 +3,24 @@ import { useCredentialsStore } from './credential.store';
 import { useVaultStore } from './vault.store';
 import { useAuthStore } from './auth.store';
 
-export const clearAllStores = () => {
+interface ClearAllStoresOptions {
+    preserveLogoutState?: boolean;
+}
+
+export const clearAllStores = (options: ClearAllStoresOptions = {}) => {
+    const { preserveLogoutState = false } = options;
+
     useCategoriesStore.getState().clearStore();
-
     useCredentialsStore.getState().clearStore();
-
     useVaultStore.getState().clearVault();
+
+    if (preserveLogoutState) {
+        const isLoggingOut = useAuthStore.getState().isLoggingOut;
+        useAuthStore.getState().clear();
+        useAuthStore.getState().setIsLoggingOut(isLoggingOut);
+        
+        return;
+    }
 
     useAuthStore.getState().clear();
 };

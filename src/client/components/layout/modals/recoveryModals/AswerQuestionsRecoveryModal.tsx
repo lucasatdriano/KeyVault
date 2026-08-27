@@ -14,17 +14,13 @@ import {
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
-
-interface QuizQuestion {
-    id?: string;
-    question: string;
-}
+import { RecoveryQuestion } from '@/src/client/types/recovery';
 
 interface QuizAnswerModalProps {
     isOpen: boolean;
     onClose: () => void;
     onVerify: (answers: string[]) => Promise<void> | void;
-    questions: QuizQuestion[];
+    questions: RecoveryQuestion[];
     title?: string;
     isLoading?: boolean;
 }

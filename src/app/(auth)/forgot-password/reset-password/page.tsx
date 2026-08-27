@@ -5,11 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Key, Lock, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { resetPasswordAction } from '@/src/server/actions/recovery/flow/reset-password.action';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
-
-import { resetPasswordAction } from '@/src/server/actions/recovery/flow/reset-password.action';
 
 export default function ResetPasswordPage() {
     const router = useRouter();
@@ -25,21 +25,17 @@ export default function ResetPasswordPage() {
 
         if (!token) {
             toast.error('Token de recuperação não encontrado.');
-
             router.replace('/forgot-password');
-
             return;
         }
 
         if (newPassword.length < 8) {
             setError('Senha deve ter pelo menos 8 caracteres.');
-
             return;
         }
 
         if (newPassword !== confirmPassword) {
             setError('As senhas não coincidem.');
-
             return;
         }
 

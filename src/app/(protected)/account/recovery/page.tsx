@@ -1,31 +1,17 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
     AlertTriangleIcon,
     CheckCircleIcon,
     HelpCircleIcon,
     ShieldCheckIcon,
 } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { getRecoveryMethodsAction } from '@/src/server/actions/recovery/settings/get-recovery-methods.action';
-import { enableRecoveryMethodAction } from '@/src/server/actions/recovery/settings/enable-recovery-method.action';
-import { disableRecoveryMethodAction } from '@/src/server/actions/recovery/settings/disable-recovery-method.action';
-import { configureRecoveryQuestionsAction } from '@/src/server/actions/recovery/settings/configure-recovery-questions.action';
-import { configureRecoveryPasswordAction } from '@/src/server/actions/recovery/settings/configure-recovery-password.action';
-import { generateRecoveryKeyAction } from '@/src/server/actions/recovery/settings/generate-recovery-key.action';
+import { RecoveryType } from '@/src/shared/types/recovery';
 
-import { RecoveryDataPayload, RecoveryType } from '@/src/shared/types/recovery';
-import {
-    createRecoveryDataKey,
-    encryptRecoveryDataKey,
-    encryptRecoveryVaultKey,
-} from '@/src/shared/crypto/recovery';
-
-import { useVaultStore } from '@/src/client/store/vault.store';
-import { useAuth } from '@/src/client/hooks/auth/useAuth';
+import { useRecovery } from '@/src/client/hooks/recovery/useRecovery';
+import { getRecoveryLevel } from '@/src/client/utils/recovery/recovery-level';
 import { recoveryMethodConfig } from './components/recovery-method.config';
 
 import Header from '@/src/client/components/layout/header/Header';
@@ -34,274 +20,49 @@ import QuizFormModal from '@/src/client/components/layout/modals/recoveryModals/
 import RecoveryKeyModal from '@/src/client/components/layout/modals/recoveryModals/RecoveryKeyModal';
 import RecoveryPasswordModal from '@/src/client/components/layout/modals/recoveryModals/RecoveryPasswordModal';
 import RecoveryMethodCard from './components/RecoveryMethodCard';
-
-interface RecoveryMethod {
-    id: string;
-    type: RecoveryType;
-    enabled: boolean;
-    secretHash?: string | null;
-}
-
-interface QuizQuestion {
-    id?: string;
-    question: string;
-    answer: string;
-}
+import { QuizQuestion } from '@/src/client/types/recovery';
 
 export default function RecoveryPage() {
-    const { user } = useAuth();
-    const [methods, setMethods] = useState<RecoveryMethod[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const {
+        activeMethods,
+        isLoading,
+        isSubmitting,
+        hasRecoveryKey,
+
+        loadMethods,
+        getMethod,
+
+        handleEnableMethod: enableMethod,
+        handleDisableMethod: disableMethod,
+        handleConfigureQuestions,
+        handleConfigureRecoveryPassword,
+        handleGenerateRecoveryKey,
+    } = useRecovery();
+
     const [showRecoveryKeyModal, setShowRecoveryKeyModal] = useState(false);
     const [showQuestionsModal, setShowQuestionsModal] = useState(false);
     const [showRecoveryPasswordModal, setShowRecoveryPasswordModal] =
         useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const vaultKey = useVaultStore((state) => state.vaultKey);
+    const level = getRecoveryLevel(activeMethods.length);
 
-    const loadMethods = useCallback(async () => {
-        try {
-            setIsLoading(true);
-
-            const result = await getRecoveryMethodsAction();
-
-            if (!result.success || !result.data) {
-                toast.error(
-                    result.error ?? 'Erro ao carregar métodos de recuperação.',
-                );
-
-                return;
-            }
-
-            setMethods(result.data);
-        } catch {
-            toast.error('Erro ao carregar métodos de recuperação.');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        loadMethods();
-    }, [loadMethods]);
-
-    const activeMethods = useMemo(
-        () => methods.filter((method) => method.enabled),
-        [methods],
-    );
-
-    const recoveryLevel =
-        activeMethods.length >= 2
-            ? 'Alto'
-            : activeMethods.length >= 1
-              ? 'Médio'
-              : 'Baixo';
-
-    const recoveryLevelColor =
-        activeMethods.length >= 2
-            ? 'text-green-500'
-            : activeMethods.length >= 1
-              ? 'text-yellow-500'
-              : 'text-error';
-
-    const recoveryLevelBg =
-        activeMethods.length >= 2
-            ? 'bg-green-500/10'
-            : activeMethods.length >= 1
-              ? 'bg-yellow-500/10'
-              : 'bg-error/10';
-
-    const getMethod = (type: RecoveryType) =>
-        methods.find((method) => method.type === type);
-
-    const recoveryKeyMethod = getMethod(RecoveryType.RECOVERY_KEY);
-
-    const hasRecoveryKey = Boolean(
-        recoveryKeyMethod?.enabled && recoveryKeyMethod?.secretHash,
-    );
-
-    const createRecoveryData = async (): Promise<RecoveryDataPayload> => {
-        if (!vaultKey) {
-            throw new Error('Chave do cofre não encontrada.');
-        }
-
-        if (!user?.email) {
-            throw new Error('E-mail do usuário não encontrado.');
-        }
-
-        const recoveryDataKey = createRecoveryDataKey();
-
-        try {
-            const encryptedRecoveryDataKey = await encryptRecoveryDataKey({
-                recoveryDataKey,
-                email: user.email,
-            });
-
-            const encryptedRecoveryVaultKey = await encryptRecoveryVaultKey(
-                vaultKey,
-                recoveryDataKey,
-            );
-
-            return {
-                encryptedDataKey: encryptedRecoveryDataKey.encryptedDataKey,
-                iv: encryptedRecoveryDataKey.iv,
-                salt: encryptedRecoveryDataKey.salt,
-                vaultKeyCipherText: encryptedRecoveryVaultKey.cipherText,
-                vaultKeyIv: encryptedRecoveryVaultKey.iv,
-            };
-        } finally {
-            recoveryDataKey.fill(0);
-        }
-    };
-
-    const handleEnableMethod = async (type: RecoveryType) => {
+    const handleEnableMethod = (type: RecoveryType) => {
         if (type === RecoveryType.QUESTIONS) {
             setShowQuestionsModal(true);
-
             return;
         }
 
         if (type === RecoveryType.RECOVERY_KEY) {
             setShowRecoveryKeyModal(true);
-
             return;
         }
 
         if (type === RecoveryType.RECOVERY_PASSWORD) {
             setShowRecoveryPasswordModal(true);
-
             return;
         }
 
-        try {
-            setIsSubmitting(true);
-
-            const result = await enableRecoveryMethodAction(type);
-
-            if (!result.success) {
-                toast.error(result.error ?? 'Erro ao ativar método.');
-
-                return;
-            }
-
-            toast.success('Método de recuperação ativado com sucesso.');
-
-            await loadMethods();
-        } catch {
-            toast.error('Erro ao ativar método de recuperação.');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleDisableMethod = async (type: RecoveryType) => {
-        try {
-            setIsSubmitting(true);
-
-            const result = await disableRecoveryMethodAction(type);
-
-            if (!result.success) {
-                toast.error(result.error ?? 'Erro ao desativar método.');
-
-                return;
-            }
-
-            toast.success('Método de recuperação desativado.');
-
-            await loadMethods();
-        } catch {
-            toast.error('Erro ao desativar método de recuperação.');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleConfigureQuestions = async (questions: QuizQuestion[]) => {
-        try {
-            setIsSubmitting(true);
-
-            const recoveryData = await createRecoveryData();
-
-            const result = await configureRecoveryQuestionsAction(
-                questions.map((question) => ({
-                    question: question.question.trim(),
-                    answer: question.answer,
-                })),
-                recoveryData,
-            );
-
-            if (!result.success) {
-                toast.error(result.error ?? 'Erro ao configurar perguntas.');
-
-                return;
-            }
-
-            toast.success('Perguntas de segurança configuradas com sucesso.');
-
-            setShowQuestionsModal(false);
-
-            await loadMethods();
-        } catch (error) {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : 'Erro ao configurar perguntas de segurança.',
-            );
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleConfigureRecoveryPassword = async (
-        recoveryPassword: string,
-    ) => {
-        try {
-            setIsSubmitting(true);
-
-            const recoveryData = await createRecoveryData();
-
-            const result = await configureRecoveryPasswordAction(
-                recoveryPassword,
-                recoveryData,
-            );
-
-            if (!result.success) {
-                toast.error(
-                    result.error ?? 'Erro ao configurar senha de recuperação.',
-                );
-
-                return;
-            }
-
-            toast.success('Senha de recuperação configurada com sucesso.');
-
-            setShowRecoveryPasswordModal(false);
-
-            await loadMethods();
-        } catch (error) {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : 'Erro ao configurar senha de recuperação.',
-            );
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleGenerateRecoveryKey = async (): Promise<string> => {
-        const recoveryData = await createRecoveryData();
-
-        const result = await generateRecoveryKeyAction(recoveryData);
-
-        if (!result.success || !result.data) {
-            throw new Error(
-                result.error ?? 'Erro ao gerar chave de recuperação.',
-            );
-        }
-
-        return result.data;
+        enableMethod(type);
     };
 
     const handleConfigureMethod = (type: RecoveryType) => {
@@ -345,10 +106,10 @@ export default function RecoveryPage() {
                     <div className="mb-4 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div
-                                className={`flex h-12 w-12 items-center justify-center rounded-xl ${recoveryLevelBg}`}
+                                className={`flex h-12 w-12 items-center justify-center rounded-xl ${level.background}`}
                             >
                                 <ShieldCheckIcon
-                                    className={`h-6 w-6 ${recoveryLevelColor}`}
+                                    className={`h-6 w-6 ${level.color}`}
                                 />
                             </div>
 
@@ -358,9 +119,9 @@ export default function RecoveryPage() {
                                 </h2>
 
                                 <p
-                                    className={`text-2xl font-bold ${recoveryLevelColor}`}
+                                    className={`text-2xl font-bold ${level.color}`}
                                 >
-                                    {recoveryLevel}
+                                    {level.label}
                                 </p>
                             </div>
                         </div>
@@ -401,7 +162,6 @@ export default function RecoveryPage() {
                 <div className="mx-4 space-y-4">
                     {Object.values(recoveryMethodConfig).map((config) => {
                         const method = getMethod(config.type);
-
                         const isActive = method?.enabled ?? false;
 
                         return (
@@ -411,9 +171,7 @@ export default function RecoveryPage() {
                                 isActive={isActive}
                                 isSubmitting={isSubmitting}
                                 onEnable={() => handleEnableMethod(config.type)}
-                                onDisable={() =>
-                                    handleDisableMethod(config.type)
-                                }
+                                onDisable={() => disableMethod(config.type)}
                                 onConfigure={
                                     config.type !== RecoveryType.EMAIL
                                         ? () =>
@@ -460,7 +218,13 @@ export default function RecoveryPage() {
             <QuizFormModal
                 isOpen={showQuestionsModal}
                 onClose={() => setShowQuestionsModal(false)}
-                onSave={handleConfigureQuestions}
+                onSave={async (questions: QuizQuestion[]) => {
+                    const success = await handleConfigureQuestions(questions);
+
+                    if (success) {
+                        setShowQuestionsModal(false);
+                    }
+                }}
                 maxQuestions={3}
                 isLoading={isSubmitting}
             />
@@ -468,7 +232,14 @@ export default function RecoveryPage() {
             <RecoveryPasswordModal
                 isOpen={showRecoveryPasswordModal}
                 onClose={() => setShowRecoveryPasswordModal(false)}
-                onSave={handleConfigureRecoveryPassword}
+                onSave={async (recoveryPassword: string) => {
+                    const success =
+                        await handleConfigureRecoveryPassword(recoveryPassword);
+
+                    if (success) {
+                        setShowRecoveryPasswordModal(false);
+                    }
+                }}
                 isLoading={isSubmitting}
             />
         </>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+
 import SplashScreen from './splash/page';
 
 export default function AuthPage() {

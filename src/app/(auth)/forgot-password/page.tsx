@@ -13,7 +13,6 @@ import Logo from '@/src/client/components/layout/logo/Logo';
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
-
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');

@@ -10,9 +10,50 @@ import {
     EncryptedRecoveryVaultKey,
     EncryptRecoveryDataKeyParams,
 } from '../types/crypto/recovery';
+import { RecoveryDataPayload } from '../types/recovery';
 
 export function createRecoveryDataKey(): Uint8Array {
     return generateRandomBytes(RECOVERY_DATA_KEY_LENGTH);
+}
+
+export async function createRecoveryData({
+    vaultKey,
+    email,
+}: {
+    vaultKey: Uint8Array;
+    email: string;
+}): Promise<RecoveryDataPayload> {
+    if (!vaultKey) {
+        throw new Error('Chave do cofre não encontrada.');
+    }
+
+    if (!email) {
+        throw new Error('E-mail do usuário não encontrado.');
+    }
+
+    const recoveryDataKey = createRecoveryDataKey();
+
+    try {
+        const encryptedRecoveryDataKey = await encryptRecoveryDataKey({
+            recoveryDataKey,
+            email: email,
+        });
+
+        const encryptedRecoveryVaultKey = await encryptRecoveryVaultKey(
+            vaultKey,
+            recoveryDataKey,
+        );
+
+        return {
+            encryptedDataKey: encryptedRecoveryDataKey.encryptedDataKey,
+            iv: encryptedRecoveryDataKey.iv,
+            salt: encryptedRecoveryDataKey.salt,
+            vaultKeyCipherText: encryptedRecoveryVaultKey.cipherText,
+            vaultKeyIv: encryptedRecoveryVaultKey.iv,
+        };
+    } finally {
+        recoveryDataKey.fill(0);
+    }
 }
 
 export async function encryptRecoveryDataKey({
