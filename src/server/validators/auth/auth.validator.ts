@@ -54,3 +54,13 @@ export function validateChangePasswordData(data: ChangePasswordData): void {
         throw new Error('A nova senha deve ser diferente da atual');
     }
 }
+
+export function validateNewPasswordData(newPassword: string): void {
+    if (!newPassword || typeof newPassword !== 'string') {
+        throw new Error('Nova senha é obrigatória');
+    }
+
+    if (newPassword.length < 8) {
+        throw new Error('Nova senha deve ter pelo menos 8 caracteres');
+    }
+}

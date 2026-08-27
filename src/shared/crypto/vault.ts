@@ -14,7 +14,7 @@ import {
     validateEncryptedVault,
     validateVaultKey,
 } from '../validators/crypto/vault.validator';
-import { validatePassword } from '../validators/auth/password.validator';
+import { validateSecret } from '../validators/auth/secret.validator';
 import { deriveArgon2Key } from './argon2';
 import { EncryptedVault } from '../types/crypto/vault';
 import { Argon2Params } from '../types/crypto/argon2';
@@ -29,7 +29,7 @@ export async function encryptVaultKey(
     params: Argon2Params = DEFAULT_ARGON2_PARAMS,
 ): Promise<EncryptedVault> {
     validateVaultKey(vaultKey);
-    validatePassword(masterPassword);
+    validateSecret(masterPassword);
 
     const salt = generateSalt();
 
@@ -69,7 +69,7 @@ export async function decryptVaultKey(
     masterPassword: string,
 ): Promise<Uint8Array> {
     validateEncryptedVault(encryptedVault);
-    validatePassword(masterPassword);
+    validateSecret(masterPassword);
 
     const salt = base64ToBytes(encryptedVault.salt);
     const iv = base64ToBytes(encryptedVault.iv);
@@ -110,8 +110,8 @@ export async function changeMasterPassword(
     newMasterPassword: string,
     params: Argon2Params = DEFAULT_ARGON2_PARAMS,
 ): Promise<EncryptedVault> {
-    validatePassword(oldMasterPassword);
-    validatePassword(newMasterPassword);
+    validateSecret(oldMasterPassword);
+    validateSecret(newMasterPassword);
 
     if (oldMasterPassword === newMasterPassword) {
         throw new Error('A nova senha deve ser diferente da atual.');

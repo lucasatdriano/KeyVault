@@ -5,6 +5,7 @@ import {
 } from '@/src/generated/prisma/client';
 
 import { RecoveryType } from '@/src/generated/prisma/enums';
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 
 export interface CreateRecoveryMethodData {
     userId: string;
@@ -16,6 +17,18 @@ export interface CreateRecoveryMethodData {
 export interface UpdateRecoveryMethodData {
     enabled?: boolean;
     secretHash?: string | null;
+}
+
+export interface CreateRecoveryDataData extends RecoveryDataPayload {
+    userId: string;
+}
+
+export interface UpdateRecoveryDataData {
+    encryptedDataKey?: string;
+    iv?: string;
+    salt?: string;
+    vaultKeyCipherText?: string;
+    vaultKeyIv?: string;
 }
 
 export interface CreateRecoveryQuestionData {

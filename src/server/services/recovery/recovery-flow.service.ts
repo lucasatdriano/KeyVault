@@ -9,8 +9,28 @@ import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
 
 import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
 import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
-import { verifyPassword } from '@/src/server/crypto/passwordHasher';
+
+import {
+    hashPassword,
+    verifyPassword,
+} from '@/src/server/crypto/passwordHasher';
+
 import { RecoverySessionService } from '@/src/server/services/recovery/recovery-session.service';
+
+import { decryptString } from '@/src/shared/crypto/cipher';
+
+import { UserRepository } from '../../database/repositories/user.repository';
+
+import {
+    decryptRecoveryDataKey,
+    decryptRecoveryVaultKey,
+} from '@/src/shared/crypto/recovery';
+
+import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
+
+import { validateNewPasswordData } from '../../validators/auth/auth.validator';
+
+import { encryptVaultKey } from '@/src/shared/crypto/vault';
 
 export class RecoveryFlowService {
     private readonly SESSION_DURATION = 15 * 60 * 1000;
@@ -18,6 +38,7 @@ export class RecoveryFlowService {
     constructor(
         private readonly recoveryRepository: RecoveryRepository,
         private readonly authRepository: AuthRepository,
+        private readonly userRepository: UserRepository,
         private readonly recoverySessionService: RecoverySessionService,
     ) {}
 
@@ -139,22 +160,63 @@ export class RecoveryFlowService {
             throw new Error('Nenhuma pergunta de recuperação foi encontrada.');
         }
 
-        return {
-            currentStep: session.currentStep,
-            completedSteps: session.completedSteps,
-            totalSteps: session.challenges.length,
-            attempts: challenge.attempts,
-            maxAttempts: challenge.maxAttempts,
-            remainingAttempts: Math.max(
-                challenge.maxAttempts - challenge.attempts,
-                0,
-            ),
-            questions: questions.map((question) => ({
-                id: question.id,
-                questionCipherText: question.questionCipherText,
-                questionIv: question.questionIv,
-            })),
-        };
+        const user = await this.userRepository.findById(session.userId);
+
+        if (!user) {
+            throw new Error('Usuário não encontrado.');
+        }
+
+        const recoveryData = await this.recoveryRepository.findRecoveryData(
+            session.userId,
+        );
+
+        if (!recoveryData) {
+            throw new Error('Dados de recuperação não encontrados.');
+        }
+
+        const recoveryDataKey = await decryptRecoveryDataKey({
+            encryptedDataKey: recoveryData.encryptedDataKey,
+            iv: recoveryData.iv,
+            salt: recoveryData.salt,
+            email: user.email,
+        });
+
+        try {
+            const decryptedQuestions = await Promise.all(
+                questions.map(async (question) => ({
+                    id: question.id,
+
+                    question: await decryptString(
+                        {
+                            cipherText: question.questionCipherText,
+                            iv: question.questionIv,
+                        },
+                        recoveryDataKey,
+                    ),
+                })),
+            );
+
+            return {
+                currentStep: session.currentStep,
+
+                completedSteps: session.completedSteps,
+
+                totalSteps: session.challenges.length,
+
+                attempts: challenge.attempts,
+
+                maxAttempts: challenge.maxAttempts,
+
+                remainingAttempts: Math.max(
+                    challenge.maxAttempts - challenge.attempts,
+                    0,
+                ),
+
+                questions: decryptedQuestions,
+            };
+        } finally {
+            recoveryDataKey.fill(0);
+        }
     }
 
     async verifyQuestionsChallenge(token: string, answers: string[]) {
@@ -202,6 +264,83 @@ export class RecoveryFlowService {
             session.id,
             challenge.id,
         );
+    }
+
+    async resetPassword(token: string, newPassword: string) {
+        validateNewPasswordData(newPassword);
+
+        const session =
+            await this.recoverySessionService.getCompletedSessionByToken(token);
+
+        const user = await this.authRepository.findUserById(session.userId);
+
+        if (!user) {
+            throw new Error('Usuário não encontrado.');
+        }
+
+        const recoveryData = await this.recoveryRepository.findRecoveryData(
+            user.id,
+        );
+
+        if (!recoveryData) {
+            throw new Error('Dados de recuperação não encontrados.');
+        }
+
+        if (!recoveryData.vaultKeyCipherText || !recoveryData.vaultKeyIv) {
+            throw new Error(
+                'A chave do cofre não está disponível para recuperação.',
+            );
+        }
+
+        const recoveryDataKey = await decryptRecoveryDataKey({
+            encryptedDataKey: recoveryData.encryptedDataKey,
+            iv: recoveryData.iv,
+            salt: recoveryData.salt,
+            email: user.email,
+        });
+
+        try {
+            const vaultKey = await decryptRecoveryVaultKey(
+                {
+                    cipherText: recoveryData.vaultKeyCipherText,
+                    iv: recoveryData.vaultKeyIv,
+                },
+                recoveryDataKey,
+            );
+
+            try {
+                const newEncryptedVault = await encryptVaultKey(
+                    vaultKey,
+                    newPassword,
+                    DEFAULT_ARGON2_PARAMS,
+                );
+
+                const newPasswordHash = await hashPassword({
+                    password: newPassword,
+                    params: DEFAULT_ARGON2_PARAMS,
+                });
+
+                await this.authRepository.updatePassword(
+                    user.id,
+                    newPasswordHash,
+                );
+
+                await this.authRepository.updateVaultKey(
+                    user.id,
+                    JSON.stringify(newEncryptedVault),
+                );
+
+                await this.recoverySessionService.completeRecovery(session.id);
+            } finally {
+                vaultKey.fill(0);
+            }
+        } finally {
+            recoveryDataKey.fill(0);
+        }
+
+        return {
+            success: true,
+        };
     }
 
     private async verifySecretChallenge(

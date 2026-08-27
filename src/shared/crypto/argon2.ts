@@ -7,12 +7,12 @@ import {
     validateHashLength,
     validateSalt,
 } from '@/src/shared/validators/crypto/argon2.validator';
-import { validatePassword } from '@/src/shared/validators/auth/password.validator';
+import { validateSecret } from '@/src/shared/validators/auth/secret.validator';
 
 export async function deriveArgon2Key(
     params: Argon2DeriveKeyParams,
 ): Promise<Uint8Array> {
-    validatePassword(params.password);
+    validateSecret(params.password);
     validateSalt(params.salt);
 
     const hashLength = params.hashLength ?? VAULT_KEY_LENGTH;

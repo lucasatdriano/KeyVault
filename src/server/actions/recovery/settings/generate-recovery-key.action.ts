@@ -5,21 +5,21 @@ import {
     recoverySettingsService,
 } from '@/src/server/containers/services';
 import { getAuditContext } from '@/src/server/utils/audit-context';
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 import { ActionResult } from '@/src/server/types/action';
 
-export async function generateRecoveryKeyAction(): Promise<
-    ActionResult<string | null>
-> {
+export async function generateRecoveryKeyAction(
+    recoveryData: RecoveryDataPayload,
+): Promise<ActionResult<string | null>> {
     try {
         const user = await authService.requireAuth();
         const audit = await getAuditContext();
 
         const recoveryKey = await recoverySettingsService.generateRecoveryKey(
             user.id,
+            recoveryData,
             audit,
         );
-
-        console.log(recoveryKey);
 
         return {
             success: true,

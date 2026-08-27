@@ -20,15 +20,13 @@ export interface CurrentRecoveryChallengeResult {
 }
 
 export interface RecoveryQuestionData {
-    questionCipherText: string;
-    questionIv: string;
+    question: string;
     answer: string;
 }
 
 export interface RecoveryQuestionChallengeData {
     id: string;
-    questionCipherText: string;
-    questionIv: string;
+    question: string;
 }
 
 export interface RecoveryQuestionsChallengeResult {

@@ -2,17 +2,22 @@ import { AuditAction, RecoveryType } from '@/src/generated/prisma/client';
 
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 import { generateRecoveryKey } from '@/src/shared/crypto/random';
+import { decryptRecoveryDataKey } from '@/src/shared/crypto/recovery';
+import { decryptString, encryptString } from '@/src/shared/crypto/cipher';
 
 import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
+import { UserRepository } from '@/src/server/database/repositories/user.repository';
 import { hashPassword } from '@/src/server/crypto/passwordHasher';
 import { validateUserId } from '@/src/server/validators/user/user.validator';
 import { AuditService } from '@/src/server/services/audit.service';
 import { AuditContext } from '@/src/server/types/service/audit';
 import { RecoveryQuestionData } from '@/src/server/types/service/recovery';
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 
 export class RecoverySettingsService {
     constructor(
         private readonly recoveryRepository: RecoveryRepository,
+        private readonly userRepository: UserRepository,
         private readonly auditService: AuditService,
     ) {}
 
@@ -141,9 +146,58 @@ export class RecoverySettingsService {
         return this.recoveryRepository.findQuestions(userId);
     }
 
+    async getDecryptedQuestions(userId: string) {
+        validateUserId(userId);
+
+        const user = await this.userRepository.findById(userId);
+
+        if (!user) {
+            throw new Error('Usuário não encontrado.');
+        }
+
+        const recoveryData =
+            await this.recoveryRepository.findRecoveryData(userId);
+
+        if (!recoveryData) {
+            throw new Error('Dados de recuperação não encontrados.');
+        }
+
+        const recoveryDataKey = await decryptRecoveryDataKey({
+            encryptedDataKey: recoveryData.encryptedDataKey,
+            iv: recoveryData.iv,
+            salt: recoveryData.salt,
+            email: user.email,
+        });
+
+        try {
+            const questions =
+                await this.recoveryRepository.findQuestions(userId);
+
+            return Promise.all(
+                questions.map(async (question) => {
+                    const decryptedQuestion = await decryptString(
+                        {
+                            cipherText: question.questionCipherText,
+                            iv: question.questionIv,
+                        },
+                        recoveryDataKey,
+                    );
+
+                    return {
+                        id: question.id,
+                        question: decryptedQuestion,
+                    };
+                }),
+            );
+        } finally {
+            recoveryDataKey.fill(0);
+        }
+    }
+
     async configureQuestions(
         userId: string,
         questions: RecoveryQuestionData[],
+        recoveryData: RecoveryDataPayload,
         audit?: AuditContext,
     ) {
         validateUserId(userId);
@@ -163,49 +217,94 @@ export class RecoverySettingsService {
             throw new Error('Método de recuperação não encontrado.');
         }
 
-        await this.recoveryRepository.deleteQuestions(userId);
+        const user = await this.userRepository.findById(userId);
 
-        for (const question of questions) {
-            const normalizedAnswer = question.answer.trim().toLowerCase();
+        if (!user) {
+            throw new Error('Usuário não encontrado.');
+        }
 
-            const answerHash = await hashPassword({
-                password: normalizedAnswer,
-                params: DEFAULT_ARGON2_PARAMS,
+        const existingRecoveryData =
+            await this.recoveryRepository.findRecoveryData(userId);
+
+        let recoveryDataKey: Uint8Array;
+
+        if (!existingRecoveryData) {
+            await this.createRecoveryDataIfNeeded(userId, recoveryData);
+
+            recoveryDataKey = await decryptRecoveryDataKey({
+                encryptedDataKey: recoveryData.encryptedDataKey,
+                iv: recoveryData.iv,
+                salt: recoveryData.salt,
+                email: user.email,
             });
-
-            await this.recoveryRepository.createQuestion({
-                userId,
-                questionCipherText: question.questionCipherText,
-                questionIv: question.questionIv,
-                answerHash,
+        } else {
+            recoveryDataKey = await decryptRecoveryDataKey({
+                encryptedDataKey: existingRecoveryData.encryptedDataKey,
+                iv: existingRecoveryData.iv,
+                salt: existingRecoveryData.salt,
+                email: user.email,
             });
         }
 
-        const updated = await this.recoveryRepository.updateMethod(
-            userId,
-            RecoveryType.QUESTIONS,
-            {
-                enabled: true,
-            },
-        );
+        try {
+            await this.recoveryRepository.deleteQuestions(userId);
 
-        if (!method.enabled) {
-            await this.auditService.createLog({
+            for (const question of questions) {
+                const normalizedAnswer = question.answer.trim().toLowerCase();
+
+                if (!normalizedAnswer) {
+                    throw new Error(
+                        'Todas as perguntas precisam possuir uma resposta.',
+                    );
+                }
+
+                const encryptedQuestion = await encryptString(
+                    question.question,
+                    recoveryDataKey,
+                );
+
+                const answerHash = await hashPassword({
+                    password: normalizedAnswer,
+                    params: DEFAULT_ARGON2_PARAMS,
+                });
+
+                await this.recoveryRepository.createQuestion({
+                    userId,
+                    questionCipherText: encryptedQuestion.cipherText,
+                    questionIv: encryptedQuestion.iv,
+                    answerHash,
+                });
+            }
+
+            const updated = await this.recoveryRepository.updateMethod(
                 userId,
-                action: AuditAction.ENABLE_RECOVERY_METHOD,
-                browser: audit?.browser,
-                os: audit?.os,
-                device: audit?.device,
-                ip: audit?.ip,
-            });
-        }
+                RecoveryType.QUESTIONS,
+                {
+                    enabled: true,
+                },
+            );
 
-        return updated;
+            if (!method.enabled) {
+                await this.auditService.createLog({
+                    userId,
+                    action: AuditAction.ENABLE_RECOVERY_METHOD,
+                    browser: audit?.browser,
+                    os: audit?.os,
+                    device: audit?.device,
+                    ip: audit?.ip,
+                });
+            }
+
+            return updated;
+        } finally {
+            recoveryDataKey.fill(0);
+        }
     }
 
     async configureRecoveryPassword(
         userId: string,
         recoveryPassword: string,
+        recoveryData: RecoveryDataPayload,
         audit?: AuditContext,
     ) {
         validateUserId(userId);
@@ -224,6 +323,8 @@ export class RecoverySettingsService {
         if (!method) {
             throw new Error('Método de recuperação não encontrado.');
         }
+
+        await this.createRecoveryDataIfNeeded(userId, recoveryData);
 
         const secretHash = await hashPassword({
             password: normalizedPassword,
@@ -255,16 +356,10 @@ export class RecoverySettingsService {
 
     async generateRecoveryKey(
         userId: string,
+        recoveryData: RecoveryDataPayload,
         audit?: AuditContext,
     ): Promise<string> {
         validateUserId(userId);
-
-        const recoveryKey = generateRecoveryKey();
-
-        const secretHash = await hashPassword({
-            password: recoveryKey,
-            params: DEFAULT_ARGON2_PARAMS,
-        });
 
         const method = await this.recoveryRepository.findMethod(
             userId,
@@ -274,6 +369,15 @@ export class RecoverySettingsService {
         if (!method) {
             throw new Error('Método de recuperação não encontrado.');
         }
+
+        await this.createRecoveryDataIfNeeded(userId, recoveryData);
+
+        const recoveryKey = generateRecoveryKey();
+
+        const secretHash = await hashPassword({
+            password: recoveryKey,
+            params: DEFAULT_ARGON2_PARAMS,
+        });
 
         await this.recoveryRepository.updateMethod(
             userId,
@@ -305,5 +409,26 @@ export class RecoverySettingsService {
         }
 
         return recoveryKey;
+    }
+
+    private async createRecoveryDataIfNeeded(
+        userId: string,
+        recoveryData: RecoveryDataPayload,
+    ) {
+        const existingRecoveryData =
+            await this.recoveryRepository.findRecoveryData(userId);
+
+        if (existingRecoveryData) {
+            return existingRecoveryData;
+        }
+
+        return this.recoveryRepository.createRecoveryData({
+            userId,
+            encryptedDataKey: recoveryData.encryptedDataKey,
+            iv: recoveryData.iv,
+            salt: recoveryData.salt,
+            vaultKeyCipherText: recoveryData.vaultKeyCipherText,
+            vaultKeyIv: recoveryData.vaultKeyIv,
+        });
     }
 }

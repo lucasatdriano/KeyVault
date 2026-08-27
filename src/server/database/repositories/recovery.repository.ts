@@ -1,6 +1,7 @@
 import {
     PrismaClient,
     RecoveryChallenge,
+    RecoveryData,
     RecoveryMethod,
     RecoveryQuestion,
     RecoverySession,
@@ -11,12 +12,14 @@ import {
 import {
     CreateRecoveryMethodData,
     UpdateRecoveryMethodData,
+    CreateRecoveryDataData,
     CreateRecoveryQuestionData,
     CreateRecoverySessionData,
     UpdateRecoverySessionData,
     CreateRecoveryChallengeData,
     UpdateRecoveryChallengeData,
     RecoverySessionWithChallenges,
+    UpdateRecoveryDataData,
 } from '@/src/server/types/repository/recovery';
 
 export class RecoveryRepository {
@@ -117,6 +120,42 @@ export class RecoveryRepository {
                 },
             },
             data,
+        });
+    }
+
+    async findRecoveryData(userId: string): Promise<RecoveryData | null> {
+        return this.prisma.recoveryData.findUnique({
+            where: {
+                userId,
+            },
+        });
+    }
+
+    async createRecoveryData(
+        data: CreateRecoveryDataData,
+    ): Promise<RecoveryData> {
+        return this.prisma.recoveryData.create({
+            data,
+        });
+    }
+
+    async updateRecoveryData(
+        userId: string,
+        data: UpdateRecoveryDataData,
+    ): Promise<RecoveryData> {
+        return this.prisma.recoveryData.update({
+            where: {
+                userId,
+            },
+            data,
+        });
+    }
+
+    async deleteRecoveryData(userId: string): Promise<RecoveryData> {
+        return this.prisma.recoveryData.delete({
+            where: {
+                userId,
+            },
         });
     }
 

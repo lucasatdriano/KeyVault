@@ -2,7 +2,7 @@ import { hash, verify } from '@node-rs/argon2';
 
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 import { validateArgon2Params } from '@/src/shared/validators/crypto/argon2.validator';
-import { validatePassword } from '@/src/shared/validators/auth/password.validator';
+import { validateSecret } from '@/src/shared/validators/auth/secret.validator';
 
 import {
     HashPasswordParams,
@@ -13,7 +13,7 @@ export async function hashPassword(
     params: HashPasswordParams,
 ): Promise<string> {
     try {
-        validatePassword(params.password);
+        validateSecret(params.password);
 
         const argonParams = params.params ?? DEFAULT_ARGON2_PARAMS;
 
@@ -34,7 +34,7 @@ export async function hashPassword(
 export async function verifyPassword(
     params: VerifyPasswordParams,
 ): Promise<boolean> {
-    validatePassword(params.password);
+    validateSecret(params.password);
 
     if (!params.hash) {
         throw new Error('verifyPassword: hash inválido');

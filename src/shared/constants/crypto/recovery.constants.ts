@@ -1,0 +1,1 @@
+export const RECOVERY_DATA_KEY_LENGTH = 32;

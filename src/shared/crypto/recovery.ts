@@ -1,0 +1,141 @@
+import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
+import { RECOVERY_DATA_KEY_LENGTH } from '../constants/crypto/recovery.constants';
+
+import { generateIV, generateRandomBytes, generateSalt } from './random';
+import { decrypt, encrypt, importAESKey } from './aes';
+import { base64ToBytes, bytesToBase64 } from './encoding';
+import { deriveArgon2Key } from './argon2';
+import {
+    DecryptRecoveryDataKeyParams,
+    EncryptedRecoveryVaultKey,
+    EncryptRecoveryDataKeyParams,
+} from '../types/crypto/recovery';
+
+export function createRecoveryDataKey(): Uint8Array {
+    return generateRandomBytes(RECOVERY_DATA_KEY_LENGTH);
+}
+
+export async function encryptRecoveryDataKey({
+    recoveryDataKey,
+    email,
+}: EncryptRecoveryDataKeyParams) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+        throw new Error('O e-mail é obrigatório.');
+    }
+
+    if (recoveryDataKey.length !== RECOVERY_DATA_KEY_LENGTH) {
+        throw new Error('RecoveryDataKey inválida.');
+    }
+
+    const salt = generateSalt();
+
+    const wrappingKeyBytes = await deriveArgon2Key({
+        password: normalizedEmail,
+        salt,
+        params: DEFAULT_ARGON2_PARAMS,
+        hashLength: RECOVERY_DATA_KEY_LENGTH,
+    });
+
+    try {
+        const wrappingKey = await importAESKey({
+            keyData: wrappingKeyBytes,
+        });
+
+        const iv = generateIV();
+
+        const encrypted = await encrypt({
+            key: wrappingKey,
+            data: recoveryDataKey,
+            iv,
+        });
+
+        return {
+            encryptedDataKey: bytesToBase64(encrypted),
+            iv: bytesToBase64(iv),
+            salt: bytesToBase64(salt),
+        };
+    } finally {
+        wrappingKeyBytes.fill(0);
+    }
+}
+
+export async function decryptRecoveryDataKey({
+    encryptedDataKey,
+    iv,
+    salt,
+    email,
+}: DecryptRecoveryDataKeyParams): Promise<Uint8Array> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+        throw new Error('O e-mail é obrigatório.');
+    }
+
+    const saltBytes = base64ToBytes(salt);
+
+    const wrappingKeyBytes = await deriveArgon2Key({
+        password: normalizedEmail,
+        salt: saltBytes,
+        params: DEFAULT_ARGON2_PARAMS,
+        hashLength: RECOVERY_DATA_KEY_LENGTH,
+    });
+
+    try {
+        const wrappingKey = await importAESKey({
+            keyData: wrappingKeyBytes,
+        });
+
+        return await decrypt({
+            key: wrappingKey,
+            ciphertext: base64ToBytes(encryptedDataKey),
+            iv: base64ToBytes(iv),
+        });
+    } catch {
+        throw new Error(
+            'Não foi possível descriptografar os dados de recuperação.',
+        );
+    } finally {
+        wrappingKeyBytes.fill(0);
+    }
+}
+
+export async function encryptRecoveryVaultKey(
+    vaultKey: Uint8Array,
+    recoveryDataKey: Uint8Array,
+): Promise<EncryptedRecoveryVaultKey> {
+    const key = await importAESKey({
+        keyData: recoveryDataKey,
+    });
+
+    const iv = generateIV();
+
+    const cipherText = await encrypt({
+        key,
+        data: vaultKey,
+        iv,
+    });
+
+    return {
+        cipherText: bytesToBase64(cipherText),
+        iv: bytesToBase64(iv),
+    };
+}
+
+export async function decryptRecoveryVaultKey(
+    encryptedVaultKey: EncryptedRecoveryVaultKey,
+    recoveryDataKey: Uint8Array,
+): Promise<Uint8Array> {
+    const key = await importAESKey({
+        keyData: recoveryDataKey,
+    });
+
+    const vaultKey = await decrypt({
+        key,
+        ciphertext: base64ToBytes(encryptedVaultKey.cipherText),
+        iv: base64ToBytes(encryptedVaultKey.iv),
+    });
+
+    return vaultKey;
+}

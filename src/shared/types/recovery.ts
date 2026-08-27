@@ -6,3 +6,11 @@ export const RecoveryType = {
 } as const;
 
 export type RecoveryType = (typeof RecoveryType)[keyof typeof RecoveryType];
+
+export interface RecoveryDataPayload {
+    encryptedDataKey: string;
+    iv: string;
+    salt: string;
+    vaultKeyCipherText: string;
+    vaultKeyIv: string;
+}

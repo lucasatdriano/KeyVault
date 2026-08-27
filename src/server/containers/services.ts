@@ -32,11 +32,13 @@ export const recoverySessionService = new RecoverySessionService(
 export const recoveryFlowService = new RecoveryFlowService(
     recoveryRepository,
     authRepository,
+    userRepository,
     recoverySessionService,
 );
 
 export const recoverySettingsService = new RecoverySettingsService(
     recoveryRepository,
+    userRepository,
     auditService,
 );
 

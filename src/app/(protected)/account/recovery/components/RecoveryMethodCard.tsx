@@ -9,6 +9,8 @@ import { RecoveryMethodConfig } from './recovery-method.config';
 interface RecoveryMethodCardProps {
     config: RecoveryMethodConfig;
     isActive: boolean;
+    isDisabled?: boolean;
+    disabledReason?: string;
     isSubmitting?: boolean;
     onEnable: () => void;
     onDisable: () => void;
@@ -18,6 +20,8 @@ interface RecoveryMethodCardProps {
 export default function RecoveryMethodCard({
     config,
     isActive,
+    isDisabled = false,
+    disabledReason = 'Este método não está disponível no momento.',
     isSubmitting = false,
     onEnable,
     onDisable,
@@ -39,22 +43,44 @@ export default function RecoveryMethodCard({
         return colors[riskLevel];
     };
 
+    const cardState = isDisabled
+        ? 'disabled'
+        : isActive
+          ? 'active'
+          : 'inactive';
+
+    const cardStyles = {
+        active: 'border-primary/30 hover:border-primary/50 bg-white/5',
+        inactive: 'border-white/10 hover:border-white/20 bg-white/5',
+        disabled: 'border-white/5 bg-white/5 opacity-60 cursor-not-allowed',
+    };
+
+    const iconStyles = {
+        active: 'bg-primary/10 text-primary',
+        inactive: 'bg-white/5 text-foreground/30',
+        disabled: 'bg-white/5 text-foreground/20',
+    };
+
+    const statusStyles = {
+        active: 'border-green-500/30 bg-green-500/20 text-green-500',
+        inactive: 'border-white/10 bg-white/5 text-foreground/30',
+        disabled: 'border-white/5 bg-white/5 text-foreground/20',
+    };
+
+    const statusText = {
+        active: 'Ativo',
+        inactive: 'Inativo',
+        disabled: 'Indisponível',
+    };
+
     return (
         <div
-            className={`rounded-2xl border bg-white/5 p-5 transition-all ${
-                isActive
-                    ? 'border-primary/30 hover:border-primary/50'
-                    : 'border-white/10 hover:border-white/20'
-            }`}
+            className={`rounded-2xl border p-5 transition-all ${cardStyles[cardState]}`}
         >
             <div className="flex flex-col gap-4 md:flex-row md:items-start">
                 <div className="flex flex-1 items-start gap-4">
                     <div
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
-                            isActive
-                                ? 'bg-primary/10 text-primary'
-                                : 'bg-white/5 text-foreground/30'
-                        }`}
+                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconStyles[cardState]}`}
                     >
                         <Icon className="h-6 w-6" />
                     </div>
@@ -66,13 +92,9 @@ export default function RecoveryMethodCard({
                             </h3>
 
                             <span
-                                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-                                    isActive
-                                        ? 'border-green-500/30 bg-green-500/20 text-green-500'
-                                        : 'border-white/10 bg-white/5 text-foreground/30'
-                                }`}
+                                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${statusStyles[cardState]}`}
                             >
-                                {isActive ? 'Ativo' : 'Inativo'}
+                                {statusText[cardState]}
                             </span>
 
                             <span
@@ -88,16 +110,26 @@ export default function RecoveryMethodCard({
                             {config.description}
                         </p>
 
-                        <p className="mt-2 flex items-center gap-1 text-xs text-foreground/30">
-                            <AlertCircleIcon className="h-3 w-3" />
-
-                            {config.riskDescription}
-                        </p>
+                        {isDisabled && disabledReason ? (
+                            <p className="mt-2 flex items-center gap-1 text-xs text-error/70">
+                                <AlertCircleIcon className="h-3 w-3" />
+                                {disabledReason}
+                            </p>
+                        ) : (
+                            <p className="mt-2 flex items-center gap-1 text-xs text-foreground/30">
+                                <AlertCircleIcon className="h-3 w-3" />
+                                {config.riskDescription}
+                            </p>
+                        )}
                     </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                    {isActive ? (
+                    {isDisabled ? (
+                        <div className="rounded-lg border border-white/5 bg-white/5 px-4 py-2 text-sm text-foreground/30">
+                            Indisponível
+                        </div>
+                    ) : isActive ? (
                         <>
                             {onConfigure && (
                                 <Button

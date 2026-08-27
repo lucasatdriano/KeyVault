@@ -5,12 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Mail, ArrowLeft, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { startRecoveryAction } from '@/src/server/actions/recovery/flow/start-recovery.action';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
+
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -30,33 +33,32 @@ export default function ForgotPasswordPage() {
             return;
         }
 
-        setIsLoading(true);
-        setError('');
-
         try {
-            // Aqui vamos chamar:
-            //
-            // const result = await startRecoveryAction(normalizedEmail);
-            //
-            // O result vai retornar algo como:
-            //
-            // {
-            //   token,
-            //   totalSteps,
-            //   currentStep,
-            //   nextMethod,
-            //   expiresAt
-            // }
+            setIsLoading(true);
+            setError('');
 
-            // Por enquanto:
-            console.log('Iniciando recuperação:', normalizedEmail);
+            const result = await startRecoveryAction(normalizedEmail);
 
-            // Depois vamos abrir o modal correspondente ao:
-            // result.data.nextMethod
+            if (!result.success || !result.data) {
+                throw new Error(
+                    result.error ?? 'Não foi possível iniciar a recuperação.',
+                );
+            }
 
             toast.success('Recuperação iniciada.');
-        } catch {
-            toast.error('Erro ao iniciar recuperação.');
+
+            router.push(
+                `/forgot-password/recovery?token=${encodeURIComponent(
+                    result.data.token,
+                )}`,
+            );
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Erro ao iniciar recuperação.';
+
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }

@@ -8,6 +8,7 @@ import {
     ChevronRightIcon,
     CheckIcon,
     AlertCircleIcon,
+    KeyIcon,
 } from 'lucide-react';
 
 import Button from '@/src/client/components/ui/buttons/Button';
@@ -212,7 +213,7 @@ export default function QuizAnswerModal({
 
                 <div className="rounded-xl border border-white/10 bg-white/5 p-6">
                     <p className="text-lg font-medium text-foreground">
-                        {questions[currentIndex]?.question}
+                        {questions[currentIndex]?.question}?
                     </p>
                 </div>
 
@@ -230,6 +231,7 @@ export default function QuizAnswerModal({
                             setError('');
                         }
                     }}
+                    leftIcon={<KeyIcon className="w-5 h-5" />}
                     error={error}
                 />
 

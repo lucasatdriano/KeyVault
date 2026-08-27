@@ -71,8 +71,9 @@ model User {
   categories          Category[]
   auditLogs           AuditLog[]
   recoveryMethods     RecoveryMethod[]
-  recoveryQuestions   RecoveryQuestion[]
   recoverySessions    RecoverySession[]
+  recoveryQuestions   RecoveryQuestion[]
+  recoveryData        RecoveryData[]
 }
 
 model EmailVerification {
@@ -257,4 +258,21 @@ model RecoveryQuestion {
   updatedAt         DateTime @updatedAt
 
   @@index([userId])
+}
+
+model RecoveryData {
+  id                 String   @id @default(cuid())
+  
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  encryptedDataKey   String
+  iv                 String
+  salt               String
+
+  vaultKeyCipherText String
+  vaultKeyIv         String
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }

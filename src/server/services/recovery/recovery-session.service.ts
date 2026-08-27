@@ -94,6 +94,37 @@ export class RecoverySessionService {
         };
     }
 
+    async getCompletedSessionByToken(token: string) {
+        if (!token?.trim()) {
+            throw new Error('Token de recuperação inválido.');
+        }
+
+        const tokenHash = await generateSha256(token);
+
+        const session =
+            await this.recoveryRepository.findSessionByTokenHash(tokenHash);
+
+        if (!session) {
+            throw new Error('Sessão de recuperação inválida.');
+        }
+
+        if (session.status !== RecoverySessionStatus.COMPLETED) {
+            throw new Error('A recuperação da conta ainda não foi concluída.');
+        }
+
+        if (session.expiresAt <= new Date()) {
+            throw new Error('Esta sessão de recuperação expirou.');
+        }
+
+        if (session.completedSteps !== session.challenges.length) {
+            throw new Error(
+                'Nem todos os métodos de recuperação foram concluídos.',
+            );
+        }
+
+        return session;
+    }
+
     async completeCurrentChallenge(sessionId: string, challengeId: string) {
         const session = await this.recoveryRepository.findSession(sessionId);
 
@@ -164,6 +195,24 @@ export class RecoverySessionService {
         };
     }
 
+    async completeRecovery(sessionId: string) {
+        const session = await this.recoveryRepository.findSession(sessionId);
+
+        if (!session) {
+            throw new Error('Sessão de recuperação não encontrada.');
+        }
+
+        if (session.status !== RecoverySessionStatus.COMPLETED) {
+            throw new Error(
+                'A recuperação ainda não está pronta para ser finalizada.',
+            );
+        }
+
+        return this.recoveryRepository.updateSession(session.id, {
+            completedAt: new Date(),
+        });
+    }
+
     async registerFailedAttempt(sessionId: string, challengeId: string) {
         const session = await this.recoveryRepository.findSession(sessionId);
 
@@ -204,9 +253,7 @@ export class RecoverySessionService {
         return {
             attempts,
             maxAttempts: challenge.maxAttempts,
-
             remainingAttempts: Math.max(challenge.maxAttempts - attempts, 0),
-
             failed,
         };
     }

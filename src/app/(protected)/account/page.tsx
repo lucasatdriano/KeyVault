@@ -68,7 +68,6 @@ export default function AccountPage() {
                 if (result.success && result.data) {
                     const { user: userData, recoveryMethods } = result.data;
 
-                    console.log();
                     const profileData: ProfileDisplay = {
                         name: userData.name,
                         email: userData.email,

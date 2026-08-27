@@ -6,11 +6,13 @@ import {
     authService,
     recoverySettingsService,
 } from '@/src/server/containers/services';
-import { ActionResult } from '@/src/server/types/action';
 import { getAuditContext } from '@/src/server/utils/audit-context';
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
+import { ActionResult } from '@/src/server/types/action';
 
 export async function configureRecoveryPasswordAction(
     recoveryPassword: string,
+    recoveryData: RecoveryDataPayload,
 ): Promise<ActionResult<RecoveryMethod | null>> {
     try {
         const user = await authService.requireAuth();
@@ -19,6 +21,7 @@ export async function configureRecoveryPasswordAction(
         const method = await recoverySettingsService.configureRecoveryPassword(
             user.id,
             recoveryPassword,
+            recoveryData,
             audit,
         );
 

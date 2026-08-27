@@ -46,8 +46,8 @@ export function validateChangePassword(data: ChangePasswordFormData) {
 
     if (!data.newPassword.trim()) {
         errors.newPassword = 'A nova senha é obrigatória.';
-    } else if (data.newPassword.length < 6) {
-        errors.newPassword = 'A senha deve ter pelo menos 6 caracteres.';
+    } else if (data.newPassword.length < 8) {
+        errors.newPassword = 'A senha deve ter pelo menos 8 caracteres.';
     } else if (data.newPassword === data.currentPassword) {
         errors.newPassword = 'A nova senha deve ser diferente da atual.';
     }
