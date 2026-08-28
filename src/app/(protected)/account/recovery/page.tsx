@@ -224,6 +224,8 @@ export default function RecoveryPage() {
                     if (success) {
                         setShowQuestionsModal(false);
                     }
+
+                    return success;
                 }}
                 maxQuestions={3}
                 isLoading={isSubmitting}

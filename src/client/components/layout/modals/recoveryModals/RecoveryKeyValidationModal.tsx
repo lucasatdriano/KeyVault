@@ -12,6 +12,9 @@ import {
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
+import { validateRecoveryKey } from '@/src/client/validators/recovery.validator';
+import { hasValidationErrors } from '@/src/client/validators';
+import { RecoveryKeyFormData } from '@/src/client/types/recovery';
 
 interface RecoveryKeyValidationModalProps {
     isOpen: boolean;
@@ -28,34 +31,41 @@ export default function RecoveryKeyValidationModal({
     title = 'Chave de recuperação',
     isLoading = false,
 }: RecoveryKeyValidationModalProps) {
-    const [recoveryKey, setRecoveryKey] = useState('');
-    const [error, setError] = useState('');
+    const [formData, setFormData] = useState<RecoveryKeyFormData>({
+        recoveryKey: '',
+    });
+    const [errors, setErrors] = useState({
+        recoveryKey: '',
+    });
 
     useEffect(() => {
         if (!isOpen) {
             return;
         }
 
-        setRecoveryKey('');
-        setError('');
+        setFormData({
+            recoveryKey: '',
+        });
+
+        setErrors({
+            recoveryKey: '',
+        });
     }, [isOpen]);
 
     const handleVerify = async () => {
-        const normalizedKey = recoveryKey.trim().toUpperCase();
+        const validationErrors = validateRecoveryKey({
+            recoveryKey: formData.recoveryKey,
+        });
 
-        if (!normalizedKey) {
-            setError('Digite sua chave de recuperação.');
+        setErrors({
+            recoveryKey: validationErrors.recoveryKey ?? '',
+        });
 
+        if (hasValidationErrors(validationErrors)) {
             return;
         }
 
-        if (!normalizedKey.startsWith('KV-')) {
-            setError('A chave de recuperação possui um formato inválido.');
-
-            return;
-        }
-
-        await onVerify(normalizedKey);
+        await onVerify(formData.recoveryKey.trim().toUpperCase());
     };
 
     return (
@@ -99,16 +109,20 @@ export default function RecoveryKeyValidationModal({
                     name="recoveryKey"
                     type="text"
                     placeholder="KV-******-******-******"
-                    value={recoveryKey}
+                    value={formData.recoveryKey}
                     disabled={isLoading}
                     onChange={(e) => {
-                        setRecoveryKey(e.target.value.toUpperCase());
+                        setFormData({
+                            recoveryKey: e.target.value.toUpperCase(),
+                        });
 
-                        if (error) {
-                            setError('');
+                        if (errors.recoveryKey) {
+                            setErrors({
+                                recoveryKey: '',
+                            });
                         }
                     }}
-                    error={error}
+                    error={errors.recoveryKey}
                     leftIcon={<KeyIcon className="h-5 w-5" />}
                 />
 
@@ -136,7 +150,7 @@ export default function RecoveryKeyValidationModal({
                     <Button
                         type="button"
                         onClick={handleVerify}
-                        disabled={!recoveryKey.trim() || isLoading}
+                        disabled={!formData.recoveryKey.trim() || isLoading}
                         isLoading={isLoading}
                         loadingText="Verificando..."
                         leftIcon={<CheckIcon className="h-4 w-4" />}

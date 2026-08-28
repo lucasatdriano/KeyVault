@@ -1,11 +1,15 @@
 import { LoginFormData, RegisterFormData } from '@/src/shared/types/auth';
+import { ValidationErrors } from '@/src/client/validators';
+import { EMAIL_REGEX } from '@/src/shared/constants/auth/auth.constants';
 
-export function validateLoginForm(data: LoginFormData) {
-    const errors: Record<string, string> = {};
+export function validateLoginForm(
+    data: LoginFormData,
+): ValidationErrors<LoginFormData> {
+    const errors: ValidationErrors<LoginFormData> = {};
 
     if (!data.email.trim()) {
         errors.email = 'Informe seu e-mail.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    } else if (!EMAIL_REGEX.test(data.email)) {
         errors.email = 'Digite um e-mail válido.';
     }
 
@@ -19,8 +23,8 @@ export function validateLoginForm(data: LoginFormData) {
 export function validateRegisterForm(
     data: RegisterFormData & { confirmPassword: string },
     acceptTerms: boolean,
-) {
-    const errors: Record<string, string> = {};
+): ValidationErrors<RegisterFormData> {
+    const errors: ValidationErrors<RegisterFormData & { terms: string }> = {};
 
     if (!data.name.trim()) {
         errors.name = 'Informe seu nome.';
@@ -30,7 +34,7 @@ export function validateRegisterForm(
 
     if (!data.email.trim()) {
         errors.email = 'Informe seu e-mail.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    } else if (!EMAIL_REGEX.test(data.email)) {
         errors.email = 'Digite um e-mail válido.';
     }
 

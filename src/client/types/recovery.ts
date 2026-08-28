@@ -28,3 +28,25 @@ export interface RecoveryChallenge {
     remainingAttempts: number;
     expiresAt: Date | string;
 }
+
+export interface CreateQuizQuestionFormData {
+    question: string;
+    answer: string;
+}
+
+export interface RecoveryKeyFormData {
+    recoveryKey: string;
+}
+
+export interface RecoveryPasswordFormData {
+    recoveryPassword: string;
+    confirmPassword: string;
+}
+
+export interface RecoveryPasswordValidationFormData {
+    recoveryPassword: string;
+}
+
+export interface RecoveryAnswerFormData {
+    answer: string;
+}

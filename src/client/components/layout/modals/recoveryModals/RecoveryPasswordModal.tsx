@@ -2,16 +2,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import {
-    CheckIcon,
-    CircleIcon,
-    LockKeyholeIcon,
-    ShieldCheckIcon,
-} from 'lucide-react';
+import { CheckIcon, LockKeyholeIcon, ShieldCheckIcon } from 'lucide-react';
 
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
+import { hasValidationErrors } from '@/src/client/validators';
+import { validateRecoveryPassword } from '@/src/client/validators/recovery.validator';
+import RequirementIndicator from '../../../ui/indicators/RequirementIndicator';
+import { RecoveryPasswordFormData } from '@/src/client/types/recovery';
 
 interface RecoveryPasswordModalProps {
     isOpen: boolean;
@@ -20,78 +19,67 @@ interface RecoveryPasswordModalProps {
     isLoading?: boolean;
 }
 
-interface PasswordRequirementProps {
-    label: string;
-    valid: boolean;
-}
-
-function PasswordRequirement({ label, valid }: PasswordRequirementProps) {
-    return (
-        <div
-            className={`flex items-center gap-2 text-xs ${
-                valid ? 'text-green-500' : 'text-foreground/40'
-            }`}
-        >
-            {valid ? (
-                <CheckIcon className="h-3.5 w-3.5" />
-            ) : (
-                <CircleIcon className="h-3.5 w-3.5" />
-            )}
-
-            <span>{label}</span>
-        </div>
-    );
-}
-
 export default function RecoveryPasswordModal({
     isOpen,
     onClose,
     onSave,
     isLoading = false,
 }: RecoveryPasswordModalProps) {
-    const [recoveryPassword, setRecoveryPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
+    const [formData, setFormData] = useState<RecoveryPasswordFormData>({
+        recoveryPassword: '',
+        confirmPassword: '',
+    });
+    const [errors, setErrors] = useState({
+        recoveryPassword: '',
+        confirmPassword: '',
+    });
 
     useEffect(() => {
         if (!isOpen) {
             return;
         }
 
-        setRecoveryPassword('');
-        setConfirmPassword('');
-        setError('');
+        setFormData({
+            recoveryPassword: '',
+            confirmPassword: '',
+        });
+
+        setErrors({
+            recoveryPassword: '',
+            confirmPassword: '',
+        });
     }, [isOpen]);
 
-    const hasMinLength = recoveryPassword.length >= 10;
-    const hasUppercase = /[A-Z]/.test(recoveryPassword);
-    const hasNumber = /\d/.test(recoveryPassword);
-    const hasSpecialCharacter = /[^A-Za-z0-9\s]/.test(recoveryPassword);
+    const hasMinLength = formData.recoveryPassword.length >= 10;
+    const hasUppercase = /[A-Z]/.test(formData.recoveryPassword);
+    const hasNumber = /\d/.test(formData.recoveryPassword);
+    const hasSpecialCharacter = /[^A-Za-z0-9\s]/.test(
+        formData.recoveryPassword,
+    );
 
     const isPasswordValid =
         hasMinLength && hasUppercase && hasNumber && hasSpecialCharacter;
 
     const passwordsMatch =
-        confirmPassword.length > 0 && recoveryPassword === confirmPassword;
+        formData.confirmPassword.length > 0 &&
+        formData.recoveryPassword === formData.confirmPassword;
 
     const handleSave = async () => {
-        if (!isPasswordValid) {
-            setError(
-                'A senha de recuperação não atende aos requisitos necessários.',
-            );
+        const validationErrors = validateRecoveryPassword({
+            recoveryPassword: formData.recoveryPassword,
+            confirmPassword: formData.confirmPassword,
+        });
 
+        setErrors({
+            recoveryPassword: validationErrors.recoveryPassword ?? '',
+            confirmPassword: validationErrors.confirmPassword ?? '',
+        });
+
+        if (hasValidationErrors(validationErrors)) {
             return;
         }
 
-        if (recoveryPassword !== confirmPassword) {
-            setError('As senhas não coincidem.');
-
-            return;
-        }
-
-        setError('');
-
-        await onSave(recoveryPassword);
+        await onSave(formData.recoveryPassword);
     };
 
     return (
@@ -125,16 +113,22 @@ export default function RecoveryPasswordModal({
                         name="recoveryPassword"
                         type="password"
                         placeholder="Digite sua senha de recuperação"
-                        value={recoveryPassword}
+                        value={formData.recoveryPassword}
                         disabled={isLoading}
                         onChange={(e) => {
-                            setRecoveryPassword(e.target.value);
+                            setFormData((prev) => ({
+                                ...prev,
+                                recoveryPassword: e.target.value,
+                            }));
 
-                            if (error) {
-                                setError('');
+                            if (errors.recoveryPassword) {
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    recoveryPassword: '',
+                                }));
                             }
                         }}
-                        error={error}
+                        error={errors.recoveryPassword}
                         leftIcon={<LockKeyholeIcon className="h-5 w-5" />}
                     />
 
@@ -144,22 +138,22 @@ export default function RecoveryPasswordModal({
                         </p>
 
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            <PasswordRequirement
+                            <RequirementIndicator
                                 label="Mínimo de 10 caracteres"
                                 valid={hasMinLength}
                             />
 
-                            <PasswordRequirement
+                            <RequirementIndicator
                                 label="Pelo menos 1 letra maiúscula"
                                 valid={hasUppercase}
                             />
 
-                            <PasswordRequirement
+                            <RequirementIndicator
                                 label="Pelo menos 1 número"
                                 valid={hasNumber}
                             />
 
-                            <PasswordRequirement
+                            <RequirementIndicator
                                 label="Pelo menos 1 caractere especial"
                                 valid={hasSpecialCharacter}
                             />
@@ -171,20 +165,22 @@ export default function RecoveryPasswordModal({
                         name="confirmRecoveryPassword"
                         type="password"
                         placeholder="Confirme sua senha de recuperação"
-                        value={confirmPassword}
+                        value={formData.confirmPassword}
                         disabled={isLoading}
                         onChange={(e) => {
-                            setConfirmPassword(e.target.value);
+                            setFormData((prev) => ({
+                                ...prev,
+                                confirmPassword: e.target.value,
+                            }));
 
-                            if (error) {
-                                setError('');
+                            if (errors.confirmPassword) {
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    confirmPassword: '',
+                                }));
                             }
                         }}
-                        error={
-                            confirmPassword.length > 0 && !passwordsMatch
-                                ? 'As senhas não coincidem.'
-                                : undefined
-                        }
+                        error={errors.confirmPassword}
                         leftIcon={<LockKeyholeIcon className="h-5 w-5" />}
                     />
                 </div>

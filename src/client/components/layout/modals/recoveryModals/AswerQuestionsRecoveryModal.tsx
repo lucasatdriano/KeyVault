@@ -14,7 +14,12 @@ import {
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
-import { RecoveryQuestion } from '@/src/client/types/recovery';
+import {
+    RecoveryAnswerFormData,
+    RecoveryQuestion,
+} from '@/src/client/types/recovery';
+import { hasValidationErrors } from '@/src/client/validators';
+import { validateRecoveryAnswer } from '@/src/client/validators/recovery.validator';
 
 interface QuizAnswerModalProps {
     isOpen: boolean;
@@ -35,8 +40,12 @@ export default function QuizAnswerModal({
 }: QuizAnswerModalProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [answers, setAnswers] = useState<string[]>([]);
-    const [currentAnswer, setCurrentAnswer] = useState('');
-    const [error, setError] = useState('');
+    const [formData, setFormData] = useState<RecoveryAnswerFormData>({
+        answer: '',
+    });
+    const [errors, setErrors] = useState<RecoveryAnswerFormData>({
+        answer: '',
+    });
 
     useEffect(() => {
         if (!isOpen) {
@@ -45,25 +54,34 @@ export default function QuizAnswerModal({
 
         setCurrentIndex(0);
         setAnswers([]);
-        setCurrentAnswer('');
-        setError('');
+
+        setFormData({
+            answer: '',
+        });
+
+        setErrors({
+            answer: '',
+        });
     }, [isOpen]);
 
     const saveCurrentAnswer = (): string[] | null => {
-        const normalizedAnswer = currentAnswer.trim();
+        const validationErrors = validateRecoveryAnswer({
+            answer: formData.answer,
+        });
 
-        if (!normalizedAnswer) {
-            setError('Por favor, digite sua resposta.');
+        setErrors({
+            answer: validationErrors.answer ?? '',
+        });
 
+        if (hasValidationErrors(validationErrors)) {
             return null;
         }
 
         const updatedAnswers = [...answers];
 
-        updatedAnswers[currentIndex] = normalizedAnswer;
+        updatedAnswers[currentIndex] = formData.answer.trim();
 
         setAnswers(updatedAnswers);
-        setError('');
 
         return updatedAnswers;
     };
@@ -82,18 +100,21 @@ export default function QuizAnswerModal({
         const nextIndex = currentIndex + 1;
 
         setCurrentIndex(nextIndex);
-        setCurrentAnswer(updatedAnswers[nextIndex] ?? '');
+
+        setFormData({
+            answer: updatedAnswers[nextIndex] ?? '',
+        });
+
+        setErrors({
+            answer: '',
+        });
     };
 
     const handlePrevious = () => {
-        if (currentIndex === 0) {
-            return;
-        }
-
         const updatedAnswers = [...answers];
 
-        if (currentAnswer.trim()) {
-            updatedAnswers[currentIndex] = currentAnswer.trim();
+        if (formData.answer.trim()) {
+            updatedAnswers[currentIndex] = formData.answer.trim();
 
             setAnswers(updatedAnswers);
         }
@@ -101,8 +122,14 @@ export default function QuizAnswerModal({
         const previousIndex = currentIndex - 1;
 
         setCurrentIndex(previousIndex);
-        setCurrentAnswer(updatedAnswers[previousIndex] ?? '');
-        setError('');
+
+        setFormData({
+            answer: updatedAnswers[previousIndex] ?? '',
+        });
+
+        setErrors({
+            answer: '',
+        });
     };
 
     const handleVerify = async () => {
@@ -177,6 +204,7 @@ export default function QuizAnswerModal({
                     <div className="flex gap-1">
                         {questions.map((_, index) => {
                             const isCurrent = index === currentIndex;
+
                             const isAnswered =
                                 Boolean(answers[index]) && !isCurrent;
 
@@ -218,17 +246,21 @@ export default function QuizAnswerModal({
                     name="answer"
                     type="text"
                     placeholder="Digite sua resposta..."
-                    value={currentAnswer}
+                    value={formData.answer}
                     disabled={isLoading}
                     onChange={(e) => {
-                        setCurrentAnswer(e.target.value);
+                        setFormData({
+                            answer: e.target.value,
+                        });
 
-                        if (error) {
-                            setError('');
+                        if (errors.answer) {
+                            setErrors({
+                                answer: '',
+                            });
                         }
                     }}
-                    leftIcon={<KeyIcon className="w-5 h-5" />}
-                    error={error}
+                    leftIcon={<KeyIcon className="h-5 w-5" />}
+                    error={errors.answer}
                 />
 
                 <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-4">
@@ -246,7 +278,7 @@ export default function QuizAnswerModal({
                         <Button
                             type="button"
                             onClick={handleVerify}
-                            disabled={!currentAnswer.trim() || isLoading}
+                            disabled={!formData.answer.trim() || isLoading}
                             isLoading={isLoading}
                             loadingText="Verificando..."
                             leftIcon={<CheckIcon className="h-4 w-4" />}
@@ -257,7 +289,7 @@ export default function QuizAnswerModal({
                         <Button
                             type="button"
                             onClick={handleNext}
-                            disabled={!currentAnswer.trim() || isLoading}
+                            disabled={!formData.answer.trim() || isLoading}
                             rightIcon={<ChevronRightIcon className="h-4 w-4" />}
                         >
                             Próxima

@@ -3,6 +3,7 @@ import {
     LoginData,
     RegisterData,
 } from '@/src/server/types/service/auth';
+import { EMAIL_REGEX } from '@/src/shared/constants/auth/auth.constants';
 
 export function validateRegisterData(data: RegisterData): void {
     if (!data.name || typeof data.name !== 'string' || data.name.length < 2) {
@@ -13,8 +14,7 @@ export function validateRegisterData(data: RegisterData): void {
         throw new Error('Email é obrigatório');
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(data.email)) {
+    if (!EMAIL_REGEX.test(data.email)) {
         throw new Error('Email inválido');
     }
 

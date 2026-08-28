@@ -1,8 +1,10 @@
+import { EMAIL_REGEX } from '@/src/shared/constants/auth/auth.constants';
 import { ChangePasswordFormData } from '@/src/shared/types/auth';
 import { ValidateChangeEmailData } from '@/src/shared/types/profile';
+import { ValidationErrors } from '@/src/client/validators';
 
-export function validateName(name: string) {
-    const errors: Record<string, string> = {};
+export function validateName(name: string): ValidationErrors<{ name: string }> {
+    const errors: ValidationErrors<{ name: string }> = {};
 
     const trimmedName = name.trim();
 
@@ -17,14 +19,16 @@ export function validateName(name: string) {
     return errors;
 }
 
-export function validateChangeEmail(data: ValidateChangeEmailData) {
-    const errors: Record<string, string> = {};
+export function validateChangeEmail(
+    data: ValidateChangeEmailData,
+): ValidationErrors<ValidateChangeEmailData> {
+    const errors: ValidationErrors<ValidateChangeEmailData> = {};
 
     const normalizedEmail = data.newEmail.trim().toLowerCase();
 
     if (!normalizedEmail) {
         errors.newEmail = 'O novo e-mail é obrigatório.';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+    } else if (!EMAIL_REGEX.test(normalizedEmail)) {
         errors.newEmail = 'Digite um e-mail válido.';
     } else if (normalizedEmail === data.currentEmail.toLowerCase()) {
         errors.newEmail = 'O novo e-mail deve ser diferente do atual.';
@@ -37,8 +41,10 @@ export function validateChangeEmail(data: ValidateChangeEmailData) {
     return errors;
 }
 
-export function validateChangePassword(data: ChangePasswordFormData) {
-    const errors: Record<string, string> = {};
+export function validateChangePassword(
+    data: ChangePasswordFormData,
+): ValidationErrors<ChangePasswordFormData> {
+    const errors: ValidationErrors<ChangePasswordFormData> = {};
 
     if (!data.currentPassword.trim()) {
         errors.currentPassword = 'A senha atual é obrigatória.';

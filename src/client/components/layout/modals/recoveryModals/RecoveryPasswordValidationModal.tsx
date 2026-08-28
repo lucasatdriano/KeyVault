@@ -12,6 +12,9 @@ import {
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
+import { validateRecoveryPasswordAnswer } from '@/src/client/validators/recovery.validator';
+import { hasValidationErrors } from '@/src/client/validators';
+import { RecoveryPasswordValidationFormData } from '@/src/client/types/recovery';
 
 interface RecoveryPasswordValidationModalProps {
     isOpen: boolean;
@@ -26,28 +29,42 @@ export default function RecoveryPasswordValidationModal({
     onVerify,
     isLoading = false,
 }: RecoveryPasswordValidationModalProps) {
-    const [recoveryPassword, setRecoveryPassword] = useState('');
-    const [error, setError] = useState('');
+    const [formData, setFormData] =
+        useState<RecoveryPasswordValidationFormData>({
+            recoveryPassword: '',
+        });
+    const [errors, setErrors] = useState({
+        recoveryPassword: '',
+    });
 
     useEffect(() => {
         if (!isOpen) {
             return;
         }
 
-        setRecoveryPassword('');
-        setError('');
+        setFormData({
+            recoveryPassword: '',
+        });
+
+        setErrors({
+            recoveryPassword: '',
+        });
     }, [isOpen]);
 
     const handleVerify = async () => {
-        if (!recoveryPassword.trim()) {
-            setError('Digite sua senha de recuperação.');
+        const validationErrors = validateRecoveryPasswordAnswer({
+            recoveryPassword: formData.recoveryPassword,
+        });
 
+        setErrors({
+            recoveryPassword: validationErrors.recoveryPassword ?? '',
+        });
+
+        if (hasValidationErrors(validationErrors)) {
             return;
         }
 
-        setError('');
-
-        await onVerify(recoveryPassword);
+        await onVerify(formData.recoveryPassword);
     };
 
     return (
@@ -91,16 +108,20 @@ export default function RecoveryPasswordValidationModal({
                     name="recoveryPassword"
                     type="password"
                     placeholder="Digite sua senha de recuperação"
-                    value={recoveryPassword}
+                    value={formData.recoveryPassword}
                     disabled={isLoading}
                     onChange={(e) => {
-                        setRecoveryPassword(e.target.value);
+                        setFormData({
+                            recoveryPassword: e.target.value,
+                        });
 
-                        if (error) {
-                            setError('');
+                        if (errors.recoveryPassword) {
+                            setErrors({
+                                recoveryPassword: '',
+                            });
                         }
                     }}
-                    error={error}
+                    error={errors.recoveryPassword}
                     leftIcon={<LockKeyholeIcon className="h-5 w-5" />}
                 />
 
@@ -128,7 +149,7 @@ export default function RecoveryPasswordValidationModal({
                     <Button
                         type="button"
                         onClick={handleVerify}
-                        disabled={!recoveryPassword || isLoading}
+                        disabled={!formData.recoveryPassword || isLoading}
                         isLoading={isLoading}
                         loadingText="Verificando..."
                         leftIcon={<CheckIcon className="h-4 w-4" />}

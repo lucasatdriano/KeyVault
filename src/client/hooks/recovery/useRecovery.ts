@@ -230,25 +230,17 @@ export function useRecovery() {
     );
 
     const handleGenerateRecoveryKey = useCallback(async (): Promise<string> => {
-        try {
-            const recoveryData = await createRecoveryDataPayload();
+        const recoveryData = await createRecoveryDataPayload();
 
-            const result = await generateRecoveryKeyAction(recoveryData);
+        const result = await generateRecoveryKeyAction(recoveryData);
 
-            if (!result.success || !result.data) {
-                throw new Error(
-                    result.error ?? 'Erro ao gerar chave de recuperação.',
-                );
-            }
-
-            return result.data;
-        } catch (error) {
+        if (!result.success || !result.data) {
             throw new Error(
-                error instanceof Error
-                    ? error.message
-                    : 'Erro ao gerar chave de recuperação.',
+                result.error ?? 'Erro ao gerar chave de recuperação.',
             );
         }
+
+        return result.data;
     }, [createRecoveryDataPayload]);
 
     return {

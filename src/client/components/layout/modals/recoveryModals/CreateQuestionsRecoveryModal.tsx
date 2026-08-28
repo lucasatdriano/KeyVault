@@ -16,12 +16,17 @@ import {
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import ModalBase from '../ModalBase';
-import { QuizQuestion } from '@/src/client/types/recovery';
+import {
+    CreateQuizQuestionFormData,
+    QuizQuestion,
+} from '@/src/client/types/recovery';
+import { hasValidationErrors } from '@/src/client/validators';
+import { validateQuizQuestion } from '@/src/client/validators/recovery.validator';
 
 interface QuizFormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (questions: QuizQuestion[]) => void;
+    onSave: (questions: QuizQuestion[]) => Promise<boolean>;
     initialQuestions?: QuizQuestion[];
     title?: string;
     maxQuestions?: number;
@@ -39,19 +44,32 @@ export default function QuizFormModal({
 }: QuizFormModalProps) {
     const [questions, setQuestions] = useState<QuizQuestion[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [currentQuestion, setCurrentQuestion] = useState('');
-    const [currentAnswer, setCurrentAnswer] = useState('');
-    const [errors, setErrors] = useState({ question: '', answer: '' });
+
+    const [formData, setFormData] = useState<CreateQuizQuestionFormData>({
+        question: '',
+        answer: '',
+    });
+
+    const [errors, setErrors] = useState<CreateQuizQuestionFormData>({
+        question: '',
+        answer: '',
+    });
 
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) {
+            return;
+        }
 
         const firstQuestion = initialQuestions[0];
 
         setQuestions(initialQuestions);
         setCurrentIndex(0);
-        setCurrentQuestion(firstQuestion?.question ?? '');
-        setCurrentAnswer(firstQuestion?.answer ?? '');
+
+        setFormData({
+            question: firstQuestion?.question ?? '',
+            answer: firstQuestion?.answer ?? '',
+        });
+
         setErrors({
             question: '',
             answer: '',
@@ -61,9 +79,16 @@ export default function QuizFormModal({
     const resetForm = () => {
         setQuestions([]);
         setCurrentIndex(0);
-        setCurrentQuestion('');
-        setCurrentAnswer('');
-        setErrors({ question: '', answer: '' });
+
+        setFormData({
+            question: '',
+            answer: '',
+        });
+
+        setErrors({
+            question: '',
+            answer: '',
+        });
     };
 
     const handleClose = () => {
@@ -71,122 +96,119 @@ export default function QuizFormModal({
         onClose();
     };
 
-    const handleNext = () => {
-        if (!currentQuestion.trim()) {
-            setErrors((prev) => ({
-                ...prev,
-                question: 'A pergunta é obrigatória.',
-            }));
-            return;
-        }
-        if (!currentAnswer.trim()) {
-            setErrors((prev) => ({
-                ...prev,
-                answer: 'A resposta é obrigatória.',
-            }));
-            return;
+    const saveCurrentQuestion = (): QuizQuestion | null => {
+        const validationErrors = validateQuizQuestion({
+            question: formData.question,
+            answer: formData.answer,
+        });
+
+        setErrors({
+            question: validationErrors.question ?? '',
+            answer: validationErrors.answer ?? '',
+        });
+
+        if (hasValidationErrors(validationErrors)) {
+            return null;
         }
 
+        return {
+            ...(questions[currentIndex]?.id
+                ? { id: questions[currentIndex].id }
+                : {}),
+            question: formData.question.trim(),
+            answer: formData.answer.trim(),
+        };
+    };
+
+    const updateCurrentQuestion = (question: QuizQuestion): QuizQuestion[] => {
         const updatedQuestions = [...questions];
-        if (updatedQuestions[currentIndex]) {
-            updatedQuestions[currentIndex] = {
-                ...updatedQuestions[currentIndex],
-                question: currentQuestion.trim(),
-                answer: currentAnswer.trim(),
-            };
-        } else {
-            updatedQuestions.push({
-                question: currentQuestion.trim(),
-                answer: currentAnswer.trim(),
-            });
-        }
-        setQuestions(updatedQuestions);
-        setErrors({ question: '', answer: '' });
 
-        if (currentIndex < maxQuestions - 1) {
-            setCurrentIndex(currentIndex + 1);
-            const nextQuestion = updatedQuestions[currentIndex + 1];
-            setCurrentQuestion(nextQuestion?.question || '');
-            setCurrentAnswer(nextQuestion?.answer || '');
+        updatedQuestions[currentIndex] = question;
+
+        setQuestions(updatedQuestions);
+
+        return updatedQuestions;
+    };
+
+    const handleNext = () => {
+        const question = saveCurrentQuestion();
+
+        if (!question) {
+            return;
         }
+
+        const updatedQuestions = updateCurrentQuestion(question);
+
+        const nextIndex = currentIndex + 1;
+
+        setCurrentIndex(nextIndex);
+
+        const nextQuestion = updatedQuestions[nextIndex];
+
+        setFormData({
+            question: nextQuestion?.question ?? '',
+            answer: nextQuestion?.answer ?? '',
+        });
+
+        setErrors({
+            question: '',
+            answer: '',
+        });
     };
 
     const handlePrevious = () => {
-        if (currentIndex > 0) {
-            if (currentQuestion.trim() || currentAnswer.trim()) {
-                const updatedQuestions = [...questions];
-                if (updatedQuestions[currentIndex]) {
-                    updatedQuestions[currentIndex] = {
-                        ...updatedQuestions[currentIndex],
-                        question:
-                            currentQuestion.trim() ||
-                            updatedQuestions[currentIndex].question,
-                        answer:
-                            currentAnswer.trim() ||
-                            updatedQuestions[currentIndex].answer,
-                    };
-                } else if (currentQuestion.trim() || currentAnswer.trim()) {
-                    updatedQuestions.push({
-                        question: currentQuestion.trim(),
-                        answer: currentAnswer.trim(),
-                    });
-                }
-                setQuestions(updatedQuestions);
-            }
-
-            setCurrentIndex(currentIndex - 1);
-            const prevQuestion = questions[currentIndex - 1];
-            setCurrentQuestion(prevQuestion?.question || '');
-            setCurrentAnswer(prevQuestion?.answer || '');
-            setErrors({ question: '', answer: '' });
-        }
-    };
-
-    const handleSave = () => {
-        if (!currentQuestion.trim()) {
-            setErrors((prev) => ({
-                ...prev,
-                question: 'A pergunta é obrigatória.',
-            }));
-
-            return;
-        }
-
-        if (!currentAnswer.trim()) {
-            setErrors((prev) => ({
-                ...prev,
-                answer: 'A resposta é obrigatória.',
-            }));
-
+        if (currentIndex === 0) {
             return;
         }
 
         const updatedQuestions = [...questions];
 
-        if (updatedQuestions[currentIndex]) {
+        if (formData.question.trim() || formData.answer.trim()) {
             updatedQuestions[currentIndex] = {
                 ...updatedQuestions[currentIndex],
-                question: currentQuestion.trim(),
-                answer: currentAnswer.trim(),
+                question: formData.question.trim(),
+                answer: formData.answer.trim(),
             };
-        } else {
-            updatedQuestions.push({
-                question: currentQuestion.trim(),
-                answer: currentAnswer.trim(),
-            });
+
+            setQuestions(updatedQuestions);
         }
 
-        setQuestions(updatedQuestions);
+        const previousIndex = currentIndex - 1;
+        const previousQuestion = updatedQuestions[previousIndex];
 
-        onSave(updatedQuestions);
+        setCurrentIndex(previousIndex);
 
-        handleClose();
+        setFormData({
+            question: previousQuestion?.question ?? '',
+            answer: previousQuestion?.answer ?? '',
+        });
+
+        setErrors({
+            question: '',
+            answer: '',
+        });
+    };
+
+    const handleSave = async () => {
+        const question = saveCurrentQuestion();
+
+        if (!question) {
+            return;
+        }
+
+        const updatedQuestions = updateCurrentQuestion(question);
+
+        const success = await onSave(updatedQuestions);
+
+        if (success) {
+            handleClose();
+        }
     };
 
     const isLastQuestion = currentIndex === maxQuestions - 1;
     const isFirstQuestion = currentIndex === 0;
 
-    const isNextDisabled = !currentQuestion.trim() || !currentAnswer.trim();
+    const isNextDisabled = !formData.question.trim() || !formData.answer.trim();
 
     return (
         <ModalBase
@@ -221,8 +243,8 @@ export default function QuizFormModal({
                                 type="button"
                                 onClick={handleSave}
                                 disabled={
-                                    !currentQuestion.trim() ||
-                                    !currentAnswer.trim() ||
+                                    !formData.question.trim() ||
+                                    !formData.answer.trim() ||
                                     isLoading
                                 }
                                 isLoading={isLoading}
@@ -252,6 +274,7 @@ export default function QuizFormModal({
                     <span className="text-sm text-foreground/60">
                         Pergunta {currentIndex + 1} de {maxQuestions}
                     </span>
+
                     <div className="flex gap-1">
                         {Array.from({ length: maxQuestions }).map(
                             (_, index) => (
@@ -262,7 +285,7 @@ export default function QuizFormModal({
                                             ? 'bg-primary'
                                             : index < questions.length ||
                                                 (index === questions.length &&
-                                                    currentQuestion.trim())
+                                                    formData.question.trim())
                                               ? 'bg-primary/40'
                                               : 'bg-white/10'
                                     }`}
@@ -272,9 +295,10 @@ export default function QuizFormModal({
                     </div>
                 </div>
 
-                <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-4">
                     <div className="flex items-start gap-3">
-                        <AlertCircleIcon className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                        <AlertCircleIcon className="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+
                         <p className="text-sm text-blue-500/80">
                             Crie uma pergunta e uma resposta com uma palavra. A
                             pergunta tem que ser algo que apenas você saiba.
@@ -288,14 +312,20 @@ export default function QuizFormModal({
                         name={`question-${currentIndex}`}
                         type="text"
                         placeholder="Ex: Qual o nome do meu primeiro pet?"
-                        value={currentQuestion}
+                        value={formData.question}
+                        disabled={isLoading}
                         onChange={(e) => {
-                            setCurrentQuestion(e.target.value);
-                            if (errors.question)
+                            setFormData((prev) => ({
+                                ...prev,
+                                question: e.target.value,
+                            }));
+
+                            if (errors.question) {
                                 setErrors((prev) => ({
                                     ...prev,
                                     question: '',
                                 }));
+                            }
                         }}
                         error={errors.question}
                         leftIcon={<HelpCircleIcon className="w-5 h-5" />}
@@ -306,11 +336,20 @@ export default function QuizFormModal({
                         name={`answer-${currentIndex}`}
                         type="text"
                         placeholder="Ex: Max"
-                        value={currentAnswer}
+                        value={formData.answer}
+                        disabled={isLoading}
                         onChange={(e) => {
-                            setCurrentAnswer(e.target.value);
-                            if (errors.answer)
-                                setErrors((prev) => ({ ...prev, answer: '' }));
+                            setFormData((prev) => ({
+                                ...prev,
+                                answer: e.target.value,
+                            }));
+
+                            if (errors.answer) {
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    answer: '',
+                                }));
+                            }
                         }}
                         error={errors.answer}
                         leftIcon={<KeyIcon className="w-5 h-5" />}

@@ -1,3 +1,5 @@
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const ACCESS_TOKEN_DURATION = {
     MINUTES_30: 1 * 60,
     HOUR_1: 60 * 60,

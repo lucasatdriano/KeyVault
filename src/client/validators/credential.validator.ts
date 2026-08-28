@@ -1,7 +1,11 @@
+import { EMAIL_REGEX } from '@/src/shared/constants/auth/auth.constants';
 import { CredentialFormData } from '@/src/shared/types/credential';
+import { ValidationErrors } from '@/src/client/validators';
 
-export function validateCredentialForm(data: CredentialFormData) {
-    const errors: Record<string, string> = {};
+export function validateCredentialForm(
+    data: CredentialFormData,
+): ValidationErrors<CredentialFormData> {
+    const errors: ValidationErrors<CredentialFormData> = {};
 
     if (!data.title.trim()) {
         errors.title = 'Informe um título.';
@@ -13,7 +17,7 @@ export function validateCredentialForm(data: CredentialFormData) {
         errors.username = 'Informe um usuário ou e-mail.';
     }
 
-    if (data.email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    if (data.email?.trim() && !EMAIL_REGEX.test(data.email)) {
         errors.email = 'Digite um e-mail válido.';
     }
 
@@ -29,7 +33,7 @@ export function validateCredentialForm(data: CredentialFormData) {
     }
 
     if (!data.categoryId == null) {
-        errors.category = 'Selecione uma categoria.';
+        errors.categoryId = 'Selecione uma categoria.';
     }
 
     if (data.notes && data.notes.length > 1000) {
