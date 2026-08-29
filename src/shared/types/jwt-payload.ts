@@ -1,6 +1,7 @@
 export interface JWTPayload {
     sub: string;
     email: string;
+    sessionId: string;
     type: 'access_token';
     iat: number;
     exp: number;

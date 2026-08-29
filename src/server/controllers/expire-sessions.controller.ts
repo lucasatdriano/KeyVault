@@ -4,11 +4,9 @@ import {
     INTERNAL_API,
     INTERNAL_API_SECRET,
 } from '@/src/shared/constants/api/api.constants';
+import { sessionService } from '../containers/services';
 
-import { authService } from '@/src/server/containers/services';
-import { getAuditContext } from '@/src/server/utils/audit-context';
-
-export async function logoutExpiredController(request: NextRequest) {
+export async function expireSessionsController(request: NextRequest) {
     const auth = request.headers.get(INTERNAL_API.HEADER);
 
     if (auth !== `${INTERNAL_API.TOKEN_PREFIX} ${INTERNAL_API_SECRET}`) {
@@ -24,16 +22,14 @@ export async function logoutExpiredController(request: NextRequest) {
     }
 
     try {
-        const body = await request.json();
-        const audit = await getAuditContext();
-
-        await authService.logoutByUserId(body.userId, audit);
+        const expired = await sessionService.expireSessions();
 
         return NextResponse.json({
             success: true,
+            expired,
         });
     } catch (error) {
-        console.error('[LOGOUT EXPIRED] Erro:', error);
+        console.error('[EXPIRE SESSIONS] Erro:', error);
 
         return NextResponse.json(
             {

@@ -1,5 +1,6 @@
 import { AuditAction } from '@/src/generated/prisma/enums';
 import { AuditLog, AuditLogResponse } from '@/src/client/types/audit';
+import { mapRecoveryType } from '@/src/shared/utils/recovery/recovery.mapper';
 
 const actionMap: Record<
     AuditAction,
@@ -126,6 +127,15 @@ const actionMap: Record<
 
 export function mapAuditLog(log: AuditLogResponse): AuditLog {
     const config = actionMap[log.action];
+    let resourceName = log.resource;
+
+    if (
+        (log.action === 'ENABLE_RECOVERY_METHOD' ||
+            log.action === 'DISABLE_RECOVERY_METHOD') &&
+        log.recoveryType
+    ) {
+        resourceName = mapRecoveryType(log.recoveryType);
+    }
 
     return {
         id: log.id,
@@ -137,7 +147,7 @@ export function mapAuditLog(log: AuditLogResponse): AuditLog {
             minute: '2-digit',
         }),
 
-        event: config.event(log.resource),
+        event: config.event(resourceName),
 
         details: config.details(),
 

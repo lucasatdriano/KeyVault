@@ -1,10 +1,11 @@
 import { decryptString } from '@/src/shared/crypto/cipher';
 import { AuditLog } from '@/src/client/types/audit';
 import { mapAuditLog } from '@/src/client/utils/audit/audit.mapper';
-import { AuditLogWithCredential } from '@/src/server/types/repository/audit';
+import { AuditLogWithCredentialWithRecoveryMethod } from '@/src/server/types/repository/audit';
+import { RecoveryType } from '@/src/generated/prisma/enums';
 
 interface DecryptAuditLogParams {
-    log: AuditLogWithCredential;
+    log: AuditLogWithCredentialWithRecoveryMethod;
     vaultKey: Uint8Array;
 }
 
@@ -13,6 +14,7 @@ export async function decryptAuditLog({
     vaultKey,
 }: DecryptAuditLogParams): Promise<AuditLog> {
     let resource = null;
+    let recoveryType: RecoveryType | null = null;
 
     if (log.credential && vaultKey) {
         try {
@@ -31,17 +33,24 @@ export async function decryptAuditLog({
         }
     }
 
-    return mapAuditLog({
+    if (log.recoveryMethod) {
+        recoveryType = log.recoveryMethod.type as RecoveryType;
+    }
+
+    const auditLogResponse = {
         ...log,
         resource,
-    });
+        recoveryType,
+    };
+
+    return mapAuditLog(auditLogResponse);
 }
 
 export async function decryptAuditLogs({
     logs,
     vaultKey,
 }: {
-    logs: AuditLogWithCredential[];
+    logs: AuditLogWithCredentialWithRecoveryMethod[];
     vaultKey: Uint8Array;
 }): Promise<AuditLog[]> {
     return Promise.all(logs.map((log) => decryptAuditLog({ log, vaultKey })));

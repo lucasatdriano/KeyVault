@@ -5,13 +5,15 @@ import { PaginatedResponse } from '@/src/shared/types/pagination';
 import { authService, auditService } from '@/src/server/containers/services';
 import { ActionResult } from '@/src/server/types/action';
 import {
-    AuditLogWithCredential,
+    AuditLogWithCredentialWithRecoveryMethod,
     FindUserLogsOptions,
 } from '@/src/server/types/repository/audit';
 
 export async function getUserLogsAction(
     params: FindUserLogsOptions = {},
-): Promise<ActionResult<PaginatedResponse<AuditLogWithCredential> | null>> {
+): Promise<
+    ActionResult<PaginatedResponse<AuditLogWithCredentialWithRecoveryMethod> | null>
+> {
     try {
         const user = await authService.requireAuth();
 

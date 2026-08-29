@@ -2,6 +2,7 @@ import {
     AuditAction,
     AuditLog,
     Credential,
+    RecoveryMethod,
 } from '@/src/generated/prisma/client';
 
 import { PaginationQuery } from '@/src/shared/types/pagination';
@@ -9,7 +10,9 @@ import { PaginationQuery } from '@/src/shared/types/pagination';
 export interface CreateAuditLogData {
     userId: string;
     credentialId?: string | null;
+    recoveryMethodId?: string | null;
     action: AuditAction;
+    resource?: string | null;
     resourceSearchHash?: string | null;
 
     browser?: string | null;
@@ -18,8 +21,9 @@ export interface CreateAuditLogData {
     ip?: string | null;
 }
 
-export type AuditLogWithCredential = AuditLog & {
-    credential: Pick<Credential, 'cipherText' | 'iv'> | null;
+export type AuditLogWithCredentialWithRecoveryMethod = AuditLog & {
+    credential?: Pick<Credential, 'cipherText' | 'iv'> | null;
+    recoveryMethod: Pick<RecoveryMethod, 'id' | 'type'> | null;
 };
 
 export interface FindUserLogsOptions extends PaginationQuery {

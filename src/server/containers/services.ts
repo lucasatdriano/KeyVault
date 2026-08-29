@@ -6,6 +6,7 @@ import {
     authRepository,
     userRepository,
     credentialRepository,
+    sessionRepository,
 } from './repository';
 
 import { JWTService } from '../services/auth/jwt.service';
@@ -18,10 +19,16 @@ import { EmailService } from '../services/auth/email.service';
 import { AuthService } from '../services/auth/auth.service';
 import { UserService } from '../services/user.service';
 import { CredentialService } from '../services/credential.service';
+import { SessionService } from '../services/auth/session.service';
 
 export const jwtService = new JWTService(process.env.JWT_SECRET);
 
 export const auditService = new AuditService(auditRepository);
+
+export const sessionService = new SessionService(
+    sessionRepository,
+    auditService,
+);
 
 export const categoryService = new CategoryService(categoryRepository);
 
@@ -47,6 +54,7 @@ export const emailService = new EmailService(process.env.RESEND_API_KEY);
 export const authService = new AuthService(
     authRepository,
     emailVerificationRepository,
+    sessionService,
     emailService,
     jwtService,
     auditService,

@@ -2,10 +2,7 @@ import { AuditAction, User } from '@/src/generated/prisma/client';
 
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
 import { changeMasterPassword } from '@/src/shared/crypto/vault';
-import {
-    ACCESS_TOKEN_COOKIE_DURATION,
-    ACCESS_TOKEN_DURATION,
-} from '@/src/shared/constants/auth/auth.constants';
+import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 
 import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
@@ -38,6 +35,7 @@ import {
     ChangePasswordData,
     VerifyEmailResult,
 } from '@/src/server/types/service/auth';
+import { SessionService } from '@/src/server/services/auth/session.service';
 
 export class AuthService {
     private readonly EMAIL_VERIFICATION_DURATION = 15 * 60 * 1000;
@@ -45,6 +43,7 @@ export class AuthService {
     constructor(
         private readonly authRepository: AuthRepository,
         private readonly emailVerificationRepository: EmailVerificationRepository,
+        private readonly sessionService: SessionService,
         private readonly emailService: EmailService,
         private readonly jwtService: JWTService,
         private readonly auditService: AuditService,
@@ -138,16 +137,18 @@ export class AuthService {
         const duration =
             data.sessionExpiration ?? ACCESS_TOKEN_DURATION.MINUTES_30;
 
-        const cookieDuration =
-            data.sessionExpiration ?? ACCESS_TOKEN_COOKIE_DURATION.MINUTES_30;
+        const expiresAt = new Date(Date.now() + duration * 1000);
+
+        const session = await this.sessionService.create(user.id, expiresAt);
 
         const token = await this.jwtService.generateAccessToken(
             user.id,
             user.email,
             duration,
+            session.id,
         );
 
-        await setAccessToken(token, cookieDuration);
+        await setAccessToken(token);
 
         await this.auditService.createLog({
             userId: user.id,
@@ -172,31 +173,20 @@ export class AuthService {
     }
 
     async logout(audit?: AuditContext): Promise<void> {
-        const user = await this.getCurrentUser();
+        const token = await getAccessToken();
 
-        if (!user) {
+        if (!token) {
+            return;
+        }
+
+        const payload = this.jwtService.decodeAccessToken(token);
+
+        if (!payload?.sessionId) {
             await deleteAccessToken();
             return;
         }
 
-        await this.logoutByUserId(user.id, audit);
-    }
-
-    async logoutByUserId(userId: string, audit?: AuditContext): Promise<void> {
-        const user = await this.authRepository.findUserById(userId);
-
-        if (!user) {
-            return;
-        }
-
-        await this.auditService.createLog({
-            userId,
-            action: AuditAction.LOGOUT,
-            browser: audit?.browser,
-            os: audit?.os,
-            device: audit?.device,
-            ip: audit?.ip,
-        });
+        await this.sessionService.logout(payload.sessionId, audit);
 
         await deleteAccessToken();
     }

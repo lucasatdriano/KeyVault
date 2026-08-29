@@ -22,6 +22,7 @@ export async function verifyEdgeToken(
             payload: {
                 sub: payload.sub as string,
                 email: payload.email as string,
+                sessionId: payload.sessionId as string,
                 type: payload.type as 'access_token',
                 exp: payload.exp as number,
                 iat: payload.iat as number,
@@ -37,6 +38,7 @@ export async function verifyEdgeToken(
                 payload: {
                     sub: payload.sub as string,
                     email: payload.email as string,
+                    sessionId: payload.sessionId as string,
                     type: payload.type as 'access_token',
                     exp: payload.exp as number,
                     iat: payload.iat as number,

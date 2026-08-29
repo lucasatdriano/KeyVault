@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { isAuthRoute, isProtectedRoute } from '@/src/server/auth/routes';
-import { handleExpiredSession } from '@/src/server/auth/logout-expired';
+import { handleExpiredSession } from '@/src/server/auth/expired-session';
 import { verifyEdgeToken } from '@/src/server/auth/verify-edge-token';
 
 import { ACCESS_TOKEN_COOKIE_NAME } from '@/src/shared/constants/auth/cookies.constants';
@@ -14,7 +14,7 @@ export async function proxy(request: NextRequest) {
     const session = token ? await verifyEdgeToken(token) : null;
 
     if (session?.expired && session.payload) {
-        return handleExpiredSession(request, session.payload.sub);
+        return handleExpiredSession(request);
     }
 
     const hasSession = session?.valid ?? false;

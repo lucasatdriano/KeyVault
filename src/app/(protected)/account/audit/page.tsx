@@ -27,7 +27,6 @@ export default function AuditPage() {
         initialItemsPerPage: 20,
     });
     const [logs, setLogs] = useState<AuditLog[]>([]);
-    const vaultKey = useVaultStore((state) => state.vaultKey);
     const [search, setSearch] = useState('');
     const [action, setAction] = useState('');
     const [loading, setLoading] = useState(true);
@@ -36,6 +35,8 @@ export default function AuditPage() {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const searchRef = useRef(search);
     const actionRef = useRef(action);
+
+    const vaultKey = useVaultStore((state) => state.vaultKey);
 
     useEffect(() => {
         searchRef.current = search;

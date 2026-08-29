@@ -20,12 +20,14 @@ export class JWTService {
         userId: string,
         email: string,
         expiresIn: number,
+        sessionId: string,
     ): Promise<string> {
         const now = Math.floor(Date.now() / 1000);
 
         const payload: JWTPayload = {
             sub: userId,
             email,
+            sessionId,
             type: 'access_token',
             iat: now,
             exp: now + expiresIn,

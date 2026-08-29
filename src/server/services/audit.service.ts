@@ -6,7 +6,7 @@ import { AuditRepository } from '../database/repositories/audit.repository';
 import { validateAuditData } from '../validators/auth/audit.validator';
 import { validateUserId } from '../validators/user/user.validator';
 import {
-    AuditLogWithCredential,
+    AuditLogWithCredentialWithRecoveryMethod,
     CreateAuditLogData,
     FindUserLogsOptions,
 } from '../types/repository/audit';
@@ -23,7 +23,7 @@ export class AuditService {
     async getUserLogs(
         userId: string,
         options: FindUserLogsOptions = {},
-    ): Promise<PaginatedResponse<AuditLogWithCredential>> {
+    ): Promise<PaginatedResponse<AuditLogWithCredentialWithRecoveryMethod>> {
         validateUserId(userId);
 
         const result = await this.auditRepository.findByUser(userId, options);
@@ -39,6 +39,22 @@ export class AuditService {
             credentials.map((credential) => [credential.id, credential]),
         );
 
+        const recoveryMethodIds = result.data
+            .map((log) => log.recoveryMethodId)
+            .filter((id): id is string => Boolean(id));
+
+        const recoveryMethods =
+            await this.auditRepository.findRecoveryMethodsByIds(
+                recoveryMethodIds,
+            );
+
+        const recoveryMethodMap = new Map(
+            recoveryMethods.map((recoveryMethod) => [
+                recoveryMethod.id,
+                recoveryMethod,
+            ]),
+        );
+
         return {
             ...result,
 
@@ -47,6 +63,10 @@ export class AuditService {
 
                 credential: log.credentialId
                     ? (credentialMap.get(log.credentialId) ?? null)
+                    : null,
+
+                recoveryMethod: log.recoveryMethodId
+                    ? (recoveryMethodMap.get(log.recoveryMethodId) ?? null)
                     : null,
             })),
         };

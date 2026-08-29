@@ -13,6 +13,7 @@ import { AuditService } from '@/src/server/services/audit.service';
 import { AuditContext } from '@/src/server/types/service/audit';
 import { RecoveryQuestionData } from '@/src/server/types/service/recovery';
 import { RecoveryDataPayload } from '@/src/shared/types/recovery';
+import { mapRecoveryType } from '@/src/shared/utils/recovery/recovery.mapper';
 
 export class RecoverySettingsService {
     constructor(
@@ -89,6 +90,8 @@ export class RecoverySettingsService {
         await this.auditService.createLog({
             userId,
             action: AuditAction.ENABLE_RECOVERY_METHOD,
+            recoveryMethodId: method.id,
+            resource: mapRecoveryType(type),
             browser: audit?.browser,
             os: audit?.os,
             device: audit?.device,
@@ -131,12 +134,13 @@ export class RecoverySettingsService {
         await this.auditService.createLog({
             userId,
             action: AuditAction.DISABLE_RECOVERY_METHOD,
+            recoveryMethodId: method.id,
+            resource: mapRecoveryType(type),
             browser: audit?.browser,
             os: audit?.os,
             device: audit?.device,
             ip: audit?.ip,
         });
-
         return updated;
     }
 
@@ -288,6 +292,8 @@ export class RecoverySettingsService {
                 await this.auditService.createLog({
                     userId,
                     action: AuditAction.ENABLE_RECOVERY_METHOD,
+                    recoveryMethodId: method.id,
+                    resource: mapRecoveryType(method.type),
                     browser: audit?.browser,
                     os: audit?.os,
                     device: audit?.device,
@@ -344,6 +350,8 @@ export class RecoverySettingsService {
             await this.auditService.createLog({
                 userId,
                 action: AuditAction.ENABLE_RECOVERY_METHOD,
+                recoveryMethodId: method.id,
+                resource: mapRecoveryType(method.type),
                 browser: audit?.browser,
                 os: audit?.os,
                 device: audit?.device,
@@ -391,6 +399,8 @@ export class RecoverySettingsService {
         await this.auditService.createLog({
             userId,
             action: AuditAction.GENERATE_RECOVERY_KEY,
+            recoveryMethodId: method.id,
+            resource: mapRecoveryType(method.type),
             browser: audit?.browser,
             os: audit?.os,
             device: audit?.device,
@@ -401,6 +411,8 @@ export class RecoverySettingsService {
             await this.auditService.createLog({
                 userId,
                 action: AuditAction.ENABLE_RECOVERY_METHOD,
+                recoveryMethodId: method.id,
+                resource: mapRecoveryType(method.type),
                 browser: audit?.browser,
                 os: audit?.os,
                 device: audit?.device,

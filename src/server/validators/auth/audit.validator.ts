@@ -19,6 +19,14 @@ export function validateAuditData(data: CreateAuditLogData): void {
     }
 
     if (
+        data.recoveryMethodId !== undefined &&
+        data.recoveryMethodId !== null &&
+        typeof data.recoveryMethodId !== 'string'
+    ) {
+        throw new Error('recoveryMethodId inválido');
+    }
+
+    if (
         data.browser !== undefined &&
         data.browser !== null &&
         typeof data.browser !== 'string'

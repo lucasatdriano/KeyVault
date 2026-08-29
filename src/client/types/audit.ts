@@ -1,4 +1,4 @@
-import { AuditAction } from '@/src/generated/prisma/enums';
+import { AuditAction, RecoveryType } from '@/src/generated/prisma/enums';
 
 export type AuditEventType =
     | 'register'
@@ -25,6 +25,7 @@ export interface AuditLogResponse {
     createdAt: Date;
     credentialId: string | null;
     resourceSearchHash: string | null;
+    recoveryType?: RecoveryType | null;
     userId: string;
 }
 

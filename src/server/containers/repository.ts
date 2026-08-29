@@ -7,8 +7,11 @@ import { CategoryRepository } from '../database/repositories/category.repository
 import { AuthRepository } from '../database/repositories/auth.repository';
 import { UserRepository } from '../database/repositories/user.repository';
 import { CredentialRepository } from '../database/repositories/credential.repository';
+import { SessionRepository } from '../database/repositories/session.repository';
 
 export const auditRepository = new AuditRepository(prisma);
+
+export const sessionRepository = new SessionRepository(prisma);
 
 export const recoveryRepository = new RecoveryRepository(prisma);
 
