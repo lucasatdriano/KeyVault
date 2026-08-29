@@ -1,6 +1,7 @@
-import { Credential } from '@/src/shared/types/credential';
-import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { create } from 'zustand';
+
+import { Credential } from '@/src/shared/types/credential';
 
 interface CredentialsStore {
     credentials: Credential[];

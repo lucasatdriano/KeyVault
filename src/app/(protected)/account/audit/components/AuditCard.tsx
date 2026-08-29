@@ -10,11 +10,11 @@ import {
     RefreshCwIcon,
 } from 'lucide-react';
 
-import { AuditLog } from '@/src/client/types/audit';
 import { formatDateOnly } from '@/src/client/utils/formatters/date';
 import { groupAuditLogs } from '@/src/client/utils/audit/audit.utils';
+import { AuditLog } from '@/src/client/types/audit';
 
-import AuditEventCard from './AuditEventCard';
+import AuditEventCard from '@/src/app/(protected)/account/audit/components/AuditEventCard';
 
 interface AuditCardProps {
     logs: AuditLog[];

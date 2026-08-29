@@ -22,10 +22,10 @@ import { DEFAULT_CATEGORIES } from '@/src/client/constants/categories';
 import { validateRegisterForm } from '@/src/client/validators/auth.validator';
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 
-import EmailVerificationModal from '@/src/client/components/layout/modals/authModals/EmailVerificationModal';
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Logo from '@/src/client/components/layout/logo/Logo';
+import EmailVerificationModal from '@/src/client/components/layout/modals/authModals/EmailVerificationModal';
 
 export default function RegisterPage() {
     const router = useRouter();

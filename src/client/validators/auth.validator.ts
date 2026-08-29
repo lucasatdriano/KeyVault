@@ -1,6 +1,7 @@
-import { LoginFormData, RegisterFormData } from '@/src/shared/types/auth';
-import { ValidationErrors } from '@/src/client/validators';
 import { EMAIL_REGEX } from '@/src/shared/constants/auth/auth.constants';
+import { LoginFormData, RegisterFormData } from '@/src/shared/types/auth';
+
+import { ValidationErrors } from '@/src/client/validators';
 
 export function validateLoginForm(
     data: LoginFormData,

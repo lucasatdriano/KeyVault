@@ -9,17 +9,18 @@ import { getUserLogsAction } from '@/src/server/actions/audit/get-user-logs.acti
 
 import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
 
-import { mapAuditSearch } from '@/src/client/utils/audit/audit-search.mapper';
-import { AuditLog } from '@/src/client/types/audit';
+import { ACTION_MAP } from '@/src/client/constants/actionAudit';
 import { useVaultStore } from '@/src/client/store/vault.store';
 import { usePagination } from '@/src/client/hooks/ui/usePagination';
+import { mapAuditSearch } from '@/src/client/utils/audit/audit-search.mapper';
 import { decryptAuditLogs } from '@/src/client/utils/audit/audit-decryption';
-import { ACTION_MAP } from '@/src/client/constants/actionAudit';
+import { AuditLog } from '@/src/client/types/audit';
 
+import InfoCard from '@/src/client/components/ui/cards/InfoCard';
 import Header from '@/src/client/components/layout/header/Header';
 import Pagination from '@/src/client/components/layout/pagination/Pagination';
-import InfoCard from '@/src/client/components/ui/cards/InfoCard';
-import AuditCard from './components/AuditCard';
+
+import AuditCard from '@/src/app/(protected)/account/audit/components/AuditCard';
 
 export default function AuditPage() {
     const pagination = usePagination({

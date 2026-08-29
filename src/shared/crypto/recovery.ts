@@ -1,16 +1,19 @@
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
-import { RECOVERY_DATA_KEY_LENGTH } from '../constants/crypto/recovery.constants';
-
-import { generateIV, generateRandomBytes, generateSalt } from './random';
-import { decrypt, encrypt, importAESKey } from './aes';
-import { base64ToBytes, bytesToBase64 } from './encoding';
-import { deriveArgon2Key } from './argon2';
+import { RECOVERY_DATA_KEY_LENGTH } from '@/src/shared/constants/crypto/recovery.constants';
+import {
+    generateIV,
+    generateRandomBytes,
+    generateSalt,
+} from '@/src/shared/crypto/random';
+import { decrypt, encrypt, importAESKey } from '@/src/shared/crypto/aes';
+import { base64ToBytes, bytesToBase64 } from '@/src/shared/crypto/encoding';
+import { deriveArgon2Key } from '@/src/shared/crypto/argon2';
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 import {
     DecryptRecoveryDataKeyParams,
     EncryptedRecoveryVaultKey,
     EncryptRecoveryDataKeyParams,
-} from '../types/crypto/recovery';
-import { RecoveryDataPayload } from '../types/recovery';
+} from '@/src/shared/types/crypto/recovery';
 
 export function createRecoveryDataKey(): Uint8Array {
     return generateRandomBytes(RECOVERY_DATA_KEY_LENGTH);

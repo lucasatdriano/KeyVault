@@ -4,7 +4,6 @@ import {
     KeyIcon,
     LogInIcon,
     LogOutIcon,
-    LucideIcon,
     PlusIcon,
     Trash2Icon,
     UserIcon,
@@ -12,7 +11,9 @@ import {
     ShieldIcon,
     RotateCcwIcon,
     UserCogIcon,
+    type LucideIcon,
 } from 'lucide-react';
+
 import { AuditEventType } from '@/src/client/types/audit';
 
 interface AuditEventConfigItem {

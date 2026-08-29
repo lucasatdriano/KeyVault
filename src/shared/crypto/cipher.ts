@@ -1,11 +1,11 @@
-import { encrypt, decrypt, importAESKey } from './aes';
-import { generateIV } from './random';
-import { base64ToBytes, bytesToBase64 } from '../crypto/encoding';
-import { EncryptedField } from '../types/crypto/cipher';
+import { encrypt, decrypt, importAESKey } from '@/src/shared/crypto/aes';
+import { base64ToBytes, bytesToBase64 } from '@/src/shared/crypto/encoding';
+import { generateIV } from '@/src/shared/crypto/random';
 import {
     validateDecrypt,
     validateEncrypt,
-} from '../validators/crypto/cipher.validator';
+} from '@/src/shared/validators/crypto/cipher.validator';
+import { EncryptedField } from '@/src/shared/types/crypto/cipher';
 
 export async function encryptString(text: string, vaultKey: Uint8Array) {
     validateEncrypt(text, vaultKey);

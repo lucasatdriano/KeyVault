@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { X } from 'lucide-react';
+import { XIcon } from 'lucide-react';
 
 interface ModalBaseProps {
     isOpen: boolean;
@@ -74,7 +74,7 @@ export default function ModalBase({
                                 className="cursor-pointer p-1.5 rounded-lg hover:bg-white/5 text-foreground/40 hover:text-foreground transition-colors"
                                 aria-label="Fechar modal"
                             >
-                                <X className="w-5 h-5" />
+                                <XIcon className="w-5 h-5" />
                             </button>
                         )}
                     </div>

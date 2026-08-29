@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { MailIcon, KeyIcon, CheckIcon } from 'lucide-react';
 
-import ModalBase from '../ModalBase';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import Button from '@/src/client/components/ui/buttons/Button';
-
 import { ChangeEmailFormData } from '@/src/shared/types/profile';
+
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 import { validateChangeEmail } from '@/src/client/validators/user.validator';
+
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface ChangeEmailModalProps {
     isOpen: boolean;

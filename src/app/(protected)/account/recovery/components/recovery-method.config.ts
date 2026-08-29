@@ -1,4 +1,3 @@
-import { RecoveryType } from '@/src/shared/types/recovery';
 import {
     HelpCircleIcon,
     KeyIcon,
@@ -6,6 +5,8 @@ import {
     MailIcon,
     type LucideIcon,
 } from 'lucide-react';
+
+import { RecoveryType } from '@/src/shared/types/recovery';
 
 export interface RecoveryMethodConfig {
     type: RecoveryType;

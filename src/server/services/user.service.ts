@@ -3,18 +3,21 @@ import { AuditAction, User } from '@/src/generated/prisma/client';
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
 import { ChangeUserData } from '@/src/shared/types/profile';
 
-import { EmailVerificationRepository } from '../database/repositories/emailVerification.repository';
-import { RecoveryRepository } from '../database/repositories/recovery.repository';
-import { UserRepository } from '../database/repositories/user.repository';
-import { AuthRepository } from '../database/repositories/auth.repository';
-import { verifyPassword } from '../crypto/passwordHasher';
-import { validateNameData } from '../validators/user/name.validator';
-import { validateEmailData } from '../validators/user/email.validator';
-import { validateUserId } from '../validators/user/user.validator';
-import { EmailService } from './auth/email.service';
-import { AuditService } from './audit.service';
-import { ChangeEmailData, RegisterResult } from '../types/service/auth';
-import { AuditContext } from '../types/service/audit';
+import { EmailVerificationRepository } from '@/src/server/database/repositories/emailVerification.repository';
+import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
+import { UserRepository } from '@/src/server/database/repositories/user.repository';
+import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
+import { EmailService } from '@/src/server/services/auth/email.service';
+import { AuditService } from '@/src/server/services/audit.service';
+import { verifyPassword } from '@/src/server/crypto/passwordHasher';
+import { validateNameData } from '@/src/server/validators/user/name.validator';
+import { validateEmailData } from '@/src/server/validators/user/email.validator';
+import { validateUserId } from '@/src/server/validators/user/user.validator';
+import {
+    ChangeEmailData,
+    RegisterResult,
+} from '@/src/server/types/service/auth';
+import { AuditContext } from '@/src/server/types/service/audit';
 
 export class UserService {
     private readonly EMAIL_VERIFICATION_DURATION = 15 * 60 * 1000;

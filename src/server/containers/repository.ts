@@ -1,13 +1,13 @@
-import { prisma } from '../database/prisma/prisma';
+import { prisma } from '@/src/server/database/prisma/prisma';
 
-import { AuditRepository } from '../database/repositories/audit.repository';
-import { RecoveryRepository } from '../database/repositories/recovery.repository';
-import { EmailVerificationRepository } from '../database/repositories/emailVerification.repository';
-import { CategoryRepository } from '../database/repositories/category.repository';
-import { AuthRepository } from '../database/repositories/auth.repository';
-import { UserRepository } from '../database/repositories/user.repository';
-import { CredentialRepository } from '../database/repositories/credential.repository';
-import { SessionRepository } from '../database/repositories/session.repository';
+import { EmailVerificationRepository } from '@/src/server/database/repositories/emailVerification.repository';
+import { CredentialRepository } from '@/src/server/database/repositories/credential.repository';
+import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
+import { CategoryRepository } from '@/src/server/database/repositories/category.repository';
+import { SessionRepository } from '@/src/server/database/repositories/session.repository';
+import { AuditRepository } from '@/src/server/database/repositories/audit.repository';
+import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
+import { UserRepository } from '@/src/server/database/repositories/user.repository';
 
 export const auditRepository = new AuditRepository(prisma);
 

@@ -2,12 +2,13 @@
 
 import { RecoveryMethod } from '@/src/generated/prisma/client';
 
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
+
 import {
     authService,
     recoverySettingsService,
 } from '@/src/server/containers/services';
 import { getAuditContext } from '@/src/server/utils/audit-context';
-import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 import { ActionResult } from '@/src/server/types/action';
 
 export async function configureRecoveryPasswordAction(

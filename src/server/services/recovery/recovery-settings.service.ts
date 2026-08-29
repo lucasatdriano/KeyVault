@@ -4,16 +4,16 @@ import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.cons
 import { generateRecoveryKey } from '@/src/shared/crypto/random';
 import { decryptRecoveryDataKey } from '@/src/shared/crypto/recovery';
 import { decryptString, encryptString } from '@/src/shared/crypto/cipher';
+import { mapRecoveryType } from '@/src/shared/utils/recovery/recovery.mapper';
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 
 import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
 import { UserRepository } from '@/src/server/database/repositories/user.repository';
+import { AuditService } from '@/src/server/services/audit.service';
 import { hashPassword } from '@/src/server/crypto/passwordHasher';
 import { validateUserId } from '@/src/server/validators/user/user.validator';
-import { AuditService } from '@/src/server/services/audit.service';
 import { AuditContext } from '@/src/server/types/service/audit';
 import { RecoveryQuestionData } from '@/src/server/types/service/recovery';
-import { RecoveryDataPayload } from '@/src/shared/types/recovery';
-import { mapRecoveryType } from '@/src/shared/utils/recovery/recovery.mapper';
 
 export class RecoverySettingsService {
     constructor(

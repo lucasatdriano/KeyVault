@@ -9,12 +9,13 @@ import {
     ShieldCheckIcon,
 } from 'lucide-react';
 
+import { hasValidationErrors } from '@/src/client/validators';
+import { validateRecoveryPasswordAnswer } from '@/src/client/validators/recovery.validator';
+import { RecoveryPasswordValidationFormData } from '@/src/client/types/recovery';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import ModalBase from '../ModalBase';
-import { validateRecoveryPasswordAnswer } from '@/src/client/validators/recovery.validator';
-import { hasValidationErrors } from '@/src/client/validators';
-import { RecoveryPasswordValidationFormData } from '@/src/client/types/recovery';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface RecoveryPasswordValidationModalProps {
     isOpen: boolean;

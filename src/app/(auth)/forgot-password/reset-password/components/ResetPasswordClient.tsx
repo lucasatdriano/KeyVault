@@ -2,10 +2,14 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Key, Lock, ArrowLeft } from 'lucide-react';
+import { KeyIcon, LockIcon, ArrowLeftIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { resetPasswordAction } from '@/src/server/actions/recovery/flow/reset-password.action';
+
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
+import { validateResetPassword } from '@/src/client/validators/recovery.validator';
+import { ResetPasswordFormData } from '@/src/client/types/recovery';
 
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
@@ -17,9 +21,16 @@ export default function ResetPasswordClient() {
     const token = searchParams.get('token');
 
     const [isLoading, setIsLoading] = useState(false);
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
+    const [formData, setFormData] = useState<ResetPasswordFormData>({
+        newPassword: '',
+        confirmPassword: '',
+    });
+    const [errors, setErrors] = useState<
+        ValidationErrors<ResetPasswordFormData>
+    >({
+        newPassword: '',
+        confirmPassword: '',
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -32,23 +43,27 @@ export default function ResetPasswordClient() {
             return;
         }
 
-        if (newPassword.length < 8) {
-            setError('Senha deve ter pelo menos 8 caracteres.');
+        const validationErrors = validateResetPassword({
+            newPassword: formData.newPassword,
+            confirmPassword: formData.confirmPassword,
+        });
 
-            return;
-        }
+        setErrors({
+            newPassword: validationErrors.newPassword ?? '',
+            confirmPassword: validationErrors.confirmPassword ?? '',
+        });
 
-        if (newPassword !== confirmPassword) {
-            setError('As senhas não coincidem.');
-
+        if (hasValidationErrors(validationErrors)) {
             return;
         }
 
         setIsLoading(true);
-        setError('');
 
         try {
-            const result = await resetPasswordAction(token, newPassword);
+            const result = await resetPasswordAction(
+                token,
+                formData.newPassword,
+            );
 
             if (!result.success) {
                 throw new Error(
@@ -58,6 +73,11 @@ export default function ResetPasswordClient() {
 
             toast.success('Senha redefinida com sucesso.');
 
+            setFormData({
+                newPassword: '',
+                confirmPassword: '',
+            });
+
             router.replace('/login');
         } catch (error) {
             const message =
@@ -65,7 +85,10 @@ export default function ResetPasswordClient() {
                     ? error.message
                     : 'Erro ao redefinir senha. Tente novamente.';
 
-            setError(message);
+            setErrors({
+                newPassword: '',
+                confirmPassword: message,
+            });
         } finally {
             setIsLoading(false);
         }
@@ -90,25 +113,30 @@ export default function ResetPasswordClient() {
                     label="Nova senha"
                     type="password"
                     placeholder="********"
-                    value={newPassword}
-                    onChange={(e) => {
-                        setNewPassword(e.target.value);
-                        setError('');
-                    }}
-                    leftIcon={<Key className="h-5 w-5" />}
-                    error={error}
+                    value={formData.newPassword}
+                    onChange={(e) =>
+                        setFormData({
+                            ...formData,
+                            newPassword: e.target.value,
+                        })
+                    }
+                    leftIcon={<KeyIcon className="h-5 w-5" />}
+                    error={errors.newPassword}
                 />
 
                 <InputTextForm
                     label="Confirmar nova senha"
                     type="password"
                     placeholder="********"
-                    value={confirmPassword}
-                    onChange={(e) => {
-                        setConfirmPassword(e.target.value);
-                        setError('');
-                    }}
-                    leftIcon={<Lock className="h-5 w-5" />}
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                        setFormData({
+                            ...formData,
+                            confirmPassword: e.target.value,
+                        })
+                    }
+                    leftIcon={<LockIcon className="h-5 w-5" />}
+                    error={errors.confirmPassword}
                 />
 
                 <Button
@@ -126,7 +154,7 @@ export default function ResetPasswordClient() {
                     onClick={() => router.push('/login')}
                     className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 text-sm text-foreground/60 transition-colors duration-200 hover:text-foreground"
                 >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeftIcon className="h-4 w-4" />
                     Voltar para o login
                 </button>
             </form>

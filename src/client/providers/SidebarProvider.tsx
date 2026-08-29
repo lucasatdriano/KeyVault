@@ -2,7 +2,7 @@
 
 import { ReactNode, useCallback, useMemo, useState } from 'react';
 
-import { SidebarContext } from '../contexts/SidebarContext';
+import { SidebarContext } from '@/src/client/contexts/SidebarContext';
 
 interface SidebarProviderProps {
     children: ReactNode;

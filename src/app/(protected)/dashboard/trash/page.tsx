@@ -6,9 +6,9 @@ import { Trash2Icon, AlertCircleIcon } from 'lucide-react';
 
 import { useCredentials } from '@/src/client/hooks/credentials/useCredentials';
 
-import Header from '@/src/client/components/layout/header/Header';
-import DeletedCredentialCard from '@/src/client/components/ui/cards/DeletedCredentialCard';
 import InfoCard from '@/src/client/components/ui/cards/InfoCard';
+import DeletedCredentialCard from '@/src/client/components/ui/cards/DeletedCredentialCard';
+import Header from '@/src/client/components/layout/header/Header';
 import Pagination from '@/src/client/components/layout/pagination/Pagination';
 
 export default function TrashPage() {

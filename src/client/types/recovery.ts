@@ -29,6 +29,10 @@ export interface RecoveryChallenge {
     expiresAt: Date | string;
 }
 
+export interface ForgotPasswordFormData {
+    email: string;
+}
+
 export interface CreateQuizQuestionFormData {
     question: string;
     answer: string;
@@ -49,4 +53,9 @@ export interface RecoveryPasswordValidationFormData {
 
 export interface RecoveryAnswerFormData {
     answer: string;
+}
+
+export interface ResetPasswordFormData {
+    newPassword: string;
+    confirmPassword: string;
 }

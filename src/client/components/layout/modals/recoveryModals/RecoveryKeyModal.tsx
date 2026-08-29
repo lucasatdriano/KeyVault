@@ -12,7 +12,7 @@ import {
 import { toast } from 'sonner';
 
 import Button from '@/src/client/components/ui/buttons/Button';
-import ModalBase from '../ModalBase';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface RecoveryKeyModalProps {
     isOpen: boolean;

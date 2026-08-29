@@ -4,13 +4,14 @@
 import { useEffect, useState } from 'react';
 import { CheckIcon, LockKeyholeIcon, ShieldCheckIcon } from 'lucide-react';
 
-import Button from '@/src/client/components/ui/buttons/Button';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import ModalBase from '../ModalBase';
 import { hasValidationErrors } from '@/src/client/validators';
 import { validateRecoveryPassword } from '@/src/client/validators/recovery.validator';
-import RequirementIndicator from '../../../ui/indicators/RequirementIndicator';
 import { RecoveryPasswordFormData } from '@/src/client/types/recovery';
+
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import RequirementIndicator from '@/src/client/components/ui/indicators/RequirementIndicator';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface RecoveryPasswordModalProps {
     isOpen: boolean;

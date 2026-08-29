@@ -1,5 +1,6 @@
 import { EMAIL_REGEX } from '@/src/shared/constants/auth/auth.constants';
 import { CredentialFormData } from '@/src/shared/types/credential';
+
 import { ValidationErrors } from '@/src/client/validators';
 
 export function validateCredentialForm(

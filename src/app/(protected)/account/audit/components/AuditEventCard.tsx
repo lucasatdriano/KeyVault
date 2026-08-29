@@ -3,7 +3,11 @@
 import { ClockIcon, MapPinIcon, MonitorIcon } from 'lucide-react';
 
 import { AuditLog } from '@/src/client/types/audit';
-import { auditEventConfig, defaultAuditEvent } from './Audit-event.config';
+
+import {
+    auditEventConfig,
+    defaultAuditEvent,
+} from '@/src/app/(protected)/account/audit/components/Audit-event.config';
 
 interface AuditEventCardProps {
     log: AuditLog;

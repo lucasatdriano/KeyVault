@@ -6,8 +6,8 @@ import { getCategoriesAction } from '@/src/server/actions/category/get-categorie
 
 import { DecryptedCategory } from '@/src/shared/types/category';
 
-import { useCategoriesStore } from '@/src/client/store/category.store';
 import { useVaultStore } from '@/src/client/store/vault.store';
+import { useCategoriesStore } from '@/src/client/store/category.store';
 import { decryptCategory } from '@/src/client/utils/categories/category-decryption';
 import { sortCategoriesByOrder } from '@/src/client/utils/categories/category-sort';
 

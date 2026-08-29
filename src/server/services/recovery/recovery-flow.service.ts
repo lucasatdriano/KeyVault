@@ -4,33 +4,24 @@ import {
     RECOVERY_MAX_ATTEMPTS,
     RECOVERY_ORDER,
 } from '@/src/shared/constants/recovery/recovery.constants';
-
+import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
-
-import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
-import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
-
-import {
-    hashPassword,
-    verifyPassword,
-} from '@/src/server/crypto/passwordHasher';
-
-import { RecoverySessionService } from '@/src/server/services/recovery/recovery-session.service';
-
+import { encryptVaultKey } from '@/src/shared/crypto/vault';
 import { decryptString } from '@/src/shared/crypto/cipher';
-
-import { UserRepository } from '../../database/repositories/user.repository';
-
 import {
     decryptRecoveryDataKey,
     decryptRecoveryVaultKey,
 } from '@/src/shared/crypto/recovery';
 
-import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
-
-import { validateNewPasswordData } from '../../validators/auth/auth.validator';
-
-import { encryptVaultKey } from '@/src/shared/crypto/vault';
+import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
+import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
+import { UserRepository } from '@/src/server/database/repositories/user.repository';
+import { RecoverySessionService } from '@/src/server/services/recovery/recovery-session.service';
+import {
+    hashPassword,
+    verifyPassword,
+} from '@/src/server/crypto/passwordHasher';
+import { validateNewPasswordData } from '@/src/server/validators/auth/auth.validator';
 
 export class RecoveryFlowService {
     private readonly SESSION_DURATION = 15 * 60 * 1000;

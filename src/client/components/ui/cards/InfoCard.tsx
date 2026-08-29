@@ -1,7 +1,7 @@
 'use client';
 
-import { LucideIcon } from 'lucide-react';
 import { ReactNode } from 'react';
+import { type LucideIcon } from 'lucide-react';
 
 interface InfoCardProps {
     icon: LucideIcon;

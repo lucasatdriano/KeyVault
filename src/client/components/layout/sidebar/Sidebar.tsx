@@ -4,14 +4,13 @@ import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { LogOutIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 
-import Logo from '../logo/Logo';
-
-import { useSidebar } from '@/src/client/hooks/ui/useSidebar';
 import { useCredentialsStore } from '@/src/client/store/credential.store';
-
-import { sidebarSections } from './Sidebar.config';
+import { useSidebar } from '@/src/client/hooks/ui/useSidebar';
 import { useAuth } from '@/src/client/hooks/auth/useAuth';
 import { useLogout } from '@/src/client/hooks/auth/useLogout';
+import { sidebarSections } from '@/src/client/components/layout/sidebar/Sidebar.config';
+
+import Logo from '@/src/client/components/layout/logo/Logo';
 
 interface SidebarProps {
     mobile?: boolean;

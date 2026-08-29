@@ -1,10 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Home, ArrowLeft } from 'lucide-react';
+import { HomeIcon, ArrowLeftIcon } from 'lucide-react';
 
 import Button from '@/src/client/components/ui/buttons/Button';
-import Logo from '../client/components/layout/logo/Logo';
+import Logo from '@/src/client/components/layout/logo/Logo';
 
 export default function NotFound() {
     const router = useRouter();
@@ -38,7 +38,7 @@ export default function NotFound() {
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Button
                         onClick={() => router.push('/dashboard')}
-                        leftIcon={<Home className="w-5 h-5" />}
+                        leftIcon={<HomeIcon className="w-5 h-5" />}
                         fullWidth
                     >
                         Ir para o Dashboard
@@ -47,7 +47,7 @@ export default function NotFound() {
                     <Button
                         onClick={() => router.back()}
                         variant="secondary"
-                        leftIcon={<ArrowLeft className="w-5 h-5" />}
+                        leftIcon={<ArrowLeftIcon className="w-5 h-5" />}
                         fullWidth
                     >
                         Voltar

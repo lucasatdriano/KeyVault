@@ -6,14 +6,15 @@ import { toast } from 'sonner';
 
 import { CredentialFormData } from '@/src/shared/types/credential';
 
-import { validateCredentialForm } from '@/src/client/validators/credential.validator';
 import { useCategories } from '@/src/client/hooks/categories/useCategories';
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
+import { validateCredentialForm } from '@/src/client/validators/credential.validator';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
 import InputTextAreaForm from '@/src/client/components/ui/inputs/InputTextAreaForm';
-import ModalBase from '../ModalBase';
-import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface NewCredentialModalProps {
     isOpen: boolean;

@@ -1,6 +1,7 @@
 import { EMAIL_REGEX } from '@/src/shared/constants/auth/auth.constants';
 import { ChangePasswordFormData } from '@/src/shared/types/auth';
 import { ValidateChangeEmailData } from '@/src/shared/types/profile';
+
 import { ValidationErrors } from '@/src/client/validators';
 
 export function validateName(name: string): ValidationErrors<{ name: string }> {

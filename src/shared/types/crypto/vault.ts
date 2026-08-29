@@ -1,4 +1,4 @@
-import { Argon2Params } from './argon2';
+import { Argon2Params } from '@/src/shared/types/crypto/argon2';
 
 export interface EncryptedVault {
     version: number;

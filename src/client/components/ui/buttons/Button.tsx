@@ -1,7 +1,7 @@
 'use client';
 
+import { ButtonHTMLAttributes, ReactNode } from 'react';
 import { LoaderCircleIcon } from 'lucide-react';
-import React, { ButtonHTMLAttributes, ReactNode } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     children: ReactNode;

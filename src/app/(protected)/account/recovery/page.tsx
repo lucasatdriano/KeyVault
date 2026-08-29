@@ -12,15 +12,16 @@ import { RecoveryType } from '@/src/shared/types/recovery';
 
 import { useRecovery } from '@/src/client/hooks/recovery/useRecovery';
 import { getRecoveryLevel } from '@/src/client/utils/recovery/recovery-level';
-import { recoveryMethodConfig } from './components/recovery-method.config';
+import { QuizQuestion } from '@/src/client/types/recovery';
 
-import Header from '@/src/client/components/layout/header/Header';
 import InfoCard from '@/src/client/components/ui/cards/InfoCard';
+import Header from '@/src/client/components/layout/header/Header';
 import QuizFormModal from '@/src/client/components/layout/modals/recoveryModals/CreateQuestionsRecoveryModal';
 import RecoveryKeyModal from '@/src/client/components/layout/modals/recoveryModals/RecoveryKeyModal';
 import RecoveryPasswordModal from '@/src/client/components/layout/modals/recoveryModals/RecoveryPasswordModal';
-import RecoveryMethodCard from './components/RecoveryMethodCard';
-import { QuizQuestion } from '@/src/client/types/recovery';
+
+import { recoveryMethodConfig } from '@/src/app/(protected)/account/recovery/components/recovery-method.config';
+import RecoveryMethodCard from '@/src/app/(protected)/account/recovery/components/RecoveryMethodCard';
 
 export default function RecoveryPage() {
     const {

@@ -3,8 +3,8 @@ import {
     RecoverySession,
     RecoverySessionStatus,
 } from '@/src/generated/prisma/client';
-
 import { RecoveryType } from '@/src/generated/prisma/enums';
+
 import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 
 export interface CreateRecoveryMethodData {

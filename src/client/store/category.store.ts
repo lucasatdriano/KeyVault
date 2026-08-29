@@ -1,5 +1,6 @@
-import { DecryptedCategory } from '@/src/shared/types/category';
 import { create } from 'zustand';
+
+import { DecryptedCategory } from '@/src/shared/types/category';
 
 interface CategoriesStore {
     cachedCategories: DecryptedCategory[];

@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { bottomBarItems } from './BottomBar.config';
+
+import { bottomBarItems } from '@/src/client/components/layout/bottomBar/BottomBar.config';
 
 export default function BottomBar() {
     const router = useRouter();

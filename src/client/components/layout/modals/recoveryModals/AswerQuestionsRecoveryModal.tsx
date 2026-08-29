@@ -11,15 +11,16 @@ import {
     KeyIcon,
 } from 'lucide-react';
 
-import Button from '@/src/client/components/ui/buttons/Button';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import ModalBase from '../ModalBase';
+import { hasValidationErrors } from '@/src/client/validators';
+import { validateRecoveryAnswer } from '@/src/client/validators/recovery.validator';
 import {
     RecoveryAnswerFormData,
     RecoveryQuestion,
 } from '@/src/client/types/recovery';
-import { hasValidationErrors } from '@/src/client/validators';
-import { validateRecoveryAnswer } from '@/src/client/validators/recovery.validator';
+
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface QuizAnswerModalProps {
     isOpen: boolean;

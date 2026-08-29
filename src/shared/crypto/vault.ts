@@ -7,17 +7,17 @@ import {
     generateIV,
     generateRandomBytes,
     generateSalt,
-} from '../crypto/random';
-import { decrypt, encrypt, importAESKey } from './aes';
-import { base64ToBytes, bytesToBase64 } from '../crypto/encoding';
+} from '@/src/shared/crypto/random';
+import { base64ToBytes, bytesToBase64 } from '@/src/shared/crypto/encoding';
+import { decrypt, encrypt, importAESKey } from '@/src/shared/crypto/aes';
+import { deriveArgon2Key } from '@/src/shared/crypto/argon2';
+import { validateSecret } from '@/src/shared/validators/auth/secret.validator';
 import {
     validateEncryptedVault,
     validateVaultKey,
-} from '../validators/crypto/vault.validator';
-import { validateSecret } from '../validators/auth/secret.validator';
-import { deriveArgon2Key } from './argon2';
-import { EncryptedVault } from '../types/crypto/vault';
-import { Argon2Params } from '../types/crypto/argon2';
+} from '@/src/shared/validators/crypto/vault.validator';
+import { Argon2Params } from '@/src/shared/types/crypto/argon2';
+import { EncryptedVault } from '@/src/shared/types/crypto/vault';
 
 export function createVaultKey(): Uint8Array {
     return generateRandomBytes(VAULT_KEY_LENGTH);

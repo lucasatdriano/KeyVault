@@ -8,7 +8,6 @@ import { SidebarProvider } from '@/src/client/providers/SidebarProvider';
 import { SessionExpiredHandler } from '@/src/client/components/layout/handlers/SessionExpiredHandler';
 
 import VaultUnlockGuard from '@/src/client/guards/VaultUnlockGuard';
-
 import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';
 import SidebarDrawer from '@/src/client/components/layout/sidebar/SidebarDrawer';
 import BottomBar from '@/src/client/components/layout/bottomBar/BottomBar';

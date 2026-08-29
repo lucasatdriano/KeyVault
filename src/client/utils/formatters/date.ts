@@ -20,3 +20,12 @@ export function formatDateTime(date: Date | string) {
         year: 'numeric',
     });
 }
+
+export function getDaysRemaining(deletedAt: string) {
+    const deleted = new Date(deletedAt);
+    const now = new Date();
+    const diffTime =
+        deleted.getTime() + 30 * 24 * 60 * 60 * 1000 - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+}

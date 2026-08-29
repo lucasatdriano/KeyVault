@@ -10,8 +10,8 @@ import { Credential, CredentialFormData } from '@/src/shared/types/credential';
 import { useCredentials } from '@/src/client/hooks/credentials/useCredentials';
 import { formatDateTime } from '@/src/client/utils/formatters/date';
 
-import Header from '@/src/client/components/layout/header/Header';
 import CredentialCard from '@/src/client/components/ui/cards/CredentialCard';
+import Header from '@/src/client/components/layout/header/Header';
 import Pagination from '@/src/client/components/layout/pagination/Pagination';
 import ViewCredentialModal from '@/src/client/components/layout/modals/credentialsModals/ViewCredentialModal';
 

@@ -9,13 +9,14 @@ import {
     EyeOffIcon,
 } from 'lucide-react';
 
-import ModalBase from '../ModalBase';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import Button from '@/src/client/components/ui/buttons/Button';
-
 import { ChangePasswordFormData } from '@/src/shared/types/auth';
+
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 import { validateChangePassword } from '@/src/client/validators/user.validator';
+
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface ChangePasswordModalProps {
     isOpen: boolean;

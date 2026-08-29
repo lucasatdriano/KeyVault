@@ -1,11 +1,49 @@
+import { ValidationErrors } from '@/src/client/validators';
 import {
+    ForgotPasswordFormData,
     CreateQuizQuestionFormData,
     RecoveryAnswerFormData,
     RecoveryKeyFormData,
     RecoveryPasswordFormData,
     RecoveryPasswordValidationFormData,
+    ResetPasswordFormData,
 } from '@/src/client/types/recovery';
-import { ValidationErrors } from '@/src/client/validators';
+
+export function validateForgotPassword(
+    data: ForgotPasswordFormData,
+): ValidationErrors<ForgotPasswordFormData> {
+    const errors: ValidationErrors<ForgotPasswordFormData> = {};
+
+    const normalizedEmail = data.email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+        errors.email = 'E-mail é obrigatório.';
+    } else if (!/\S+@\S+\.\S+/.test(normalizedEmail)) {
+        errors.email = 'E-mail inválido.';
+    }
+
+    return errors;
+}
+
+export function validateResetPassword(
+    data: ResetPasswordFormData,
+): ValidationErrors<ResetPasswordFormData> {
+    const errors: ValidationErrors<ResetPasswordFormData> = {};
+
+    if (!data.newPassword) {
+        errors.newPassword = 'Nova senha é obrigatória.';
+    } else if (data.newPassword.length < 8) {
+        errors.newPassword = 'Senha deve ter pelo menos 8 caracteres.';
+    }
+
+    if (!data.confirmPassword) {
+        errors.confirmPassword = 'Confirme sua nova senha.';
+    } else if (data.newPassword !== data.confirmPassword) {
+        errors.confirmPassword = 'As senhas não coincidem.';
+    }
+
+    return errors;
+}
 
 export function validateQuizQuestion(
     data: CreateQuizQuestionFormData,

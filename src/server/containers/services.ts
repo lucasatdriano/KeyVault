@@ -7,19 +7,19 @@ import {
     userRepository,
     credentialRepository,
     sessionRepository,
-} from './repository';
+} from '@/src/server/containers/repository';
 
-import { JWTService } from '../services/auth/jwt.service';
-import { AuditService } from '../services/audit.service';
-import { CategoryService } from '../services/category.service';
-import { RecoverySessionService } from '../services/recovery/recovery-session.service';
-import { RecoveryFlowService } from '../services/recovery/recovery-flow.service';
-import { RecoverySettingsService } from '../services/recovery/recovery-settings.service';
-import { EmailService } from '../services/auth/email.service';
-import { AuthService } from '../services/auth/auth.service';
-import { UserService } from '../services/user.service';
-import { CredentialService } from '../services/credential.service';
-import { SessionService } from '../services/auth/session.service';
+import { RecoverySettingsService } from '@/src/server/services/recovery/recovery-settings.service';
+import { RecoverySessionService } from '@/src/server/services/recovery/recovery-session.service';
+import { RecoveryFlowService } from '@/src/server/services/recovery/recovery-flow.service';
+import { CredentialService } from '@/src/server/services/credential.service';
+import { SessionService } from '@/src/server/services/auth/session.service';
+import { CategoryService } from '@/src/server/services/category.service';
+import { EmailService } from '@/src/server/services/auth/email.service';
+import { AuthService } from '@/src/server/services/auth/auth.service';
+import { JWTService } from '@/src/server/services/auth/jwt.service';
+import { AuditService } from '@/src/server/services/audit.service';
+import { UserService } from '@/src/server/services/user.service';
 
 export const jwtService = new JWTService(process.env.JWT_SECRET);
 

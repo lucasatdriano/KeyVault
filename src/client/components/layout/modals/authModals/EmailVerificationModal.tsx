@@ -4,7 +4,7 @@ import React from 'react';
 import { MailIcon, RefreshCwIcon, AlertCircleIcon } from 'lucide-react';
 
 import Button from '@/src/client/components/ui/buttons/Button';
-import ModalBase from '../ModalBase';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface EmailVerificationModalProps {
     isOpen: boolean;

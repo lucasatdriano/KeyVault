@@ -2,10 +2,14 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, ArrowLeft, ArrowRight } from 'lucide-react';
+import { MailIcon, ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { startRecoveryAction } from '@/src/server/actions/recovery/flow/start-recovery.action';
+
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
+import { validateForgotPassword } from '@/src/client/validators/recovery.validator';
+import { ForgotPasswordFormData } from '@/src/client/types/recovery';
 
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
@@ -13,30 +17,35 @@ import Logo from '@/src/client/components/layout/logo/Logo';
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
-    const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [formData, setFormData] = useState<ForgotPasswordFormData>({
+        email: '',
+    });
+    const [errors, setErrors] = useState<
+        ValidationErrors<ForgotPasswordFormData>
+    >({
+        email: '',
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        const normalizedEmail = email.trim().toLowerCase();
+        const validationErrors = validateForgotPassword({
+            email: formData.email,
+        });
 
-        if (!normalizedEmail) {
-            setError('E-mail é obrigatório.');
-            return;
-        }
+        setErrors({
+            email: validationErrors.email ?? '',
+        });
 
-        if (!/\S+@\S+\.\S+/.test(normalizedEmail)) {
-            setError('E-mail inválido.');
+        if (hasValidationErrors(validationErrors)) {
             return;
         }
 
         try {
             setIsLoading(true);
-            setError('');
 
-            const result = await startRecoveryAction(normalizedEmail);
+            const result = await startRecoveryAction(formData.email);
 
             if (!result.success || !result.data) {
                 throw new Error(
@@ -45,6 +54,8 @@ export default function ForgotPasswordPage() {
             }
 
             toast.success('Recuperação iniciada.');
+
+            setFormData({ email: '' });
 
             router.push(
                 `/forgot-password/recovery?token=${encodeURIComponent(
@@ -82,13 +93,12 @@ export default function ForgotPasswordPage() {
                     label="E-mail"
                     type="email"
                     placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => {
-                        setEmail(e.target.value);
-                        setError('');
-                    }}
-                    leftIcon={<Mail className="h-5 w-5" />}
-                    error={error}
+                    value={formData.email}
+                    onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                    }
+                    leftIcon={<MailIcon className="h-5 w-5" />}
+                    error={errors.email}
                 />
 
                 <Button
@@ -97,7 +107,7 @@ export default function ForgotPasswordPage() {
                     fullWidth
                     isLoading={isLoading}
                     loadingText="Continuando..."
-                    rightIcon={<ArrowRight className="h-5 w-5" />}
+                    rightIcon={<ArrowRightIcon className="h-5 w-5" />}
                 >
                     Continuar
                 </Button>
@@ -107,7 +117,7 @@ export default function ForgotPasswordPage() {
                     onClick={() => router.push('/login')}
                     className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 text-sm text-foreground/60 transition-colors duration-200 hover:text-foreground"
                 >
-                    <ArrowLeft className="h-4 w-4" />
+                    <ArrowLeftIcon className="h-4 w-4" />
                     Voltar para o login
                 </button>
             </form>

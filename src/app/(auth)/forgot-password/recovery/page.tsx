@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 
-import RecoveryFlowClient from './components/RecoveryFlowClient';
+import RecoveryFlowClient from '@/src/app/(auth)/forgot-password/recovery/components/RecoveryFlowClient';
 
 export default function RecoveryFlowPage() {
     return (

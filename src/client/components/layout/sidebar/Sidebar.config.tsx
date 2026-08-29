@@ -1,4 +1,3 @@
-import { SidebarSection } from '@/src/client/types/layout/sidebar';
 import {
     ActivityIcon,
     FingerprintIcon,
@@ -8,6 +7,8 @@ import {
     Trash2Icon,
     UserIcon,
 } from 'lucide-react';
+
+import { SidebarSection } from '@/src/client/types/layout/sidebar';
 
 export const sidebarSections: SidebarSection[] = [
     {

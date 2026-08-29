@@ -4,7 +4,7 @@ import { AlertCircleIcon } from 'lucide-react';
 
 import Button from '@/src/client/components/ui/buttons/Button';
 
-import { RecoveryMethodConfig } from './recovery-method.config';
+import { RecoveryMethodConfig } from '@/src/app/(protected)/account/recovery/components/recovery-method.config';
 
 interface RecoveryMethodCardProps {
     config: RecoveryMethodConfig;

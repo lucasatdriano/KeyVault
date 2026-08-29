@@ -17,8 +17,8 @@ import {
 import { useAccountProfile } from '@/src/client/hooks/user/useAccountProfile';
 import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
 
-import Header from '@/src/client/components/layout/header/Header';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import Header from '@/src/client/components/layout/header/Header';
 import ChangeEmailModal from '@/src/client/components/layout/modals/usersModals/ChangeEmailModal';
 import ChangePasswordModal from '@/src/client/components/layout/modals/usersModals/ChangePasswordModal';
 import EmailVerificationModal from '@/src/client/components/layout/modals/authModals/EmailVerificationModal';

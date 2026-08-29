@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { MenuIcon, UserIcon } from 'lucide-react';
 
 import { useSidebar } from '@/src/client/hooks/ui/useSidebar';
-import Logo from '../logo/Logo';
+
+import Logo from '@/src/client/components/layout/logo/Logo';
 
 export default function HeaderMobile() {
     const { toggle } = useSidebar();

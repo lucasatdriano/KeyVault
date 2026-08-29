@@ -1,7 +1,7 @@
-import { base64ToBytes, bytesToBase64 } from '@/src/shared/crypto/encoding';
 import { JWT_ALGORITHM } from '@/src/shared/constants/auth/auth.constants';
-import { JWTPayload } from '@/src/shared/types/jwt-payload';
+import { base64ToBytes, bytesToBase64 } from '@/src/shared/crypto/encoding';
 import { getSubtle } from '@/src/shared/crypto/webcrypto';
+import { JWTPayload } from '@/src/shared/types/jwt-payload';
 
 import { VerifyTokenResult } from '@/src/server/types/service/jwt';
 

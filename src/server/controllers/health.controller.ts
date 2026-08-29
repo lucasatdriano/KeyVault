@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { prisma } from '../database/prisma/prisma';
+import { prisma } from '@/src/server/database/prisma/prisma';
 
 export async function healthController() {
     try {

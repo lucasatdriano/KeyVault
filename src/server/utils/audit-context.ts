@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 
-import { AuditContext } from '../types/service/audit';
+import { AuditContext } from '@/src/server/types/service/audit';
 
 export async function getAuditContext(): Promise<AuditContext> {
     const h = await headers();

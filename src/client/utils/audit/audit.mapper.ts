@@ -1,6 +1,8 @@
 import { AuditAction } from '@/src/generated/prisma/enums';
-import { AuditLog, AuditLogResponse } from '@/src/client/types/audit';
+
 import { mapRecoveryType } from '@/src/shared/utils/recovery/recovery.mapper';
+
+import { AuditLog, AuditLogResponse } from '@/src/client/types/audit';
 
 const actionMap: Record<
     AuditAction,

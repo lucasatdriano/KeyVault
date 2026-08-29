@@ -1,12 +1,18 @@
 import { AuditAction, User } from '@/src/generated/prisma/client';
 
-import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
-import { changeMasterPassword } from '@/src/shared/crypto/vault';
 import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
+import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
+import { changeMasterPassword } from '@/src/shared/crypto/vault';
 
 import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
 import { EmailVerificationRepository } from '@/src/server/database/repositories/emailVerification.repository';
+import { RecoverySettingsService } from '@/src/server/services/recovery/recovery-settings.service';
+import { CategoryService } from '@/src/server/services/category.service';
+import { SessionService } from '@/src/server/services/auth/session.service';
+import { AuditService } from '@/src/server/services/audit.service';
+import { EmailService } from '@/src/server/services/auth/email.service';
+import { JWTService } from '@/src/server/services/auth/jwt.service';
 import {
     hashPassword,
     verifyPassword,
@@ -21,11 +27,6 @@ import {
     validateLoginData,
     validateRegisterData,
 } from '@/src/server/validators/auth/auth.validator';
-import { AuditService } from '@/src/server/services/audit.service';
-import { CategoryService } from '@/src/server/services/category.service';
-import { EmailService } from '@/src/server/services/auth/email.service';
-import { JWTService } from '@/src/server/services/auth/jwt.service';
-import { RecoverySettingsService } from '@/src/server/services/recovery/recovery-settings.service';
 import { AuditContext } from '@/src/server/types/service/audit';
 import {
     LoginData,
@@ -35,7 +36,6 @@ import {
     ChangePasswordData,
     VerifyEmailResult,
 } from '@/src/server/types/service/auth';
-import { SessionService } from '@/src/server/services/auth/session.service';
 
 export class AuthService {
     private readonly EMAIL_VERIFICATION_DURATION = 15 * 60 * 1000;

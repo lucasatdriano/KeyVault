@@ -19,21 +19,21 @@ import { toast } from 'sonner';
 
 import { Credential, CredentialFormData } from '@/src/shared/types/credential';
 
+import { useCategories } from '@/src/client/hooks/categories/useCategories';
+import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
+import { validateCredentialForm } from '@/src/client/validators/credential.validator';
 import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+import { formatDateTime } from '@/src/client/utils/formatters/date';
 import {
     getCategoryBadgeColor,
     getCategoryColor,
 } from '@/src/client/utils/credentials/credential-category';
 
-import { formatDateTime } from '@/src/client/utils/formatters/date';
-import { useCategories } from '@/src/client/hooks/categories/useCategories';
-import { validateCredentialForm } from '@/src/client/validators/credential.validator';
+import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
 import InputTextAreaForm from '@/src/client/components/ui/inputs/InputTextAreaForm';
-import Button from '@/src/client/components/ui/buttons/Button';
-import ModalBase from '../ModalBase';
-import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface ViewCredentialModalProps {
     isOpen: boolean;

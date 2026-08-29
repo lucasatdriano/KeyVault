@@ -2,10 +2,10 @@ import {
     DEFAULT_BASE64_LENGTH,
     DEFAULT_HEX_LENGTH,
 } from '@/src/shared/constants/crypto/encoding.constants';
-import { bytesToBase64, bytesToHex } from './encoding';
 import { DEFAULT_IV_LENGTH } from '@/src/shared/constants/crypto/aes.constants';
 import { DEFAULT_SALT_LENGTH } from '@/src/shared/constants/crypto/random.constants';
-import { getCrypto } from './webcrypto';
+import { bytesToBase64, bytesToHex } from '@/src/shared/crypto/encoding';
+import { getCrypto } from '@/src/shared/crypto/webcrypto';
 
 export function generateRandomBytes(length: number): Uint8Array {
     if (!Number.isInteger(length) || length <= 0) {

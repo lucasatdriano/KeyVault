@@ -3,20 +3,20 @@ import { AuditAction } from '@/src/generated/prisma/client';
 
 import { PaginatedResponse } from '@/src/shared/types/pagination';
 
-import { CredentialRepository } from '../database/repositories/credential.repository';
+import { CredentialRepository } from '@/src/server/database/repositories/credential.repository';
+import { AuditService } from '@/src/server/services/audit.service';
 import {
     validateCreateCredentialData,
     validateUpdateCredentialData,
-} from '../validators/credential/credential.validator';
-import { validateUserId } from '../validators/user/user.validator';
-import { AuditService } from './audit.service';
-import { AuditContext } from '../types/service/audit';
+} from '@/src/server/validators/credential/credential.validator';
+import { validateUserId } from '@/src/server/validators/user/user.validator';
+import { AuditContext } from '@/src/server/types/service/audit';
 import {
     CreateCredentialData,
     CredentialWithCategory,
     FindCredentialsOptions,
     UpdateCredentialData,
-} from '../types/repository/credential';
+} from '@/src/server/types/repository/credential';
 
 export class CredentialService {
     constructor(

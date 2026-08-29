@@ -1,7 +1,7 @@
 'use client';
 
 import React, { InputHTMLAttributes, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
 interface InputTextFormProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string;
@@ -79,9 +79,9 @@ export default function InputTextForm({
                                 disabled={disabled}
                             >
                                 {showPassword ? (
-                                    <EyeOff className="h-6 w-6" />
+                                    <EyeOffIcon className="h-6 w-6" />
                                 ) : (
-                                    <Eye className="h-6 w-6" />
+                                    <EyeIcon className="h-6 w-6" />
                                 )}
                             </button>
                         ) : (

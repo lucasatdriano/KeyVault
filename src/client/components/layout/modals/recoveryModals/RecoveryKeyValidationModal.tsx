@@ -9,12 +9,13 @@ import {
     CheckIcon,
 } from 'lucide-react';
 
+import { hasValidationErrors } from '@/src/client/validators';
+import { validateRecoveryKey } from '@/src/client/validators/recovery.validator';
+import { RecoveryKeyFormData } from '@/src/client/types/recovery';
+
 import Button from '@/src/client/components/ui/buttons/Button';
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import ModalBase from '../ModalBase';
-import { validateRecoveryKey } from '@/src/client/validators/recovery.validator';
-import { hasValidationErrors } from '@/src/client/validators';
-import { RecoveryKeyFormData } from '@/src/client/types/recovery';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface RecoveryKeyValidationModalProps {
     isOpen: boolean;

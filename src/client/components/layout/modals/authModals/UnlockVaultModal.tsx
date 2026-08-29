@@ -3,14 +3,15 @@
 import { useState } from 'react';
 import { KeyIcon, LockKeyholeIcon } from 'lucide-react';
 
-import ModalBase from '../ModalBase';
-import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
-import Button from '@/src/client/components/ui/buttons/Button';
+import { unlockVaultAction } from '@/src/server/actions/auth/unlock-vault.action';
+
+import { decryptVaultKey } from '@/src/shared/crypto/vault';
 
 import { useVaultStore } from '@/src/client/store/vault.store';
 
-import { decryptVaultKey } from '@/src/shared/crypto/vault';
-import { unlockVaultAction } from '@/src/server/actions/auth/unlock-vault.action';
+import Button from '@/src/client/components/ui/buttons/Button';
+import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 export default function UnlockVaultModal() {
     const [password, setPassword] = useState('');

@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 
-import { VerifyEmailClient } from './components/VerifyEmailClient';
+import { VerifyEmailClient } from '@/src/app/(auth)/verify-email/components/VerifyEmailClient';
 
 export default function VerifyEmailPage() {
     return (

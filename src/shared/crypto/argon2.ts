@@ -1,13 +1,14 @@
 import { argon2id } from 'hash-wasm';
+
 import { VAULT_KEY_LENGTH } from '@/src/shared/constants/crypto/vault.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
-import { Argon2DeriveKeyParams } from '@/src/shared/types/crypto/argon2';
 import {
     validateArgon2Params,
     validateHashLength,
     validateSalt,
 } from '@/src/shared/validators/crypto/argon2.validator';
 import { validateSecret } from '@/src/shared/validators/auth/secret.validator';
+import { Argon2DeriveKeyParams } from '@/src/shared/types/crypto/argon2';
 
 export async function deriveArgon2Key(
     params: Argon2DeriveKeyParams,

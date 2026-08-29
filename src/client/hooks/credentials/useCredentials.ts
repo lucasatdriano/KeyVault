@@ -10,10 +10,10 @@ import { restoreCredentialAction } from '@/src/server/actions/credentials/restor
 import { createCredentialAction } from '@/src/server/actions/credentials/create-credential.action';
 import { updateCredentialAction } from '@/src/server/actions/credentials/update-credential.action';
 
-import { encryptString } from '@/src/shared/crypto/cipher';
-import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
-import { bytesToBase64 } from '@/src/shared/crypto/encoding';
 import { generateSalt } from '@/src/shared/crypto/random';
+import { encryptString } from '@/src/shared/crypto/cipher';
+import { bytesToBase64 } from '@/src/shared/crypto/encoding';
+import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
 import { Credential, CredentialFormData } from '@/src/shared/types/credential';
 
 import { useVaultStore } from '@/src/client/store/vault.store';

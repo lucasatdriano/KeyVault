@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 
-import SplashScreen from './splash/page';
+import SplashScreen from '@/src/app/(auth)/splash/page';
 
 export default function AuthPage() {
     const router = useRouter();

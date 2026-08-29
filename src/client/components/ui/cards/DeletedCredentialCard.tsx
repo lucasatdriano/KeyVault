@@ -1,13 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RotateCcw, Calendar, Clock } from 'lucide-react';
+import { RotateCcwIcon, CalendarIcon, ClockIcon } from 'lucide-react';
+
 import { Credential } from '@/src/shared/types/credential';
-import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+
 import {
     getCategoryBadgeColor,
     getCategoryColor,
 } from '@/src/client/utils/credentials/credential-category';
+import {
+    formatDateTime,
+    getDaysRemaining,
+} from '@/src/client/utils/formatters/date';
+import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
 
 interface DeletedCredentialCardProps {
     credential: Credential;
@@ -15,26 +21,6 @@ interface DeletedCredentialCardProps {
     onPermanentDelete?: (id: string) => void;
     onCopy?: (text: string) => void;
 }
-
-const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-};
-
-const getDaysRemaining = (deletedAt: string) => {
-    const deleted = new Date(deletedAt);
-    const now = new Date();
-    const diffTime =
-        deleted.getTime() + 30 * 24 * 60 * 60 * 1000 - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-};
 
 const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
     credential,
@@ -104,8 +90,8 @@ const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
                                     : 'Expirou'}
                             </div>
                             <span className="text-[10px] text-foreground/20 mt-0.5 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {formatDate(credential.updatedAt)}
+                                <ClockIcon className="w-3 h-3" />
+                                {formatDateTime(credential.updatedAt)}
                             </span>
                         </div>
 
@@ -115,7 +101,7 @@ const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
                                 className="cursor-pointer p-2 rounded-xl hover:bg-blue-500/10 text-foreground/40 hover:text-blue-500 transition-all"
                                 title="Restaurar"
                             >
-                                <RotateCcw className="w-4 h-4" />
+                                <RotateCcwIcon className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
@@ -123,8 +109,8 @@ const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
 
                 <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-white/5 sm:hidden">
                     <div className="flex items-center gap-1 text-xs text-foreground/40">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>{formatDate(credential.updatedAt)}</span>
+                        <CalendarIcon className="w-3.5 h-3.5" />
+                        <span>{formatDateTime(credential.updatedAt)}</span>
                     </div>
                     <div
                         className={`

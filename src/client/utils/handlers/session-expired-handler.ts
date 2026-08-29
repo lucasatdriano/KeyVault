@@ -1,7 +1,8 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
 import { clearAllStores } from '@/src/client/store';
 
 export function useSessionExpiredHandler() {

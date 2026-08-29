@@ -1,7 +1,7 @@
 import { AuditAction } from '@/src/generated/prisma/client';
 
 import { CreateAuditLogData } from '@/src/server/types/repository/audit';
-import { validateUserId } from '../user/user.validator';
+import { validateUserId } from '@/src/server/validators/user/user.validator';
 
 export function validateAuditData(data: CreateAuditLogData): void {
     validateUserId(data.userId);

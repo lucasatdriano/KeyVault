@@ -1,6 +1,7 @@
 import { RecoveryMethod, User } from '@/src/generated/prisma/client';
 
 import { Profile } from '@/src/shared/types/profile';
+
 export interface ProfileWithRecoveryMethods {
     user: Profile;
     recoveryMethods: RecoveryMethod[];

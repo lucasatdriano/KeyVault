@@ -2,11 +2,11 @@
 
 import { HeaderVariant } from '@/src/client/types/layout/header';
 import { useCategories } from '@/src/client/hooks/categories/useCategories';
+import { headerVariants } from '@/src/client/components/layout/header/Header.config';
 
-import { headerVariants } from './Header.config';
-import HeaderMobile from './HeaderMobile';
-import HeaderSearch from './HeaderSearch';
-import HeaderSimple from './HeaderSimple';
+import HeaderMobile from '@/src/client/components/layout/header/HeaderMobile';
+import HeaderSearch from '@/src/client/components/layout/header/HeaderSearch';
+import HeaderSimple from '@/src/client/components/layout/header/HeaderSimple';
 
 interface HeaderProps {
     variant: HeaderVariant;

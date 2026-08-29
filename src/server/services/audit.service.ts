@@ -2,14 +2,14 @@ import { AuditAction, AuditLog } from '@/src/generated/prisma/client';
 
 import { PaginatedResponse } from '@/src/shared/types/pagination';
 
-import { AuditRepository } from '../database/repositories/audit.repository';
-import { validateAuditData } from '../validators/auth/audit.validator';
-import { validateUserId } from '../validators/user/user.validator';
+import { AuditRepository } from '@/src/server/database/repositories/audit.repository';
+import { validateAuditData } from '@/src/server/validators/auth/audit.validator';
+import { validateUserId } from '@/src/server/validators/user/user.validator';
 import {
     AuditLogWithCredentialWithRecoveryMethod,
     CreateAuditLogData,
     FindUserLogsOptions,
-} from '../types/repository/audit';
+} from '@/src/server/types/repository/audit';
 
 export class AuditService {
     constructor(private readonly auditRepository: AuditRepository) {}

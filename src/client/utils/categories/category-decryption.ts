@@ -1,6 +1,7 @@
+import { Category } from '@/src/generated/prisma/client';
+
 import { DecryptedCategory } from '@/src/shared/types/category';
 import { decryptString } from '@/src/shared/crypto/cipher';
-import { Category } from '@/src/generated/prisma/client';
 
 interface DecryptCategoryParams {
     category: Category;

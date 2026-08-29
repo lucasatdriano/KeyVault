@@ -6,20 +6,20 @@ import {
     HMAC_INFO,
     VAULT_INFO,
 } from '@/src/shared/constants/crypto/hkdf.constants';
+import { generateRandomBytes } from '@/src/shared/crypto/random';
+import { getSubtle, toArrayBuffer } from '@/src/shared/crypto/webcrypto';
+import {
+    validateKeyLength,
+    validateMasterKey,
+} from '@/src/shared/validators/crypto/key.validator';
+import { validateInfo } from '@/src/shared/validators/crypto/common.validator';
+import { validateSalt } from '@/src/shared/validators/crypto/argon2.validator';
 import {
     DeriveExportKeyParams,
     DeriveHmacKeyParams,
     DeriveVaultKeyParams,
     HKDFDeriveKeyParams,
-} from '../types/crypto/hkdf';
-import {
-    validateKeyLength,
-    validateMasterKey,
-} from '../validators/crypto/key.validator';
-import { validateInfo } from '../validators/crypto/common.validator';
-import { generateRandomBytes } from './random';
-import { getSubtle, toArrayBuffer } from './webcrypto';
-import { validateSalt } from '../validators/crypto/argon2.validator';
+} from '@/src/shared/types/crypto/hkdf';
 
 export async function deriveHKDFKey(
     params: HKDFDeriveKeyParams,

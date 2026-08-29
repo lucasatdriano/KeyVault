@@ -3,12 +3,12 @@
 import {
     AlertTriangleIcon,
     ShieldCheckIcon,
-    Trash2,
+    Trash2Icon,
     ClockIcon,
 } from 'lucide-react';
 
-import ModalBase from '../ModalBase';
 import Button from '@/src/client/components/ui/buttons/Button';
+import ModalBase from '@/src/client/components/layout/modals/ModalBase';
 
 interface DeleteCredentialModalProps {
     isOpen: boolean;
@@ -48,7 +48,7 @@ export default function DeleteCredentialModal({
                         onClick={onConfirm}
                         isLoading={isLoading}
                         loadingText="Excluindo..."
-                        leftIcon={<Trash2 className="h-5 w-5" />}
+                        leftIcon={<Trash2Icon className="h-5 w-5" />}
                         fullWidth
                     >
                         Excluir

@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+
 import { Profile } from '@/src/shared/types/profile';
-import { AuthContext } from '../contexts/AuthContext';
+
+import { AuthContext } from '@/src/client/contexts/AuthContext';
 
 interface AuthProviderProps {
     children: React.ReactNode;

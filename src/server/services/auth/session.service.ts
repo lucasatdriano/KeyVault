@@ -1,7 +1,8 @@
 import { AuditAction } from '@/src/generated/prisma/enums';
-import { AuditContext } from '@/src/server/types/service/audit';
-import { AuditService } from '@/src/server/services/audit.service';
+
 import { SessionRepository } from '@/src/server/database/repositories/session.repository';
+import { AuditService } from '@/src/server/services/audit.service';
+import { AuditContext } from '@/src/server/types/service/audit';
 
 export class SessionService {
     constructor(

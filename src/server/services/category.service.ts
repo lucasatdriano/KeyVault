@@ -1,11 +1,11 @@
 import { Category } from '@/src/generated/prisma/client';
 
-import { CategoryRepository } from '../database/repositories/category.repository';
-import { validateUserId } from '../validators/user/user.validator';
+import { CategoryRepository } from '@/src/server/database/repositories/category.repository';
+import { validateUserId } from '@/src/server/validators/user/user.validator';
 import {
     CreateCategoryData,
     UpdateCategoryData,
-} from '../types/repository/category';
+} from '@/src/server/types/repository/category';
 
 export class CategoryService {
     constructor(private readonly categoryRepository: CategoryRepository) {}

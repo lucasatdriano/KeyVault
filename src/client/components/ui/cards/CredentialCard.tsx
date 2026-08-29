@@ -13,13 +13,16 @@ import {
     MailIcon,
     ShieldIcon,
 } from 'lucide-react';
+
 import { Credential } from '@/src/shared/types/credential';
-import DeleteConfirmationModal from '@/src/client/components/layout/modals/credentialsModals/DeleteCredentialModal';
-import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+
 import {
     getCategoryBadgeColor,
     getCategoryColor,
 } from '@/src/client/utils/credentials/credential-category';
+import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+
+import DeleteConfirmationModal from '@/src/client/components/layout/modals/credentialsModals/DeleteCredentialModal';
 
 interface CredentialCardProps {
     credential: Credential;

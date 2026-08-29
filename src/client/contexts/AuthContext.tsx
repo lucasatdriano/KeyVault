@@ -1,7 +1,8 @@
 'use client';
 
-import { Profile } from '@/src/shared/types/profile';
 import { createContext } from 'react';
+
+import { Profile } from '@/src/shared/types/profile';
 
 interface AuthContextValue {
     user: Profile;
