@@ -3,6 +3,7 @@ export interface Profile {
     name: string;
     email: string;
     emailVerified: boolean;
+    sessionExpiration: number;
     createdAt: Date;
     updatedAt: Date;
 }

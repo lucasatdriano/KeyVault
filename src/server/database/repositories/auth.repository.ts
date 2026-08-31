@@ -87,6 +87,20 @@ export class AuthRepository {
         });
     }
 
+    async updateSessionExpiration(
+        userId: string,
+        sessionExpiration: number,
+    ): Promise<User> {
+        return this.prisma.user.update({
+            where: {
+                id: userId,
+            },
+            data: {
+                sessionExpiration,
+            },
+        });
+    }
+
     async deleteUser(userId: string): Promise<User> {
         return this.prisma.user.delete({
             where: {

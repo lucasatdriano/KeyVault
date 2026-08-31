@@ -2,23 +2,32 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { getCredentialsAction } from '@/src/server/actions/credentials/get-credentials.action';
-import { copyPasswordAction } from '@/src/server/actions/credentials/copy-password.action';
-import { toggleFavoriteAction } from '@/src/server/actions/credentials/toggle-favorite.action';
-import { deleteCredentialAction } from '@/src/server/actions/credentials/delete-credential.action';
+import { exportCredentialsAction } from '@/src/server/actions/credentials/export-credentials.action';
 import { restoreCredentialAction } from '@/src/server/actions/credentials/restore-credential.action';
+import { importCredentialsAction } from '@/src/server/actions/credentials/import-credentials.action';
+import { deleteCredentialAction } from '@/src/server/actions/credentials/delete-credential.action';
 import { createCredentialAction } from '@/src/server/actions/credentials/create-credential.action';
 import { updateCredentialAction } from '@/src/server/actions/credentials/update-credential.action';
+import { getCredentialsAction } from '@/src/server/actions/credentials/get-credentials.action';
+import { toggleFavoriteAction } from '@/src/server/actions/credentials/toggle-favorite.action';
+import { copyPasswordAction } from '@/src/server/actions/credentials/copy-password.action';
 
 import { generateSalt } from '@/src/shared/crypto/random';
 import { encryptString } from '@/src/shared/crypto/cipher';
 import { bytesToBase64 } from '@/src/shared/crypto/encoding';
 import { generateResourceSearchHash } from '@/src/shared/crypto/resource-search';
-import { Credential, CredentialFormData } from '@/src/shared/types/credential';
+import {
+    Credential,
+    CredentialFormData,
+    ExportCredential,
+} from '@/src/shared/types/credential';
 
-import { useVaultStore } from '@/src/client/store/vault.store';
 import { useCredentialsStore } from '@/src/client/store/credential.store';
+import { useVaultStore } from '@/src/client/store/vault.store';
 import { usePagination } from '@/src/client/hooks/ui/usePagination';
+import { useCategories } from '@/src/client/hooks/categories/useCategories';
+import { downloadCredentialsExport } from '@/src/client/utils/credentials/credential-export';
+import { importCredentialsFromFile } from '@/src/client/utils/credentials/credential-import';
 import { decryptCredential } from '@/src/client/utils/credentials/credential-decryption';
 
 interface UseCredentialsOptions {
@@ -28,19 +37,14 @@ interface UseCredentialsOptions {
     deleted?: boolean;
 }
 
-interface CreateCredentialResult {
-    success: boolean;
-    error?: string;
-    data?: Credential;
-}
-
-interface UpdateCredentialResult {
+interface CredentialResult {
     success: boolean;
     error?: string;
     data?: Credential;
 }
 
 export function useCredentials(options: UseCredentialsOptions = {}) {
+    const { categories, isLoading: isLoadingCategories } = useCategories();
     const {
         initialPage = 1,
         initialItemsPerPage = 18,
@@ -348,9 +352,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
     );
 
     const handleCreateCredential = useCallback(
-        async (
-            formData: CredentialFormData,
-        ): Promise<CreateCredentialResult> => {
+        async (formData: CredentialFormData): Promise<CredentialResult> => {
             if (!vaultKey) {
                 return {
                     success: false,
@@ -451,7 +453,7 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         async (
             credential: Credential,
             formData: CredentialFormData,
-        ): Promise<UpdateCredentialResult> => {
+        ): Promise<CredentialResult> => {
             if (!vaultKey) {
                 return {
                     success: false,
@@ -648,6 +650,102 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         [goToPage, loadCredentials, searchQuery, selectedCategory],
     );
 
+    const handleExport = useCallback(async () => {
+        if (!vaultKey) {
+            toast.error('Vault Key não encontrada.');
+            return;
+        }
+
+        try {
+            const result = await exportCredentialsAction();
+
+            if (!result.success || !result.data) {
+                toast.error(result.error ?? 'Erro ao exportar credenciais.');
+                return;
+            }
+
+            const decrypted = await Promise.all(
+                result.data.map((credential) =>
+                    decryptCredential({
+                        credential,
+                        vaultKey,
+                    }),
+                ),
+            );
+
+            const exportCredentials: ExportCredential[] = decrypted.map(
+                (credential): ExportCredential => ({
+                    title: credential.title,
+                    username: credential.username,
+                    email: credential.email,
+                    password: credential.password,
+                    url: credential.url,
+                    notes: credential.notes,
+                    category: credential.category,
+                    favorite: credential.favorite,
+                }),
+            );
+
+            downloadCredentialsExport(exportCredentials);
+
+            toast.success('Credenciais exportadas com sucesso.');
+        } catch (error) {
+            console.error('Erro ao exportar credenciais:', error);
+            toast.error('Erro ao exportar credenciais.');
+        }
+    }, [vaultKey]);
+
+    const handleImport = useCallback(
+        async (file: File) => {
+            if (!vaultKey) {
+                toast.error('Vault Key não encontrada.');
+                return false;
+            }
+
+            if (isLoadingCategories) {
+                toast.info('Aguarde o carregamento das categorias.');
+                return false;
+            }
+
+            try {
+                const result = await importCredentialsFromFile(
+                    file,
+                    vaultKey,
+                    categories,
+                );
+
+                if (!result.success || !result.credentials) {
+                    toast.error(result.error);
+                    return false;
+                }
+
+                const importResult = await importCredentialsAction(
+                    result.credentials,
+                );
+
+                if (!importResult.success || !importResult.data) {
+                    toast.error(
+                        importResult.error ?? 'Erro ao importar credenciais.',
+                    );
+                    return false;
+                }
+
+                invalidateCache();
+                await refresh();
+
+                toast.success(
+                    `${importResult.data.count} credencial(is) importada(s) com sucesso.`,
+                );
+                return true;
+            } catch (error) {
+                console.error('Erro ao importar credenciais:', error);
+                toast.error('Erro ao importar credenciais.');
+                return false;
+            }
+        },
+        [vaultKey, categories, isLoadingCategories, invalidateCache, refresh],
+    );
+
     return {
         credentials: localCredentials,
 
@@ -676,6 +774,9 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         handleCreateCredential,
         handleUpdateCredential,
         refresh,
+
+        handleExport,
+        handleImport,
 
         setSearchQuery,
         setSelectedCategory,

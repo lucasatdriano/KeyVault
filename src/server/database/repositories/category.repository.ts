@@ -1,4 +1,4 @@
-import { Category, PrismaClient } from '@/src/generated/prisma/client';
+import { PrismaClient, Category } from '@/src/generated/prisma/client';
 
 import {
     CreateCategoryData,

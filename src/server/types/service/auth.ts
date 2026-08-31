@@ -27,16 +27,6 @@ export interface LoginData {
     sessionExpiration?: number;
 }
 
-export interface ChangePasswordData {
-    currentPassword: string;
-    newPassword: string;
-}
-
-export interface ChangeEmailData {
-    newEmail: string;
-    password: string;
-}
-
 export interface RegisterResult {
     user: {
         id: string;
@@ -53,6 +43,7 @@ export interface LoginResult {
         name: string;
         email: string;
         emailVerified: boolean;
+        sessionExpiration: number;
     };
     encryptedVaultKey: EncryptedVault;
 }

@@ -1,5 +1,6 @@
-import { bytesToBase64 } from '@/src/shared/crypto/encoding';
+import { JWT_ALGORITHM } from '@/src/shared/constants/auth/auth.constants';
 import { getSubtle, toArrayBuffer } from '@/src/shared/crypto/webcrypto';
+import { bytesToBase64 } from '@/src/shared/crypto/encoding';
 
 export async function generateResourceSearchHash(
     value: string,
@@ -10,10 +11,7 @@ export async function generateResourceSearchHash(
     const key = await subtle.importKey(
         'raw',
         toArrayBuffer(vaultKey),
-        {
-            name: 'HMAC',
-            hash: 'SHA-256',
-        },
+        JWT_ALGORITHM,
         false,
         ['sign'],
     );

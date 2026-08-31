@@ -1,19 +1,15 @@
 'use server';
 
-import { ChangePasswordData } from '@/src/shared/types/auth';
-
 import { authService } from '@/src/server/containers/services';
-import { getAuditContext } from '@/src/server/utils/audit-context';
 import { ActionResult } from '@/src/server/types/action';
 
-export async function changePasswordAction(
-    data: ChangePasswordData,
-): Promise<ActionResult<void | null>> {
+export async function deleteAccountAction(): Promise<
+    ActionResult<void | null>
+> {
     try {
         const user = await authService.requireAuth();
-        const audit = await getAuditContext();
 
-        const result = await authService.changePassword(user.id, data, audit);
+        const result = await authService.deleteAccount(user.id);
 
         return {
             success: true,

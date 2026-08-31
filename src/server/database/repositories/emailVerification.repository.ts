@@ -1,4 +1,4 @@
-import { EmailVerification, PrismaClient } from '@/src/generated/prisma/client';
+import { PrismaClient, EmailVerification } from '@/src/generated/prisma/client';
 
 import { CreateEmailVerificationData } from '@/src/server/types/repository/emailVerification';
 

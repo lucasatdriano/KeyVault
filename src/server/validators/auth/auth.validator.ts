@@ -1,10 +1,7 @@
 import { EMAIL_REGEX } from '@/src/shared/constants/auth/auth.constants';
+import { ChangePasswordData } from '@/src/shared/types/auth';
 
-import {
-    ChangePasswordData,
-    LoginData,
-    RegisterData,
-} from '@/src/server/types/service/auth';
+import { LoginData, RegisterData } from '@/src/server/types/service/auth';
 
 export function validateRegisterData(data: RegisterData): void {
     if (!data.name || typeof data.name !== 'string' || data.name.length < 2) {

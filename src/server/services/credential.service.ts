@@ -46,6 +46,34 @@ export class CredentialService {
         return credential;
     }
 
+    async createMany(
+        userId: string,
+        data: CreateCredentialData[],
+        audit?: AuditContext,
+    ): Promise<{ count: number }> {
+        if (!data.length) {
+            return { count: 0 };
+        }
+
+        const result = await this.credentialRepository.createMany(
+            data.map((credential) => ({
+                ...credential,
+                userId,
+            })),
+        );
+
+        await this.auditService.createLog({
+            userId,
+            action: AuditAction.IMPORT_DATA,
+            browser: audit?.browser,
+            os: audit?.os,
+            device: audit?.device,
+            ip: audit?.ip,
+        });
+
+        return result;
+    }
+
     async getById(id: string): Promise<Credential | null> {
         if (!id) {
             throw new Error('id inválido.');
@@ -69,6 +97,26 @@ export class CredentialService {
         }
 
         return this.credentialRepository.findByUser(userId, options);
+    }
+
+    async getAllUserCredentials(
+        userId: string,
+        audit?: AuditContext,
+    ): Promise<CredentialWithCategory[]> {
+        validateUserId(userId);
+
+        const result = await this.credentialRepository.findAllByUser(userId);
+
+        await this.auditService.createLog({
+            userId,
+            action: AuditAction.EXPORT_DATA,
+            browser: audit?.browser,
+            os: audit?.os,
+            device: audit?.device,
+            ip: audit?.ip,
+        });
+
+        return result;
     }
 
     async update(

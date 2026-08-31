@@ -1,9 +1,10 @@
 import { AuditAction, User } from '@/src/generated/prisma/client';
 
-import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
+import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constants';
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
 import { changeMasterPassword } from '@/src/shared/crypto/vault';
+import { ChangePasswordData } from '@/src/shared/types/auth';
 
 import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
 import { EmailVerificationRepository } from '@/src/server/database/repositories/emailVerification.repository';
@@ -33,7 +34,6 @@ import {
     RegisterData,
     LoginResult,
     RegisterResult,
-    ChangePasswordData,
     VerifyEmailResult,
 } from '@/src/server/types/service/auth';
 
@@ -134,8 +134,7 @@ export class AuthService {
             throw new Error('Email ou senha inválidos.');
         }
 
-        const duration =
-            data.sessionExpiration ?? ACCESS_TOKEN_DURATION.MINUTES_30;
+        const duration = user.sessionExpiration;
 
         const expiresAt = new Date(Date.now() + duration * 1000);
 
@@ -167,6 +166,7 @@ export class AuthService {
                 name: user.name,
                 email: user.email,
                 emailVerified: user.emailVerified,
+                sessionExpiration: user.sessionExpiration,
             },
             encryptedVaultKey: JSON.parse(user.encryptedVaultKey),
         };
@@ -272,6 +272,26 @@ export class AuthService {
         await deleteAccessToken();
     }
 
+    async updateSessionExpiration(
+        userId: string,
+        sessionExpiration: number,
+    ): Promise<void> {
+        const allowedValues = [
+            ACCESS_TOKEN_DURATION.MINUTES_30,
+            ACCESS_TOKEN_DURATION.HOUR_1,
+            ACCESS_TOKEN_DURATION.HOURS_2,
+        ];
+
+        if (!allowedValues.includes(sessionExpiration)) {
+            throw new Error('Tempo de sessão inválido.');
+        }
+
+        await this.authRepository.updateSessionExpiration(
+            userId,
+            sessionExpiration,
+        );
+    }
+
     async verifyEmail(
         token: string,
         audit?: AuditContext,
@@ -363,5 +383,17 @@ export class AuthService {
             user.name,
             verificationToken,
         );
+    }
+
+    async deleteAccount(userId: string): Promise<void> {
+        const user = await this.authRepository.findUserById(userId);
+
+        if (!user) {
+            throw new Error('Usuário não encontrado.');
+        }
+
+        await this.authRepository.deleteUser(user.id);
+
+        await deleteAccessToken();
     }
 }

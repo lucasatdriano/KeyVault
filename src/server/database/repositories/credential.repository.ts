@@ -1,7 +1,7 @@
 import {
+    PrismaClient,
     Credential,
     Prisma,
-    PrismaClient,
 } from '@/src/generated/prisma/client';
 
 import { PaginatedResponse } from '@/src/shared/types/pagination';
@@ -19,6 +19,14 @@ export class CredentialRepository {
 
     async create(data: CreateCredentialData): Promise<Credential> {
         return this.prisma.credential.create({
+            data,
+        });
+    }
+
+    async createMany(
+        data: CreateCredentialData[],
+    ): Promise<Prisma.BatchPayload> {
+        return this.prisma.credential.createMany({
             data,
         });
     }
@@ -111,6 +119,21 @@ export class CredentialRepository {
             limit,
             totalPages: Math.ceil(total / limit),
         };
+    }
+
+    async findAllByUser(userId: string): Promise<CredentialWithCategory[]> {
+        return this.prisma.credential.findMany({
+            where: {
+                userId,
+                deletedAt: null,
+            },
+            include: {
+                category: true,
+            },
+            orderBy: {
+                createdAt: 'asc',
+            },
+        });
     }
 
     async update(id: string, data: UpdateCredentialData): Promise<Credential> {

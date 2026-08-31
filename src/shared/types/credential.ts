@@ -27,3 +27,20 @@ export interface CredentialFormData {
     url?: string;
     notes?: string;
 }
+
+export interface ExportCredential {
+    title: string;
+    username?: string;
+    email?: string;
+    password: string;
+    url?: string;
+    notes?: string;
+    category: string | null;
+    favorite: boolean;
+}
+
+export interface CredentialExport {
+    version: number;
+    exportedAt: string;
+    credentials: ExportCredential[];
+}

@@ -1,14 +1,18 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
+import { updateSessionExpirationAction } from '@/src/server/actions/auth/update-session-expiration.action';
 import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
 import { updateUserNameAction } from '@/src/server/actions/user/update-profile.action';
 import { changePasswordAction } from '@/src/server/actions/auth/change-password.action';
 import { updateEmailAction } from '@/src/server/actions/user/update-email.action';
 import { getProfileAction } from '@/src/server/actions/user/get-profile.action';
+
+import { ChangeEmailData, ChangePasswordData } from '@/src/shared/types/auth';
 
 import { useCredentialsStore } from '@/src/client/store/credential.store';
 import { useAuth } from '@/src/client/hooks/auth/useAuth';
@@ -22,42 +26,38 @@ interface ProfileDisplay {
     credentialsCount: number;
 }
 
-interface ChangeEmailData {
-    newEmail: string;
-    password: string;
-}
-
-interface ChangePasswordData {
-    currentPassword: string;
-    newPassword: string;
-}
-
 export function useAccountProfile() {
     const router = useRouter();
-
     const { user, updateUser } = useAuth();
     const { credentialsCount } = useCredentialsStore();
 
     const [profile, setProfile] = useState<ProfileDisplay | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-
     const [isChangeEmailModalOpen, setIsChangeEmailModalOpen] = useState(false);
-
     const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] =
         useState(false);
-
     const [isEmailVerificationModalOpen, setIsEmailVerificationModalOpen] =
         useState(false);
-
     const [verificationEmail, setVerificationEmail] = useState('');
     const [verificationToken, setVerificationToken] = useState('');
-
     const [formData, setFormData] = useState({
         name: '',
     });
+    const [isUpdatingSessionExpiration, setIsUpdatingSessionExpiration] =
+        useState(false);
+    const [sessionExpiration, setSessionExpiration] = useState<number>(
+        user?.sessionExpiration ?? 1800,
+    );
+
+    useEffect(() => {
+        if (!user) {
+            return;
+        }
+
+        setSessionExpiration(user.sessionExpiration);
+    }, [user]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -282,6 +282,49 @@ export function useAccountProfile() {
         }
     };
 
+    const handleSaveSessionExpiration = async (
+        value: number,
+    ): Promise<boolean> => {
+        if (isUpdatingSessionExpiration) {
+            return false;
+        }
+
+        setIsUpdatingSessionExpiration(true);
+
+        try {
+            const result = await updateSessionExpirationAction(value);
+
+            if (!result.success) {
+                toast.error(
+                    result.error || 'Erro ao atualizar tempo de sessão.',
+                );
+
+                return false;
+            }
+
+            setSessionExpiration(value);
+
+            if (user) {
+                updateUser({
+                    ...user,
+                    sessionExpiration: value,
+                });
+            }
+
+            toast.success('Tempo de sessão atualizado com sucesso.');
+
+            return true;
+        } catch (error) {
+            console.error('Erro ao atualizar tempo de sessão:', error);
+
+            toast.error('Erro ao atualizar tempo de sessão.');
+
+            return false;
+        } finally {
+            setIsUpdatingSessionExpiration(false);
+        }
+    };
+
     const handleOpenChangeEmail = () => {
         setIsChangeEmailModalOpen(true);
     };
@@ -310,6 +353,9 @@ export function useAccountProfile() {
         isSaving,
         formData,
 
+        sessionExpiration,
+        isUpdatingSessionExpiration,
+
         isChangeEmailModalOpen,
         isChangePasswordModalOpen,
         isEmailVerificationModalOpen,
@@ -325,6 +371,8 @@ export function useAccountProfile() {
         handleVerifyEmail,
         handleResendEmail,
         handleSavePassword,
+
+        handleSaveSessionExpiration,
 
         handleOpenChangeEmail,
         handleCloseChangeEmail,

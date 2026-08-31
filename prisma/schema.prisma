@@ -58,19 +58,21 @@ enum RecoverySessionStatus {
 }
 
 model User {
-  id                  String   @id @default(cuid())
+  id                  String    @id @default(cuid())
   name                String
-  email               String   @unique
-  passwordHash        String   @db.Text
+  email               String    @unique
+  passwordHash        String    @db.Text
 
-  encryptedVaultKey   String   @db.Text
-  isRecoverable       Boolean  @default(false)
+  encryptedVaultKey   String    @db.Text
+  isRecoverable       Boolean   @default(false)
 
-  emailVerified       Boolean  @default(false)
+  sessionExpiration   Int       @default(1800)
+  
+  emailVerified       Boolean   @default(false)
   emailVerifiedAt     DateTime?
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   emailVerifications  EmailVerification[]
   credentials         Credential[]
@@ -99,6 +101,23 @@ model EmailVerification {
     @@index([userId])
     @@index([tokenHash])
     @@index([expiresAt])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  cipherText  String   @db.Text
+  iv          String   @db.Text
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  credentials Credential[]
+
+  @@index([userId])
 }
 
 model Credential {
@@ -131,23 +150,6 @@ model Credential {
   @@index([categoryId])
   @@index([favorite])
   @@index([deletedAt])
-}
-
-model Category {
-  id          String   @id @default(cuid())
-
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  cipherText  String   @db.Text
-  iv          String   @db.Text
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  credentials Credential[]
-
-  @@index([userId])
 }
 
 model AuditLog {

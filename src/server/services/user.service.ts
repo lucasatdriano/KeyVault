@@ -2,6 +2,7 @@ import { AuditAction, User } from '@/src/generated/prisma/client';
 
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
 import { ChangeUserData } from '@/src/shared/types/profile';
+import { ChangeEmailData } from '@/src/shared/types/auth';
 
 import { EmailVerificationRepository } from '@/src/server/database/repositories/emailVerification.repository';
 import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
@@ -13,10 +14,8 @@ import { verifyPassword } from '@/src/server/crypto/passwordHasher';
 import { validateNameData } from '@/src/server/validators/user/name.validator';
 import { validateEmailData } from '@/src/server/validators/user/email.validator';
 import { validateUserId } from '@/src/server/validators/user/user.validator';
-import {
-    ChangeEmailData,
-    RegisterResult,
-} from '@/src/server/types/service/auth';
+import { ProfileWithRecoveryMethods } from '@/src/server/types/repository/user';
+import { RegisterResult } from '@/src/server/types/service/auth';
 import { AuditContext } from '@/src/server/types/service/audit';
 
 export class UserService {
@@ -31,7 +30,7 @@ export class UserService {
         private readonly auditService: AuditService,
     ) {}
 
-    async getProfile(userId: string) {
+    async getProfile(userId: string): Promise<ProfileWithRecoveryMethods> {
         validateUserId(userId);
 
         const user = await this.userRepository.findById(userId);
@@ -49,6 +48,7 @@ export class UserService {
                 name: user.name,
                 email: user.email,
                 emailVerified: user.emailVerified,
+                sessionExpiration: user.sessionExpiration,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
             },

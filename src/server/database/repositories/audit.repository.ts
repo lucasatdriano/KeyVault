@@ -1,8 +1,8 @@
 import {
+    PrismaClient,
     AuditAction,
     AuditLog,
     Prisma,
-    PrismaClient,
 } from '@/src/generated/prisma/client';
 
 import { PaginatedResponse } from '@/src/shared/types/pagination';

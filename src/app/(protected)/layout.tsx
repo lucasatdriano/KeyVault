@@ -8,8 +8,8 @@ import { SidebarProvider } from '@/src/client/providers/SidebarProvider';
 import { SessionExpiredHandler } from '@/src/client/components/layout/handlers/SessionExpiredHandler';
 
 import VaultUnlockGuard from '@/src/client/guards/VaultUnlockGuard';
-import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';
 import SidebarDrawer from '@/src/client/components/layout/sidebar/SidebarDrawer';
+import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';
 import BottomBar from '@/src/client/components/layout/bottomBar/BottomBar';
 
 export default async function ProtectedLayout({
@@ -32,6 +32,7 @@ export default async function ProtectedLayout({
                 name: user.name,
                 email: user.email,
                 emailVerified: user.emailVerified,
+                sessionExpiration: user.sessionExpiration,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
             }}

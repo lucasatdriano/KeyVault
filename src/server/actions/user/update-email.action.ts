@@ -1,12 +1,11 @@
 'use server';
 
+import { ChangeEmailData } from '@/src/shared/types/auth';
+
 import { authService, userService } from '@/src/server/containers/services';
 import { getAuditContext } from '@/src/server/utils/audit-context';
 import { ActionResult } from '@/src/server/types/action';
-import {
-    ChangeEmailData,
-    RegisterResult,
-} from '@/src/server/types/service/auth';
+import { RegisterResult } from '@/src/server/types/service/auth';
 
 export async function updateEmailAction(
     data: ChangeEmailData,

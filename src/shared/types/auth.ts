@@ -10,8 +10,18 @@ export interface LoginFormData {
     password: string;
 }
 
-export interface ChangePasswordFormData {
-    newPassword: string;
+export interface ChangePasswordData {
     currentPassword: string;
+    newPassword: string;
+}
+
+export interface ChangePasswordFormData {
+    currentPassword: string;
+    newPassword: string;
     confirmPassword: string;
+}
+
+export interface ChangeEmailData {
+    newEmail: string;
+    password: string;
 }
