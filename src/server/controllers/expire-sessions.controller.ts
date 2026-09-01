@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { sessionService } from '../containers/services';
+import { sessionService } from '@/src/server/containers/services';
 
 export async function expireSessionsController(request: NextRequest) {
     const auth = request.headers.get('authorization');
