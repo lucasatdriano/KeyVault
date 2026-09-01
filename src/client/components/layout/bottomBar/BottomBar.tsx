@@ -18,7 +18,7 @@ export default function BottomBar() {
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-xl border-t border-white/10">
-            <div className="flex items-center justify-around px-4 py-2 max-w-lg mx-auto relative">
+            <div className="flex items-center justify-around px-2 py-2 max-w-lg mx-auto relative">
                 {bottomBarItems.map((item) => (
                     <button
                         key={item.label}
@@ -34,7 +34,9 @@ export default function BottomBar() {
                         `}
                     >
                         <item.icon />
-                        <span className="font-medium">{item.label}</span>
+                        <span className="font-medium text-xs">
+                            {item.label}
+                        </span>
 
                         {isActive(item.href) && (
                             <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />

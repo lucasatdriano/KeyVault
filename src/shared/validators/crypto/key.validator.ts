@@ -18,8 +18,10 @@ export function validateMasterKey(key: Uint8Array): void {
 }
 
 export function validateKeyLength(length: number): void {
-    if (!Number.isInteger(length)) {
-        throw new Error('length deve ser inteiro');
+    if (!Number.isInteger(length) || length <= 0) {
+        throw new Error(
+            `length deve ser um inteiro positivo. Recebido: ${length}`,
+        );
     }
 
     if (length < MIN_DERIVED_KEY_LENGTH) {

@@ -76,9 +76,9 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
 
     const loadCredentials = useCallback(
         async (
-            search?: string,
-            category?: string,
-            page: number = currentPage,
+            search: string = '',
+            category: string = '',
+            page: number = 1,
         ) => {
             if (!vaultKey) return;
 
@@ -110,6 +110,7 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
                 setTotalItems(data.length);
                 setIsLoading(false);
                 setIsCacheUsed(true);
+
                 return;
             }
 
@@ -117,17 +118,15 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
             setIsCacheUsed(false);
 
             try {
-                const searchHash =
-                    search && vaultKey
-                        ? await generateResourceSearchHash(search, vaultKey)
-                        : undefined;
+                const searchHash = search
+                    ? await generateResourceSearchHash(search, vaultKey)
+                    : undefined;
 
                 const result = await getCredentialsAction({
                     favorite: favorite || undefined,
                     deleted: deleted || undefined,
                     search: searchHash,
-                    categoryId:
-                        category && category !== '' ? category : undefined,
+                    categoryId: category || undefined,
                     page,
                     limit: itemsPerPage,
                 });
@@ -165,7 +164,6 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
         },
         [
             vaultKey,
-            currentPage,
             itemsPerPage,
             favorite,
             deleted,
@@ -185,8 +183,10 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
 
     useEffect(() => {
         if (!vaultKey) return;
-        loadCredentials();
-    }, [vaultKey, loadCredentials]);
+
+        loadCredentials(searchQuery, selectedCategory, currentPage);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [vaultKey, searchQuery, selectedCategory, currentPage]);
 
     const refresh = useCallback(async () => {
         invalidateCache();
@@ -200,23 +200,21 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
     ]);
 
     const handleSearch = useCallback(
-        async (query: string) => {
+        (query: string) => {
             setSearchQuery(query);
             resetPagination();
             invalidateCache();
-            await loadCredentials(query, selectedCategory, 1);
         },
-        [loadCredentials, selectedCategory, resetPagination, invalidateCache],
+        [resetPagination, invalidateCache],
     );
 
     const handleFilterChange = useCallback(
-        async (category: string) => {
+        (category: string) => {
             setSelectedCategory(category);
             resetPagination();
             invalidateCache();
-            await loadCredentials(searchQuery, category, 1);
         },
-        [loadCredentials, searchQuery, resetPagination, invalidateCache],
+        [resetPagination, invalidateCache],
     );
 
     const handlePageChange = useCallback(
@@ -228,14 +226,12 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
     );
 
     return {
-        // Dados
         credentials: localCredentials,
         isLoading,
         isCacheUsed,
         searchQuery,
         selectedCategory,
 
-        // Paginação
         currentPage,
         totalPages,
         totalItems,
@@ -246,7 +242,6 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
         incrementTotalItems,
         resetPagination,
 
-        // Ações
         loadCredentials,
         refresh,
         handleSearch,
@@ -254,7 +249,6 @@ export function useCredentialsData(options: UseCredentialsDataOptions = {}) {
         handlePageChange,
         invalidateCache,
 
-        // Setters
         setSearchQuery,
         setSelectedCategory,
         setLocalCredentials,

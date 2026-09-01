@@ -143,7 +143,7 @@ export default function AuditPage() {
 
     if (loading && logs.length === 0) {
         return (
-            <div className="space-y-6">
+            <div className="space-y-4">
                 <Header variant="audit" />
 
                 <div className="mx-4 rounded-xl border border-white/10 bg-white/5 p-8 text-center text-foreground/60">
@@ -154,7 +154,7 @@ export default function AuditPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4">
             <Header
                 variant="audit"
                 onSearch={setSearch}
@@ -165,7 +165,6 @@ export default function AuditPage() {
             <AuditCard
                 logs={logs}
                 onRefresh={() => loadLogs(pagination.currentPage)}
-                onExport={() => console.log('Exportando logs...')}
             />
 
             {!loading && logs.length > 0 && (

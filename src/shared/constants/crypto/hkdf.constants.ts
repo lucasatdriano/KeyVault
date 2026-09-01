@@ -3,8 +3,6 @@ export const HKDF_ALGORITHM = {
     hash: 'SHA-256',
 } as const;
 
-export const DEFAULT_KEY_LENGTH = 32;
-
 export const VAULT_INFO = new TextEncoder().encode('vault-encryption-key');
 
 export const HMAC_INFO = new TextEncoder().encode('hmac-authentication-key');

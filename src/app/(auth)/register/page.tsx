@@ -91,7 +91,7 @@ export default function RegisterPage() {
 
     const handleVerifyAndClose = () => {
         handleVerificationModalConfirm(() => {
-            closeVerificationModal(); // Fecha o modal do cadastro
+            closeVerificationModal();
         });
     };
 

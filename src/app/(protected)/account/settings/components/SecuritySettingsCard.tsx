@@ -52,7 +52,7 @@ export default function SecuritySettingsCard({
                         </p>
                     </div>
 
-                    <div className="w-64">
+                    <div className="sm:w-64">
                         <InputSelectForm
                             value={hidePasswordDelay}
                             className="text-sm"
@@ -79,7 +79,7 @@ export default function SecuritySettingsCard({
                         </p>
                     </div>
 
-                    <div className="w-64">
+                    <div className="sm:w-64">
                         <InputSelectForm
                             value={sessionExpiration}
                             className="text-sm"
@@ -109,24 +109,28 @@ export default function SecuritySettingsCard({
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={onAutoLockToggle}
-                        className={`cursor-pointer relative w-12 h-7 rounded-full transition-all duration-200 ${
-                            autoLockMinutes > 0 ? 'bg-primary' : 'bg-white/20'
-                        }`}
-                        aria-label={
-                            autoLockMinutes > 0
-                                ? 'Desativar bloqueio automático'
-                                : 'Ativar bloqueio automático'
-                        }
-                    >
-                        <div
-                            className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all duration-200 ${
-                                autoLockMinutes > 0 ? 'left-6' : 'left-1'
+                    <div className="sm:w-64 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={onAutoLockToggle}
+                            className={`cursor-pointer relative w-12 h-7 rounded-full transition-all duration-200 ${
+                                autoLockMinutes > 0
+                                    ? 'bg-primary'
+                                    : 'bg-white/20'
                             }`}
-                        />
-                    </button>
+                            aria-label={
+                                autoLockMinutes > 0
+                                    ? 'Desativar bloqueio automático'
+                                    : 'Ativar bloqueio automático'
+                            }
+                        >
+                            <div
+                                className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all duration-200 ${
+                                    autoLockMinutes > 0 ? 'left-6' : 'left-1'
+                                }`}
+                            />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

@@ -18,15 +18,10 @@ import AuditEventCard from '@/src/app/(protected)/account/audit/components/Audit
 
 interface AuditCardProps {
     logs: AuditLog[];
-    onExport?: () => void;
     onRefresh?: () => void;
 }
 
-export default function AuditCard({
-    logs,
-    onExport,
-    onRefresh,
-}: AuditCardProps) {
+export default function AuditCard({ logs, onRefresh }: AuditCardProps) {
     const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>(
         {},
     );
@@ -72,16 +67,6 @@ export default function AuditCard({
                 </span>
 
                 <div className="flex items-center gap-1">
-                    {onExport && (
-                        <button
-                            onClick={onExport}
-                            title="Exportar"
-                            className="cursor-pointer rounded-lg p-1.5 text-foreground/40 transition-colors hover:bg-white/5 hover:text-foreground"
-                        >
-                            <DownloadIcon className="h-4 w-4" />
-                        </button>
-                    )}
-
                     {onRefresh && (
                         <button
                             onClick={onRefresh}

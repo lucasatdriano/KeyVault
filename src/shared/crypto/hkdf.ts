@@ -1,12 +1,11 @@
+import { DEFAULT_KEY_LENGTH } from '@/src/shared/constants/crypto/random.constants';
 import {
-    DEFAULT_KEY_LENGTH,
     DEFAULT_SALT,
     EXPORT_INFO,
     HKDF_ALGORITHM,
     HMAC_INFO,
     VAULT_INFO,
 } from '@/src/shared/constants/crypto/hkdf.constants';
-import { generateRandomBytes } from '@/src/shared/crypto/random';
 import { getSubtle, toArrayBuffer } from '@/src/shared/crypto/webcrypto';
 import {
     validateKeyLength,
@@ -111,12 +110,4 @@ export async function deriveExportKey(
         info: EXPORT_INFO,
         length: params.length || DEFAULT_KEY_LENGTH,
     });
-}
-
-export function generateHKDFSalt(
-    length: number = DEFAULT_KEY_LENGTH,
-): Uint8Array {
-    validateKeyLength(length);
-
-    return generateRandomBytes(length);
 }

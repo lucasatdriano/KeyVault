@@ -1,4 +1,4 @@
-import { KeyIcon, StarIcon, UserIcon, SettingsIcon } from 'lucide-react';
+import { KeyIcon, StarIcon, SettingsIcon, FingerprintIcon } from 'lucide-react';
 
 import { BottomBarItem } from '@/src/client/types/layout/bottomBar';
 
@@ -14,9 +14,9 @@ export const bottomBarItems: BottomBarItem[] = [
         href: '/dashboard/favorites',
     },
     {
-        icon: UserIcon,
-        label: 'Conta',
-        href: '/account',
+        icon: FingerprintIcon,
+        label: 'Recup.',
+        href: '/account/recovery',
     },
     {
         icon: SettingsIcon,

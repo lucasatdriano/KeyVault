@@ -68,32 +68,27 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
     };
 
     return {
-        // Dados
         credentials: data.credentials,
         isLoading: data.isLoading,
         isCacheUsed: data.isCacheUsed,
         searchQuery: data.searchQuery,
         selectedCategory: data.selectedCategory,
 
-        // Paginação
         currentPage: data.currentPage,
         totalPages: data.totalPages,
         totalItems: data.totalItems,
         itemsPerPage: data.itemsPerPage,
         goToPage: data.goToPage,
 
-        // Estados de loading
         isCreating: actions.isCreating,
         isUpdating: actions.isUpdating,
 
-        // Ações de dados
         loadCredentials: data.loadCredentials,
         handlePageChange: data.handlePageChange,
         handleSearch: data.handleSearch,
         handleFilterChange: data.handleFilterChange,
         refresh: data.refresh,
 
-        // Ações CRUD
         handleCopy: actions.handleCopy,
         handleToggleFavorite,
         handleDelete,
@@ -101,11 +96,9 @@ export function useCredentials(options: UseCredentialsOptions = {}) {
         handleCreateCredential,
         handleUpdateCredential,
 
-        // Import/Export
         handleExport: importExport.handleExport,
         handleImport: importExport.handleImport,
 
-        // Setters
         setSearchQuery: data.setSearchQuery,
         setSelectedCategory: data.setSelectedCategory,
     };

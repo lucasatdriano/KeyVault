@@ -8,6 +8,7 @@ import {
     SettingsIcon,
 } from 'lucide-react';
 
+import { pluralizeWithCount } from '@/src/client/utils/formatters/string';
 import { HeaderConfig, HeaderVariant } from '@/src/client/types/layout/header';
 
 export const headerVariants: Record<HeaderVariant, HeaderConfig> = {
@@ -16,7 +17,14 @@ export const headerVariants: Record<HeaderVariant, HeaderConfig> = {
         iconClass: 'text-primary',
         bgColor: 'bg-primary/10',
         defaultTitle: 'Minhas Credenciais',
-        defaultSubtitle: (count) => `${count} Credenciais`,
+        defaultSubtitle: (count) => {
+            return pluralizeWithCount(
+                count,
+                'credencial',
+                'credenciais',
+                'Nenhuma credencial',
+            );
+        },
         type: 'search',
         showNewButton: true,
         showFilter: true,
@@ -28,7 +36,14 @@ export const headerVariants: Record<HeaderVariant, HeaderConfig> = {
         iconClass: 'text-warning',
         bgColor: 'bg-warning/10',
         defaultTitle: 'Favoritos',
-        defaultSubtitle: (count) => `${count} Credenciais favoritas`,
+        defaultSubtitle: (count) => {
+            return pluralizeWithCount(
+                count,
+                'credencial favorita',
+                'credenciais favoritas',
+                'Nenhuma credencial favorita',
+            );
+        },
         type: 'search',
         showNewButton: false,
         showFilter: true,
@@ -40,7 +55,14 @@ export const headerVariants: Record<HeaderVariant, HeaderConfig> = {
         iconClass: 'text-error',
         bgColor: 'bg-error/10',
         defaultTitle: 'Lixeira',
-        defaultSubtitle: (count) => `${count} Credenciais na lixeira`,
+        defaultSubtitle: (count) => {
+            return pluralizeWithCount(
+                count,
+                'credencial na lixeira',
+                'credenciais na lixeira',
+                'Nenhuma credencial na lixeira',
+            );
+        },
         type: 'search',
         showNewButton: false,
         showFilter: true,

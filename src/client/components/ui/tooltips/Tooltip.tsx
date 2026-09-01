@@ -48,7 +48,6 @@ export default function Tooltip({
     };
 
     const handleMouseLeave = () => {
-        // Delay pequeno para permitir que o mouse entre no tooltip
         timeoutRef.current = setTimeout(() => {
             setShow(false);
         }, 150);

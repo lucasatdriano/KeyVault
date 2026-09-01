@@ -106,7 +106,7 @@ export default function DashboardPage() {
     };
 
     return (
-        <>
+        <div className="space-y-4">
             <Header
                 variant="search"
                 credentialCount={credentials.length}
@@ -193,6 +193,6 @@ export default function DashboardPage() {
                 onSave={handleNewCredentialSave}
                 isLoading={isCreating}
             />
-        </>
+        </div>
     );
 }

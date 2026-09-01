@@ -16,6 +16,7 @@ import {
 
 import { useAccountProfile } from '@/src/client/hooks/user/useAccountProfile';
 import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
+import { pluralizeWithCount } from '@/src/client/utils/formatters/string';
 
 import InputTextForm from '@/src/client/components/ui/inputs/InputTextForm';
 import Header from '@/src/client/components/layout/header/Header';
@@ -206,13 +207,12 @@ export default function AccountPage() {
                                 </p>
 
                                 <p className="text-foreground font-medium">
-                                    {profile.credentialsCount === 0
-                                        ? 'Nenhuma senha'
-                                        : `${profile.credentialsCount} ${
-                                              profile.credentialsCount > 1
-                                                  ? 'Senhas'
-                                                  : 'Senha'
-                                          }`}
+                                    {pluralizeWithCount(
+                                        profile.credentialsCount,
+                                        'Senha',
+                                        'Senhas',
+                                        'Nenhuma senha',
+                                    )}
                                 </p>
                             </div>
                         </div>
@@ -226,13 +226,12 @@ export default function AccountPage() {
                                 </p>
 
                                 <p className="text-foreground font-medium">
-                                    {profile.recoveryMethods === 0
-                                        ? 'Nenhum método'
-                                        : `${profile.recoveryMethods} ${
-                                              profile.recoveryMethods > 1
-                                                  ? 'Métodos'
-                                                  : 'Método'
-                                          }`}
+                                    {pluralizeWithCount(
+                                        profile.recoveryMethods,
+                                        'Método',
+                                        'Métodos',
+                                        'Nenhum método',
+                                    )}
                                 </p>
                             </div>
                         </div>

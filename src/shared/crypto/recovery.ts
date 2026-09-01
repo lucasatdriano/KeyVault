@@ -1,14 +1,14 @@
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
-import { RECOVERY_DATA_KEY_LENGTH } from '@/src/shared/constants/crypto/recovery.constants';
+import { DEFAULT_KEY_LENGTH } from '@/src/shared/constants/crypto/random.constants';
 import {
+    generateRandomKey,
     generateIV,
-    generateRandomBytes,
     generateSalt,
 } from '@/src/shared/crypto/random';
 import { decrypt, encrypt, importAESKey } from '@/src/shared/crypto/aes';
 import { base64ToBytes, bytesToBase64 } from '@/src/shared/crypto/encoding';
-import { deriveArgon2Key } from '@/src/shared/crypto/argon2';
 import { RecoveryDataPayload } from '@/src/shared/types/recovery';
+import { deriveArgon2Key } from '@/src/shared/crypto/argon2';
 import {
     DecryptRecoveryDataKeyParams,
     EncryptedRecoveryVaultKey,
@@ -16,7 +16,7 @@ import {
 } from '@/src/shared/types/crypto/recovery';
 
 export function createRecoveryDataKey(): Uint8Array {
-    return generateRandomBytes(RECOVERY_DATA_KEY_LENGTH);
+    return generateRandomKey();
 }
 
 export async function createRecoveryData({
@@ -69,7 +69,7 @@ export async function encryptRecoveryDataKey({
         throw new Error('O e-mail é obrigatório.');
     }
 
-    if (recoveryDataKey.length !== RECOVERY_DATA_KEY_LENGTH) {
+    if (recoveryDataKey.length !== DEFAULT_KEY_LENGTH) {
         throw new Error('RecoveryDataKey inválida.');
     }
 
@@ -79,7 +79,7 @@ export async function encryptRecoveryDataKey({
         password: normalizedEmail,
         salt,
         params: DEFAULT_ARGON2_PARAMS,
-        hashLength: RECOVERY_DATA_KEY_LENGTH,
+        hashLength: DEFAULT_KEY_LENGTH,
     });
 
     try {
@@ -123,7 +123,7 @@ export async function decryptRecoveryDataKey({
         password: normalizedEmail,
         salt: saltBytes,
         params: DEFAULT_ARGON2_PARAMS,
-        hashLength: RECOVERY_DATA_KEY_LENGTH,
+        hashLength: DEFAULT_KEY_LENGTH,
     });
 
     try {

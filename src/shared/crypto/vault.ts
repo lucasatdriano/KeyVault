@@ -5,7 +5,7 @@ import {
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 import {
     generateIV,
-    generateRandomBytes,
+    generateRandomKey,
     generateSalt,
 } from '@/src/shared/crypto/random';
 import { base64ToBytes, bytesToBase64 } from '@/src/shared/crypto/encoding';
@@ -20,7 +20,7 @@ import { Argon2Params } from '@/src/shared/types/crypto/argon2';
 import { EncryptedVault } from '@/src/shared/types/crypto/vault';
 
 export function createVaultKey(): Uint8Array {
-    return generateRandomBytes(VAULT_KEY_LENGTH);
+    return generateRandomKey(VAULT_KEY_LENGTH);
 }
 
 export async function encryptVaultKey(
