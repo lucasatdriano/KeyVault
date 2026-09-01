@@ -106,72 +106,76 @@ export default function DashboardPage() {
     };
 
     return (
-        <div className="space-y-4">
-            <Header
-                variant="search"
-                credentialCount={credentials.length}
-                onSearch={handleSearch}
-                onNewCredential={handleNewCredential}
-                onFilterChange={handleFilterChange}
-                selectedCategory={selectedCategory}
-            />
+        <>
+            <div className="space-y-4">
+                <Header
+                    variant="search"
+                    credentialCount={credentials.length}
+                    onSearch={handleSearch}
+                    onNewCredential={handleNewCredential}
+                    onFilterChange={handleFilterChange}
+                    selectedCategory={selectedCategory}
+                />
 
-            <div className="p-4 lg:p-6">
-                {isLoading ? (
-                    <div className="text-center py-12">Carregando...</div>
-                ) : (
-                    <>
-                        {isCreating && (
-                            <div className="mb-4 text-sm text-primary">
-                                Criando credencial...
+                <div className="p-4 lg:p-6">
+                    {isLoading ? (
+                        <div className="text-center py-12">Carregando...</div>
+                    ) : (
+                        <>
+                            {isCreating && (
+                                <div className="mb-4 text-sm text-primary">
+                                    Criando credencial...
+                                </div>
+                            )}
+
+                            {isUpdating && (
+                                <div className="mb-4 text-sm text-primary">
+                                    Atualizando credencial...
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {credentials.map((credential) => (
+                                    <CredentialCard
+                                        key={credential.id}
+                                        credential={{
+                                            ...credential,
+                                            createdAt: formatDateTime(
+                                                credential.createdAt,
+                                            ),
+                                        }}
+                                        onClick={() =>
+                                            handleCardClick(credential)
+                                        }
+                                        onEdit={handleEdit}
+                                        onDelete={handleDeleteWrapper}
+                                        onCopy={handleCopy}
+                                        onToggleFavorite={handleToggleFavorite}
+                                    />
+                                ))}
                             </div>
-                        )}
 
-                        {isUpdating && (
-                            <div className="mb-4 text-sm text-primary">
-                                Atualizando credencial...
-                            </div>
-                        )}
+                            {credentials.length === 0 && (
+                                <div className="py-12 text-center">
+                                    <KeyIcon className="mx-auto mb-3 h-12 w-12 text-foreground/20" />
+                                    <p className="text-foreground/40">
+                                        Nenhuma credencial encontrada
+                                    </p>
+                                </div>
+                            )}
 
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {credentials.map((credential) => (
-                                <CredentialCard
-                                    key={credential.id}
-                                    credential={{
-                                        ...credential,
-                                        createdAt: formatDateTime(
-                                            credential.createdAt,
-                                        ),
-                                    }}
-                                    onClick={() => handleCardClick(credential)}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDeleteWrapper}
-                                    onCopy={handleCopy}
-                                    onToggleFavorite={handleToggleFavorite}
+                            {!isLoading && credentials.length > 0 && (
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    totalItems={totalItems}
+                                    itemsPerPage={itemsPerPage}
+                                    onPageChange={goToPage}
                                 />
-                            ))}
-                        </div>
-
-                        {credentials.length === 0 && (
-                            <div className="py-12 text-center">
-                                <KeyIcon className="mx-auto mb-3 h-12 w-12 text-foreground/20" />
-                                <p className="text-foreground/40">
-                                    Nenhuma credencial encontrada
-                                </p>
-                            </div>
-                        )}
-
-                        {!isLoading && credentials.length > 0 && (
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                totalItems={totalItems}
-                                itemsPerPage={itemsPerPage}
-                                onPageChange={goToPage}
-                            />
-                        )}
-                    </>
-                )}
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
 
             <ViewCredentialModal
@@ -193,6 +197,6 @@ export default function DashboardPage() {
                 onSave={handleNewCredentialSave}
                 isLoading={isCreating}
             />
-        </div>
+        </>
     );
 }

@@ -86,80 +86,86 @@ export default function FavoritePage() {
     };
 
     return (
-        <div className="space-y-4">
-            <Header
-                variant="favorites"
-                credentialCount={credentials.length}
-                onSearch={handleSearch}
-                onFilterChange={handleFilterChange}
-                selectedCategory={selectedCategory}
-            />
+        <>
+            <div className="space-y-4">
+                <Header
+                    variant="favorites"
+                    credentialCount={credentials.length}
+                    onSearch={handleSearch}
+                    onFilterChange={handleFilterChange}
+                    selectedCategory={selectedCategory}
+                />
 
-            <div className="p-4 lg:p-6">
-                {isLoading ? (
-                    <div className="text-center py-12">Carregando...</div>
-                ) : (
-                    <>
-                        {isUpdating && (
-                            <div className="mb-4 text-sm text-primary">
-                                Atualizando credencial...
-                            </div>
-                        )}
-
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {credentials.map((credential) => (
-                                <CredentialCard
-                                    key={credential.id}
-                                    credential={{
-                                        ...credential,
-                                        createdAt: formatDateTime(
-                                            credential.createdAt,
-                                        ),
-                                    }}
-                                    onClick={() => handleCardClick(credential)}
-                                    onEdit={handleEdit}
-                                    onDelete={handleDeleteWrapper}
-                                    onCopy={handleCopy}
-                                    onToggleFavorite={handleToggleFavorite}
-                                />
-                            ))}
-                        </div>
-
-                        {credentials.length === 0 && (
-                            <div className="py-16 text-center">
-                                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-yellow-500/10">
-                                    <HeartIcon className="h-10 w-10 text-yellow-500/40" />
+                <div className="p-4 lg:p-6">
+                    {isLoading ? (
+                        <div className="text-center py-12">Carregando...</div>
+                    ) : (
+                        <>
+                            {isUpdating && (
+                                <div className="mb-4 text-sm text-primary">
+                                    Atualizando credencial...
                                 </div>
+                            )}
 
-                                <h3 className="mb-2 text-lg font-semibold text-foreground">
-                                    Nenhum favorito ainda
-                                </h3>
-
-                                <p className="mx-auto max-w-sm text-sm text-foreground/40">
-                                    Marque suas credenciais mais importantes
-                                    como favoritas clicando na estrela ⭐
-                                </p>
-
-                                <button
-                                    onClick={() => router.push('/dashboard')}
-                                    className="mt-4 text-sm text-primary hover:underline"
-                                >
-                                    Ver todas as credenciais
-                                </button>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {credentials.map((credential) => (
+                                    <CredentialCard
+                                        key={credential.id}
+                                        credential={{
+                                            ...credential,
+                                            createdAt: formatDateTime(
+                                                credential.createdAt,
+                                            ),
+                                        }}
+                                        onClick={() =>
+                                            handleCardClick(credential)
+                                        }
+                                        onEdit={handleEdit}
+                                        onDelete={handleDeleteWrapper}
+                                        onCopy={handleCopy}
+                                        onToggleFavorite={handleToggleFavorite}
+                                    />
+                                ))}
                             </div>
-                        )}
 
-                        {!isLoading && credentials.length > 0 && (
-                            <Pagination
-                                currentPage={currentPage}
-                                totalPages={totalPages}
-                                totalItems={totalItems}
-                                itemsPerPage={itemsPerPage}
-                                onPageChange={goToPage}
-                            />
-                        )}
-                    </>
-                )}
+                            {credentials.length === 0 && (
+                                <div className="py-16 text-center">
+                                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-yellow-500/10">
+                                        <HeartIcon className="h-10 w-10 text-yellow-500/40" />
+                                    </div>
+
+                                    <h3 className="mb-2 text-lg font-semibold text-foreground">
+                                        Nenhum favorito ainda
+                                    </h3>
+
+                                    <p className="mx-auto max-w-sm text-sm text-foreground/40">
+                                        Marque suas credenciais mais importantes
+                                        como favoritas clicando na estrela ⭐
+                                    </p>
+
+                                    <button
+                                        onClick={() =>
+                                            router.push('/dashboard')
+                                        }
+                                        className="mt-4 text-sm text-primary hover:underline"
+                                    >
+                                        Ver todas as credenciais
+                                    </button>
+                                </div>
+                            )}
+
+                            {!isLoading && credentials.length > 0 && (
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    totalItems={totalItems}
+                                    itemsPerPage={itemsPerPage}
+                                    onPageChange={goToPage}
+                                />
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
 
             <ViewCredentialModal
@@ -174,6 +180,6 @@ export default function FavoritePage() {
                 onUpdate={handleUpdateCredentialWrapper}
                 isUpdating={isUpdating}
             />
-        </div>
+        </>
     );
 }
