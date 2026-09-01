@@ -4,6 +4,7 @@ import { useVaultStore } from '@/src/client/store/vault.store';
 import { useAuthStore } from '@/src/client/store/auth.store';
 
 import UnlockVaultModal from '@/src/client/components/layout/modals/authModals/UnlockVaultModal';
+import AutoLockHandler from '@/src/client/components/layout/handlers/AutoLockHandler';
 
 export default function VaultUnlockGuard({
     children,
@@ -21,5 +22,11 @@ export default function VaultUnlockGuard({
         return <UnlockVaultModal />;
     }
 
-    return <>{children}</>;
+    return (
+        <>
+            <AutoLockHandler />
+
+            {children}
+        </>
+    );
 }

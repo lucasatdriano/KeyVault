@@ -11,6 +11,7 @@ import VaultUnlockGuard from '@/src/client/guards/VaultUnlockGuard';
 import SidebarDrawer from '@/src/client/components/layout/sidebar/SidebarDrawer';
 import Sidebar from '@/src/client/components/layout/sidebar/Sidebar';
 import BottomBar from '@/src/client/components/layout/bottomBar/BottomBar';
+import SettingsInitializer from '@/src/client/components/layout/initializers/SettingsInitializer';
 
 export default async function ProtectedLayout({
     children,
@@ -37,6 +38,8 @@ export default async function ProtectedLayout({
                 updatedAt: user.updatedAt,
             }}
         >
+            <SettingsInitializer userId={user.id} />
+
             <SidebarProvider>
                 <VaultUnlockGuard>
                     <SessionExpiredHandler />

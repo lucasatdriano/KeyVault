@@ -18,7 +18,7 @@ export default function HeaderSimple({
     subtitle,
 }: HeaderSimpleProps) {
     return (
-        <div className="px-4 pt-0 pb-4 sm:pt-4 border-b border-white/10 bg-background/50">
+        <div className="px-4 pb-4 border-b border-white/10 bg-background/50">
             <div className="max-w-7xl mx-auto">
                 <div className="flex items-center gap-3">
                     <div

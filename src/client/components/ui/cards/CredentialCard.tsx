@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     KeyIcon,
     StarIcon,
@@ -16,6 +16,7 @@ import {
 
 import { Credential } from '@/src/shared/types/credential';
 
+import { useSettingsStore } from '@/src/client/store/settings.store';
 import {
     getCategoryBadgeColor,
     getCategoryColor,
@@ -33,17 +34,35 @@ interface CredentialCardProps {
     onToggleFavorite?: (id: string) => void;
 }
 
-const CredentialCard: React.FC<CredentialCardProps> = ({
+export default function CredentialCard({
     credential,
     onClick,
     onDelete,
     onCopy,
     onToggleFavorite,
-}) => {
+}: CredentialCardProps) {
     const [showPassword, setShowPassword] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
+
+    const hidePasswordDelay = useSettingsStore(
+        (state) => state.hidePasswordDelay,
+    );
+
+    useEffect(() => {
+        if (!showPassword || hidePasswordDelay === -1) {
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            setShowPassword(false);
+        }, hidePasswordDelay);
+
+        return () => {
+            clearTimeout(timeout);
+        };
+    }, [showPassword, hidePasswordDelay]);
 
     const handleCopy = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -73,6 +92,12 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
         onToggleFavorite?.(credential.id);
     };
 
+    const handleTogglePassword = (e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        setShowPassword((previous) => !previous);
+    };
+
     const isFavorite = credential.favorite || false;
 
     return (
@@ -87,15 +112,18 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                     <div className="flex items-center gap-3 min-w-0">
                         <div
                             className={`
-                            w-12 h-12 rounded-xl flex items-center justify-center shrink-0
-                            bg-linear-to-br ${getCategoryColor(credential.category)}
-                            shadow-lg shadow-primary/10
-                        `}
+                                w-12 h-12 rounded-xl flex items-center justify-center shrink-0
+                                bg-linear-to-br ${getCategoryColor(
+                                    credential.category,
+                                )}
+                                shadow-lg shadow-primary/10
+                            `}
                         >
                             <span className="text-white font-bold text-sm">
                                 {getInitials(credential.title)}
                             </span>
                         </div>
+
                         <div className="min-w-0">
                             <div className="flex items-center gap-2">
                                 <h3 className="text-base font-semibold text-foreground truncate">
@@ -103,6 +131,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                 </h3>
 
                                 <button
+                                    type="button"
                                     onClick={handleToggleFavorite}
                                     className={`
                                         cursor-pointer transition-all duration-200 shrink-0
@@ -132,11 +161,14 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                     />
                                 </button>
                             </div>
+
                             <span
                                 className={`
-                                inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium
-                                border ${getCategoryBadgeColor(credential.category)}
-                            `}
+                                    inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium
+                                    border ${getCategoryBadgeColor(
+                                        credential.category,
+                                    )}
+                                `}
                             >
                                 {credential.category}
                             </span>
@@ -148,8 +180,10 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button
+                            type="button"
                             onClick={() => setShowMenu(!showMenu)}
                             className="cursor-pointer p-1.5 rounded-lg hover:bg-white/5 text-foreground/40 hover:text-foreground transition-colors"
+                            aria-label="Abrir menu"
                         >
                             <MoreVerticalIcon className="w-5 h-5" />
                         </button>
@@ -160,8 +194,10 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                     className="fixed inset-0 z-40"
                                     onClick={() => setShowMenu(false)}
                                 />
+
                                 <div className="absolute right-0 mt-1 w-48 bg-background/95 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl z-50 py-1">
                                     <button
+                                        type="button"
                                         onClick={handleDelete}
                                         className="cursor-pointer w-full flex items-center gap-2 px-4 py-2 text-sm text-error hover:bg-white/5 transition-colors"
                                     >
@@ -178,6 +214,7 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                     {(credential.email || credential.username) && (
                         <div className="flex items-center gap-2 text-sm">
                             <MailIcon className="w-4 h-4 text-foreground/30 shrink-0" />
+
                             <span className="text-foreground/70 truncate">
                                 {credential.email || credential.username}
                             </span>
@@ -187,18 +224,23 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                     {credential.password && (
                         <div className="flex items-center gap-2 text-sm">
                             <KeyIcon className="w-4 h-4 text-foreground/30 shrink-0" />
+
                             <span className="text-foreground/70 font-mono">
                                 {showPassword
                                     ? credential.password
                                     : '**********'}
                             </span>
+
                             <div className="flex items-center gap-1 ml-auto">
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowPassword(!showPassword);
-                                    }}
+                                    type="button"
+                                    onClick={handleTogglePassword}
                                     className="cursor-pointer p-1 rounded hover:bg-white/5 text-foreground/30 hover:text-foreground/60 transition-colors"
+                                    aria-label={
+                                        showPassword
+                                            ? 'Ocultar senha'
+                                            : 'Mostrar senha'
+                                    }
                                 >
                                     {showPassword ? (
                                         <EyeOffIcon className="w-4 h-4" />
@@ -206,9 +248,12 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                                         <EyeIcon className="w-4 h-4" />
                                     )}
                                 </button>
+
                                 <button
+                                    type="button"
                                     onClick={handleCopy}
                                     className="cursor-pointer p-1 rounded hover:bg-white/5 text-foreground/30 hover:text-foreground/60 transition-colors"
+                                    aria-label="Copiar senha"
                                 >
                                     <CopyIcon className="w-4 h-4" />
                                 </button>
@@ -221,12 +266,14 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
                     <div className="flex items-center gap-3 text-xs">
                         <div className="flex items-center gap-1 text-foreground/40">
                             <CalendarIcon className="w-3.5 h-3.5" />
+
                             <span>{credential.createdAt}</span>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-1">
                         <ShieldIcon className="w-3.5 h-3.5 text-green-500" />
+
                         <span className="text-[10px] text-foreground/30">
                             Seguro
                         </span>
@@ -242,6 +289,4 @@ const CredentialCard: React.FC<CredentialCardProps> = ({
             />
         </>
     );
-};
-
-export default CredentialCard;
+}

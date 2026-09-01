@@ -22,14 +22,17 @@ import { ACCESS_TOKEN_DURATION } from '@/src/shared/constants/auth/auth.constant
 
 import { useCredentials } from '@/src/client/hooks/credentials/useCredentials';
 import { useAccountProfile } from '@/src/client/hooks/user/useAccountProfile';
+import { useSettingsStore } from '@/src/client/store/settings.store';
 
 import Header from '@/src/client/components/layout/header/Header';
 import ImportModal from '@/src/client/components/layout/modals/credentialsModals/ImportModal';
 import ExportModal from '@/src/client/components/layout/modals/credentialsModals/ExportModal';
 import DeleteAccountModal from '@/src/client/components/layout/modals/usersModals/DeleteAccountModal';
+import InputSelectForm from '@/src/client/components/ui/inputs/InputSelectForm';
 
 export default function SettingsPage() {
     const router = useRouter();
+
     const {
         sessionExpiration,
         isUpdatingSessionExpiration,
@@ -37,6 +40,13 @@ export default function SettingsPage() {
     } = useAccountProfile();
 
     const { handleExport, handleImport } = useCredentials();
+
+    const {
+        hidePasswordDelay,
+        autoLockMinutes,
+        updateHidePasswordDelay,
+        updateAutoLock,
+    } = useSettingsStore();
 
     const [showExportModal, setShowExportModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
@@ -46,14 +56,6 @@ export default function SettingsPage() {
     const [isImporting, setIsImporting] = useState(false);
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
-    const [settings, setSettings] = useState({
-        hidePasswordTimeout: '5',
-        sessionTimeout: ACCESS_TOKEN_DURATION.MINUTES_30,
-        autoLock: true,
-        clearClipboard: true,
-        showPasswordsByDefault: false,
-    });
-
     const [lastSync, setLastSync] = useState<Date | null>(null);
 
     useEffect(() => {
@@ -61,11 +63,26 @@ export default function SettingsPage() {
     }, []);
 
     const hidePasswordOptions = [
-        { value: '3', label: '3 segundos' },
-        { value: '5', label: '5 segundos (recomendado)' },
-        { value: '10', label: '10 segundos' },
-        { value: '30', label: '30 segundos' },
-        { value: 'never', label: 'Nunca' },
+        {
+            value: 3000,
+            label: '3 segundos',
+        },
+        {
+            value: 5000,
+            label: '5 segundos (recomendado)',
+        },
+        {
+            value: 10000,
+            label: '10 segundos',
+        },
+        {
+            value: 30000,
+            label: '30 segundos',
+        },
+        {
+            value: -1,
+            label: 'Nunca',
+        },
     ];
 
     const sessionTimeoutOptions = [
@@ -87,21 +104,13 @@ export default function SettingsPage() {
         await handleSaveSessionExpiration(value);
     };
 
-    const handleSettingChange = (
-        key: keyof typeof settings,
-        value: string | number | boolean,
-    ) => {
-        setSettings((prev) => ({
-            ...prev,
-            [key]: value,
-        }));
-    };
+    const handleAutoLockToggle = () => {
+        if (autoLockMinutes > 0) {
+            updateAutoLock(0);
+            return;
+        }
 
-    const handleToggleSetting = (key: keyof typeof settings) => {
-        setSettings((prev) => ({
-            ...prev,
-            [key]: !prev[key],
-        }));
+        updateAutoLock(5);
     };
 
     const handleExportData = async (): Promise<boolean> => {
@@ -204,28 +213,30 @@ export default function SettingsPage() {
                                 <p className="text-sm font-medium text-foreground">
                                     Tempo para ocultar senha
                                 </p>
+
+                                <p className="text-xs text-foreground/40">
+                                    Define por quanto tempo uma senha
+                                    permanecerá visível após ser revelada
+                                </p>
                             </div>
 
-                            <select
-                                value={settings.hidePasswordTimeout}
-                                onChange={(event) =>
-                                    handleSettingChange(
-                                        'hidePasswordTimeout',
-                                        event.target.value,
-                                    )
-                                }
-                                className="bg-background/50 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                            >
-                                {hidePasswordOptions.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                        className="bg-background"
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="w-64">
+                                <InputSelectForm
+                                    value={hidePasswordDelay}
+                                    className="text-sm"
+                                    onChange={(event) =>
+                                        updateHidePasswordDelay(
+                                            Number(event.target.value),
+                                        )
+                                    }
+                                    options={hidePasswordOptions.map(
+                                        (option) => ({
+                                            value: String(option.value),
+                                            label: option.label,
+                                        }),
+                                    )}
+                                />
+                            </div>
                         </div>
 
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
@@ -233,28 +244,31 @@ export default function SettingsPage() {
                                 <p className="text-sm font-medium text-foreground">
                                     Tempo de sessão
                                 </p>
+
+                                <p className="text-xs text-foreground/40">
+                                    Define a duração das novas sessões após o
+                                    login
+                                </p>
                             </div>
 
-                            <select
-                                value={sessionExpiration}
-                                onChange={(event) =>
-                                    handleSessionExpirationChange(
-                                        Number(event.target.value),
-                                    )
-                                }
-                                disabled={isUpdatingSessionExpiration}
-                                className="bg-background/50 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                            >
-                                {sessionTimeoutOptions.map((option) => (
-                                    <option
-                                        key={option.value}
-                                        value={option.value}
-                                        className="bg-background"
-                                    >
-                                        {option.label}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="w-64">
+                                <InputSelectForm
+                                    value={sessionExpiration}
+                                    className="text-sm"
+                                    onChange={(event) =>
+                                        handleSessionExpirationChange(
+                                            Number(event.target.value),
+                                        )
+                                    }
+                                    options={sessionTimeoutOptions.map(
+                                        (option) => ({
+                                            value: String(option.value),
+                                            label: option.label,
+                                        }),
+                                    )}
+                                    disabled={isUpdatingSessionExpiration}
+                                />
+                            </div>
                         </div>
 
                         <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
@@ -266,51 +280,27 @@ export default function SettingsPage() {
                                 <p className="text-xs text-foreground/40">
                                     Bloquear o KeyVault quando o computador
                                     ficar inativo
+                                    {autoLockMinutes > 0 && ` após 3 minutos`}
                                 </p>
                             </div>
 
                             <button
                                 type="button"
-                                onClick={() => handleToggleSetting('autoLock')}
-                                className={`relative w-12 h-7 rounded-full transition-all duration-200 ${
-                                    settings.autoLock
+                                onClick={handleAutoLockToggle}
+                                className={` cursor-pointer relative w-12 h-7 rounded-full transition-all duration-200 ${
+                                    autoLockMinutes > 0
                                         ? 'bg-primary'
                                         : 'bg-white/20'
                                 }`}
-                            >
-                                <div
-                                    className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all duration-200 ${
-                                        settings.autoLock ? 'left-6' : 'left-1'
-                                    }`}
-                                />
-                            </button>
-                        </div>
-
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
-                            <div>
-                                <p className="text-sm font-medium text-foreground">
-                                    Limpar área de transferência
-                                </p>
-
-                                <p className="text-xs text-foreground/40">
-                                    Apagar senha copiada após 30 segundos
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    handleToggleSetting('clearClipboard')
+                                aria-label={
+                                    autoLockMinutes > 0
+                                        ? 'Desativar bloqueio automático'
+                                        : 'Ativar bloqueio automático'
                                 }
-                                className={`relative w-12 h-7 rounded-full transition-all duration-200 ${
-                                    settings.clearClipboard
-                                        ? 'bg-primary'
-                                        : 'bg-white/20'
-                                }`}
                             >
                                 <div
                                     className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-all duration-200 ${
-                                        settings.clearClipboard
+                                        autoLockMinutes > 0
                                             ? 'left-6'
                                             : 'left-1'
                                     }`}

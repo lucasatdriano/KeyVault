@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { RotateCcwIcon, CalendarIcon, ClockIcon } from 'lucide-react';
 
 import { Credential } from '@/src/shared/types/credential';
 
+import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
 import {
     getCategoryBadgeColor,
     getCategoryColor,
@@ -13,7 +14,6 @@ import {
     formatDateTime,
     getDaysRemaining,
 } from '@/src/client/utils/formatters/date';
-import { getInitials } from '@/src/client/utils/credentials/credential-avatar';
 
 interface DeletedCredentialCardProps {
     credential: Credential;
@@ -22,10 +22,10 @@ interface DeletedCredentialCardProps {
     onCopy?: (text: string) => void;
 }
 
-const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
+export default function DeletedCredentialCard({
     credential,
     onRestore,
-}) => {
+}: DeletedCredentialCardProps) {
     const [isHovered, setIsHovered] = useState(false);
 
     const daysRemaining = getDaysRemaining(credential.updatedAt);
@@ -130,6 +130,4 @@ const DeletedCredentialCard: React.FC<DeletedCredentialCardProps> = ({
             </div>
         </>
     );
-};
-
-export default DeletedCredentialCard;
+}
