@@ -3,14 +3,10 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MailIcon, KeyIcon, LogInIcon } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { loginAction } from '@/src/server/actions/auth/login.action';
-
-import { decryptVaultKey } from '@/src/shared/crypto/vault';
 import { LoginFormData } from '@/src/shared/types/auth';
 
-import { useVaultStore } from '@/src/client/store/vault.store';
+import { useAuthActions } from '@/src/client/hooks/auth/useAuthActions';
 import { useAuthStore } from '@/src/client/store/auth.store';
 import { validateLoginForm } from '@/src/client/validators/auth.validator';
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
@@ -23,7 +19,9 @@ import { LoginClient } from '@/src/app/(auth)/login/components/LoginClient';
 
 export default function LoginPage() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+    const setIsLoggingOut = useAuthStore((state) => state.setIsLoggingOut);
+    const { isLoggingIn, handleLogin } = useAuthActions();
+
     const [formData, setFormData] = useState<LoginFormData>({
         email: '',
         password: '',
@@ -32,8 +30,6 @@ export default function LoginPage() {
         email: '',
         password: '',
     });
-    const setVaultKey = useVaultStore((state) => state.setVaultKey);
-    const setIsLoggingOut = useAuthStore((state) => state.setIsLoggingOut);
 
     useEffect(() => {
         setIsLoggingOut(false);
@@ -56,37 +52,17 @@ export default function LoginPage() {
             return;
         }
 
-        setIsLoading(true);
+        const success = await handleLogin(formData);
 
-        try {
-            const result = await loginAction({
-                email: formData.email,
-                password: formData.password,
-            });
-
-            if (!result.success || !result.data) {
-                toast.error(result.error);
-                return;
-            }
-
-            const vaultKey = await decryptVaultKey(
-                result.data.encryptedVaultKey,
-                formData.password,
-            );
-
-            setVaultKey(vaultKey);
+        if (success) {
             setFormData({
                 email: '',
                 password: '',
             });
-
-            toast.success(result.message);
-
-            router.push('/dashboard');
-        } catch {
-            toast.error('Erro interno do servidor.');
-        } finally {
-            setIsLoading(false);
+            setErrors({
+                email: '',
+                password: '',
+            });
         }
     };
 
@@ -97,7 +73,7 @@ export default function LoginPage() {
             </Suspense>
             <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
                 <div className="flex justify-center mb-6">
-                    <Logo variant="icon" size="lg"></Logo>
+                    <Logo variant="icon" size="lg" />
                 </div>
 
                 <h2 className="text-3xl font-bold text-foreground mb-2 text-center">
@@ -114,11 +90,18 @@ export default function LoginPage() {
                         type="text"
                         name="email"
                         value={formData.email}
-                        onChange={(e) =>
-                            setFormData({ ...formData, email: e.target.value })
-                        }
+                        onChange={(e) => {
+                            setFormData({ ...formData, email: e.target.value });
+                            if (errors.email) {
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    email: '',
+                                }));
+                            }
+                        }}
                         leftIcon={<MailIcon className="w-5 h-5" />}
                         error={errors.email}
+                        disabled={isLoggingIn}
                     />
 
                     <InputTextForm
@@ -127,14 +110,21 @@ export default function LoginPage() {
                         type="password"
                         name="password"
                         value={formData.password}
-                        onChange={(e) =>
+                        onChange={(e) => {
                             setFormData({
                                 ...formData,
                                 password: e.target.value,
-                            })
-                        }
+                            });
+                            if (errors.password) {
+                                setErrors((prev) => ({
+                                    ...prev,
+                                    password: '',
+                                }));
+                            }
+                        }}
                         leftIcon={<KeyIcon className="w-5 h-5" />}
                         error={errors.password}
+                        disabled={isLoggingIn}
                     />
 
                     <div className="flex items-center justify-end">
@@ -142,6 +132,7 @@ export default function LoginPage() {
                             type="button"
                             onClick={() => router.push('/forgot-password')}
                             className="cursor-pointer text-sm text-primary/60 hover:text-primary transition-colors duration-200"
+                            disabled={isLoggingIn}
                         >
                             Esqueci minha senha
                         </button>
@@ -149,9 +140,9 @@ export default function LoginPage() {
 
                     <Button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isLoggingIn}
                         fullWidth
-                        isLoading={isLoading}
+                        isLoading={isLoggingIn}
                         loadingText="Entrando..."
                         leftIcon={<LogInIcon className="w-5 h-5" />}
                     >
@@ -164,6 +155,7 @@ export default function LoginPage() {
                     <button
                         onClick={() => router.push('/register')}
                         className="cursor-pointer text-primary font-semibold hover:underline transition-all duration-200"
+                        disabled={isLoggingIn}
                     >
                         Criar conta
                     </button>

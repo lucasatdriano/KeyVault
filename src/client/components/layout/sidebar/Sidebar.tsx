@@ -7,7 +7,7 @@ import { LogOutIcon, ChevronDownIcon, ChevronRightIcon } from 'lucide-react';
 import { useCredentialsStore } from '@/src/client/store/credential.store';
 import { useSidebar } from '@/src/client/hooks/ui/useSidebar';
 import { useAuth } from '@/src/client/hooks/auth/useAuth';
-import { useLogout } from '@/src/client/hooks/auth/useLogout';
+import { useAuthActions } from '@/src/client/hooks/auth/useAuthActions';
 import { sidebarSections } from '@/src/client/components/layout/sidebar/Sidebar.config';
 
 import Logo from '@/src/client/components/layout/logo/Logo';
@@ -22,7 +22,7 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    const { logout, isLoggingOut } = useLogout();
+    const { handleLogout, isLoggingOut } = useAuthActions();
 
     const { credentialsCount, favoritesCount, deletedCount } =
         useCredentialsStore();
@@ -157,7 +157,7 @@ export default function Sidebar({ mobile = false }: SidebarProps) {
                         </div>
 
                         <button
-                            onClick={() => logout('/login')}
+                            onClick={() => handleLogout('/login')}
                             disabled={isLoggingOut}
                             className="cursor-pointer rounded-lg p-1.5 text-error/40 transition-colors hover:bg-error/5 hover:text-error/70 disabled:cursor-not-allowed disabled:opacity-50"
                         >

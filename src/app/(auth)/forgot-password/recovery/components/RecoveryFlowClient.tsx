@@ -1,8 +1,7 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
     AlertCircleIcon,
     CheckCircle2Icon,
@@ -10,20 +9,10 @@ import {
     LockKeyholeIcon,
     ShieldIcon,
 } from 'lucide-react';
-import { toast } from 'sonner';
-
-import { verifyQuestionsChallengeAction } from '@/src/server/actions/recovery/flow/verify-questions-challenge.action';
-import { getCurrentRecoveryChallengeAction } from '@/src/server/actions/recovery/flow/get-current-recovery-challenge.action';
-import { getRecoveryQuestionsChallengeAction } from '@/src/server/actions/recovery/flow/get-recovery-questions-challenge.action';
-import { verifyRecoveryPasswordChallengeAction } from '@/src/server/actions/recovery/flow/verify-recovery-password-challenge.action';
-import { verifyRecoveryKeyChallengeAction } from '@/src/server/actions/recovery/flow/verify-recovery-key-challenge.action';
 
 import { RecoveryType } from '@/src/shared/types/recovery';
 
-import {
-    RecoveryChallenge,
-    RecoveryQuestion,
-} from '@/src/client/types/recovery';
+import { useRecoveryFlow } from '@/src/client/hooks/auth/useRecoveryFlow';
 
 import Button from '@/src/client/components/ui/buttons/Button';
 import Logo from '@/src/client/components/layout/logo/Logo';
@@ -32,203 +21,26 @@ import RecoveryKeyValidationModal from '@/src/client/components/layout/modals/re
 import QuizAnswerModal from '@/src/client/components/layout/modals/recoveryModals/AswerQuestionsRecoveryModal';
 
 export default function RecoveryFlowClient() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
 
-    const [challenge, setChallenge] = useState<RecoveryChallenge | null>(null);
-    const [questions, setQuestions] = useState<RecoveryQuestion[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isVerifying, setIsVerifying] = useState(false);
-
-    const handleInvalidRecovery = useCallback(
-        (message?: string) => {
-            if (message) {
-                toast.error(message);
-            }
-
-            router.replace('/forgot-password');
-        },
-        [router],
-    );
-
-    const loadQuestions = useCallback(async (recoveryToken: string) => {
-        const result = await getRecoveryQuestionsChallengeAction(recoveryToken);
-
-        if (!result.success || !result.data) {
-            throw new Error(
-                result.error ??
-                    'Não foi possível carregar as perguntas de recuperação.',
-            );
-        }
-
-        setQuestions(result.data.questions);
-    }, []);
-
-    const loadCurrentChallenge = useCallback(async () => {
-        if (!token) {
-            handleInvalidRecovery('Token de recuperação não encontrado.');
-
-            return;
-        }
-
-        setIsLoading(true);
-
-        try {
-            const result = await getCurrentRecoveryChallengeAction(token);
-
-            if (!result.success || !result.data) {
-                throw new Error(
-                    result.error ?? 'Não foi possível continuar a recuperação.',
-                );
-            }
-
-            setChallenge(result.data);
-
-            if (result.data.type === RecoveryType.QUESTIONS) {
-                await loadQuestions(token);
-            } else {
-                setQuestions([]);
-            }
-        } catch (error) {
-            handleInvalidRecovery(
-                error instanceof Error
-                    ? error.message
-                    : 'Não foi possível continuar a recuperação.',
-            );
-        } finally {
-            setIsLoading(false);
-        }
-    }, [handleInvalidRecovery, loadQuestions, token]);
+    const {
+        challenge,
+        questions,
+        isLoading,
+        isVerifying,
+        loadCurrentChallenge,
+        handleVerifyQuestions,
+        handleVerifyRecoveryPassword,
+        handleVerifyRecoveryKey,
+        handleCancel,
+    } = useRecoveryFlow();
 
     useEffect(() => {
-        loadCurrentChallenge();
-    }, [loadCurrentChallenge]);
-
-    const handleChallengeCompleted = async (result: {
-        completed: boolean;
-        nextMethod: RecoveryType | null;
-    }) => {
-        if (result.completed) {
-            toast.success('Sua identidade foi verificada com sucesso.');
-
-            router.replace(
-                `/forgot-password/reset-password?token=${encodeURIComponent(
-                    token!,
-                )}`,
-            );
-
-            return;
+        if (token) {
+            loadCurrentChallenge(token);
         }
-
-        toast.success('Método de recuperação verificado.');
-
-        await loadCurrentChallenge();
-    };
-
-    const handleVerifyQuestions = async (answers: string[]) => {
-        if (!token) {
-            return;
-        }
-
-        setIsVerifying(true);
-
-        try {
-            const result = await verifyQuestionsChallengeAction(token, answers);
-
-            if (!result.success || !result.data) {
-                throw new Error(
-                    result.error ?? 'Não foi possível verificar as respostas.',
-                );
-            }
-
-            await handleChallengeCompleted(result.data);
-        } catch (error) {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : 'Não foi possível verificar as respostas.',
-            );
-
-            await loadCurrentChallenge();
-        } finally {
-            setIsVerifying(false);
-        }
-    };
-
-    const handleVerifyRecoveryPassword = async (recoveryPassword: string) => {
-        if (!token) {
-            return;
-        }
-
-        setIsVerifying(true);
-
-        try {
-            const result = await verifyRecoveryPasswordChallengeAction(
-                token,
-                recoveryPassword,
-            );
-
-            if (!result.success || !result.data) {
-                throw new Error(
-                    result.error ?? 'Não foi possível verificar a senha.',
-                );
-            }
-
-            await handleChallengeCompleted(result.data);
-        } catch (error) {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : 'Não foi possível verificar a senha.',
-            );
-
-            await loadCurrentChallenge();
-        } finally {
-            setIsVerifying(false);
-        }
-    };
-
-    const handleVerifyRecoveryKey = async (recoveryKey: string) => {
-        if (!token) {
-            return;
-        }
-
-        setIsVerifying(true);
-
-        try {
-            const result = await verifyRecoveryKeyChallengeAction(
-                token,
-                recoveryKey,
-            );
-
-            if (!result.success || !result.data) {
-                throw new Error(
-                    result.error ?? 'Não foi possível verificar a chave.',
-                );
-            }
-
-            await handleChallengeCompleted(result.data);
-        } catch (error) {
-            toast.error(
-                error instanceof Error
-                    ? error.message
-                    : 'Não foi possível verificar a chave.',
-            );
-
-            await loadCurrentChallenge();
-        } finally {
-            setIsVerifying(false);
-        }
-    };
-
-    const handleCancel = () => {
-        if (isVerifying) {
-            return;
-        }
-
-        router.replace('/forgot-password');
-    };
+    }, [token, loadCurrentChallenge]);
 
     if (isLoading || !challenge) {
         return (
@@ -259,6 +71,23 @@ export default function RecoveryFlowClient() {
     }[challenge.type];
 
     const currentStep = challenge.completedSteps + 1;
+
+    const handleVerifyQuestionsWrapper = async (answers: string[]) => {
+        if (!token) return;
+        await handleVerifyQuestions(token, answers);
+    };
+
+    const handleVerifyRecoveryPasswordWrapper = async (
+        recoveryPassword: string,
+    ) => {
+        if (!token) return;
+        await handleVerifyRecoveryPassword(token, recoveryPassword);
+    };
+
+    const handleVerifyRecoveryKeyWrapper = async (recoveryKey: string) => {
+        if (!token) return;
+        await handleVerifyRecoveryKey(token, recoveryKey);
+    };
 
     return (
         <>
@@ -354,7 +183,7 @@ export default function RecoveryFlowClient() {
             <QuizAnswerModal
                 isOpen={challenge.type === RecoveryType.QUESTIONS}
                 onClose={handleCancel}
-                onVerify={handleVerifyQuestions}
+                onVerify={handleVerifyQuestionsWrapper}
                 questions={questions}
                 isLoading={isVerifying}
             />
@@ -362,14 +191,14 @@ export default function RecoveryFlowClient() {
             <RecoveryPasswordValidationModal
                 isOpen={challenge.type === RecoveryType.RECOVERY_PASSWORD}
                 onClose={handleCancel}
-                onVerify={handleVerifyRecoveryPassword}
+                onVerify={handleVerifyRecoveryPasswordWrapper}
                 isLoading={isVerifying}
             />
 
             <RecoveryKeyValidationModal
                 isOpen={challenge.type === RecoveryType.RECOVERY_KEY}
                 onClose={handleCancel}
-                onVerify={handleVerifyRecoveryKey}
+                onVerify={handleVerifyRecoveryKeyWrapper}
                 isLoading={isVerifying}
             />
         </>

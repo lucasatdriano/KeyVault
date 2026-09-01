@@ -106,10 +106,10 @@ export default function AccountPage() {
                                 />
 
                                 <button
-                                    onClick={handleSaveName}
-                                    disabled={isSaving}
-                                    className="cursor-pointer p-2 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Salvar"
+                                    onClick={() => handleSaveName()}
+                                    className="cursor-pointer p-2 rounded-lg bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={isSaving}
                                 >
                                     {isSaving ? (
                                         <div className="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />

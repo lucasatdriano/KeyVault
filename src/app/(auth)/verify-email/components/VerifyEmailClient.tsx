@@ -1,44 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 
-import { verifyEmailAction } from '@/src/server/actions/auth/verify-email.action';
+import { useAuthActions } from '@/src/client/hooks/auth/useAuthActions';
 
 import Button from '@/src/client/components/ui/buttons/Button';
 import Logo from '@/src/client/components/layout/logo/Logo';
 
 export function VerifyEmailClient() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
 
-    const [isLoading, setIsLoading] = useState(false);
+    const { isVerifyingEmail, handleVerifyEmail } = useAuthActions();
 
-    const handleVerifyEmail = async () => {
+    const handleVerify = async () => {
         if (!token) {
             toast.error('Token de verificação inválido.');
             return;
         }
 
-        setIsLoading(true);
-
-        try {
-            const result = await verifyEmailAction(token);
-
-            if (!result.success) {
-                toast.error(result.error);
-                return;
-            }
-
-            toast.success('E-mail verificado com sucesso!');
-            router.push('/login');
-        } catch {
-            toast.error('Erro interno do servidor.');
-        } finally {
-            setIsLoading(false);
-        }
+        await handleVerifyEmail(token);
     };
 
     return (
@@ -57,10 +39,10 @@ export function VerifyEmailClient() {
 
             <Button
                 type="button"
-                onClick={handleVerifyEmail}
-                disabled={isLoading}
+                onClick={handleVerify}
+                disabled={isVerifyingEmail || !token}
                 fullWidth
-                isLoading={isLoading}
+                isLoading={isVerifyingEmail}
                 loadingText="Verificando..."
             >
                 Verificar E-mail

@@ -34,9 +34,7 @@ export default function BottomBar() {
                         `}
                     >
                         <item.icon />
-                        <span className="text-[10px] font-medium">
-                            {item.label}
-                        </span>
+                        <span className="font-medium">{item.label}</span>
 
                         {isActive(item.href) && (
                             <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />

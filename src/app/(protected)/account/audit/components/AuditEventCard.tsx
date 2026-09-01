@@ -57,7 +57,7 @@ export default function AuditEventCard({ log }: AuditEventCardProps) {
                 </span>
 
                 <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${config.badgeClass}`}
+                    className={`rounded-full border px-2 py-0.5 font-medium ${config.badgeClass}`}
                 >
                     {config.label}
                 </span>

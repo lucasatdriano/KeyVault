@@ -1,12 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-    AlertTriangleIcon,
-    CheckCircleIcon,
-    HelpCircleIcon,
-    ShieldCheckIcon,
-} from 'lucide-react';
+import { HelpCircleIcon } from 'lucide-react';
 
 import { RecoveryType } from '@/src/shared/types/recovery';
 
@@ -22,6 +17,8 @@ import RecoveryPasswordModal from '@/src/client/components/layout/modals/recover
 
 import { recoveryMethodConfig } from '@/src/app/(protected)/account/recovery/components/recovery-method.config';
 import RecoveryMethodCard from '@/src/app/(protected)/account/recovery/components/RecoveryMethodCard';
+import RecoveryLevelCard from '@/src/app/(protected)/account/recovery/components/RecoveryLevelCard';
+import RecoveryStatusCard from '@/src/app/(protected)/account/recovery/components/RecoveryStatusCard';
 
 export default function RecoveryPage() {
     const {
@@ -46,6 +43,7 @@ export default function RecoveryPage() {
         useState(false);
 
     const level = getRecoveryLevel(activeMethods.length);
+    const isSecure = activeMethods.length >= 2;
 
     const handleEnableMethod = (type: RecoveryType) => {
         if (type === RecoveryType.QUESTIONS) {
@@ -69,13 +67,11 @@ export default function RecoveryPage() {
     const handleConfigureMethod = (type: RecoveryType) => {
         if (type === RecoveryType.QUESTIONS) {
             setShowQuestionsModal(true);
-
             return;
         }
 
         if (type === RecoveryType.RECOVERY_KEY) {
             setShowRecoveryKeyModal(true);
-
             return;
         }
 
@@ -104,60 +100,12 @@ export default function RecoveryPage() {
                 <Header variant="recovery" />
 
                 <div className="mx-4 rounded-2xl border border-white/10 bg-white/5 p-6">
-                    <div className="mb-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div
-                                className={`flex h-12 w-12 items-center justify-center rounded-xl ${level.background}`}
-                            >
-                                <ShieldCheckIcon
-                                    className={`h-6 w-6 ${level.color}`}
-                                />
-                            </div>
+                    <RecoveryLevelCard
+                        level={level}
+                        activeMethodsCount={activeMethods.length}
+                    />
 
-                            <div>
-                                <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground/40">
-                                    Nível de Recuperação
-                                </h2>
-
-                                <p
-                                    className={`text-2xl font-bold ${level.color}`}
-                                >
-                                    {level.label}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="text-right">
-                            <p className="text-xs text-foreground/40">
-                                {activeMethods.length} de{' '}
-                                {Object.keys(recoveryMethodConfig).length}{' '}
-                                métodos ativos
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="rounded-xl border border-white/5 bg-white/5 p-4">
-                        <div className="flex items-start gap-3">
-                            {activeMethods.length >= 2 ? (
-                                <CheckCircleIcon className="mt-0.5 h-5 w-5 shrink-0 text-green-500" />
-                            ) : (
-                                <AlertTriangleIcon className="mt-0.5 h-5 w-5 shrink-0 text-yellow-500" />
-                            )}
-
-                            <div>
-                                <p className="text-sm text-foreground/60">
-                                    {activeMethods.length >= 2
-                                        ? 'Bom! Adicione mais um método para aumentar a segurança da recuperação.'
-                                        : 'Adicione mais métodos de recuperação para aumentar a segurança da sua conta.'}
-                                </p>
-
-                                <p className="mt-1 text-xs text-foreground/30">
-                                    Recomendamos ativar ao menos 2 métodos
-                                    independentes.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    <RecoveryStatusCard isSecure={isSecure} />
                 </div>
 
                 <div className="mx-4 space-y-4">

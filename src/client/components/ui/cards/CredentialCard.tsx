@@ -164,7 +164,7 @@ export default function CredentialCard({
 
                             <span
                                 className={`
-                                    inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium
+                                    inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-medium
                                     border ${getCategoryBadgeColor(
                                         credential.category,
                                     )}
@@ -274,9 +274,7 @@ export default function CredentialCard({
                     <div className="flex items-center gap-1">
                         <ShieldIcon className="w-3.5 h-3.5 text-green-500" />
 
-                        <span className="text-[10px] text-foreground/30">
-                            Seguro
-                        </span>
+                        <span className="text-foreground/30">Seguro</span>
                     </div>
                 </div>
             </div>

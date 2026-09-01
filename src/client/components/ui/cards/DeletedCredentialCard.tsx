@@ -89,7 +89,7 @@ export default function DeletedCredentialCard({
                                     ? `${daysRemaining} dias restantes`
                                     : 'Expirou'}
                             </div>
-                            <span className="text-[10px] text-foreground/20 mt-0.5 flex items-center gap-1">
+                            <span className="text-foreground/20 mt-0.5 flex items-center gap-1">
                                 <ClockIcon className="w-3 h-3" />
                                 {formatDateTime(credential.updatedAt)}
                             </span>

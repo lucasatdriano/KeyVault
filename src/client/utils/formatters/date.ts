@@ -21,6 +21,38 @@ export function formatDateTime(date: Date | string) {
     });
 }
 
+export function formatShortDateTime(date: Date | string | null): string {
+    if (!date) return '—';
+
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+    if (isNaN(dateObj.getTime())) {
+        return '—';
+    }
+
+    return dateObj.toLocaleString('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+    });
+}
+
+export function formatFullDateTime(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+    if (isNaN(dateObj.getTime())) {
+        return 'Data inválida';
+    }
+
+    return dateObj.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    });
+}
+
 export function getDaysRemaining(deletedAt: string) {
     const deleted = new Date(deletedAt);
     const now = new Date();

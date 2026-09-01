@@ -5,8 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { KeyIcon, LockIcon, ArrowLeftIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { resetPasswordAction } from '@/src/server/actions/recovery/flow/reset-password.action';
-
+import { useAuthActions } from '@/src/client/hooks/auth/useAuthActions';
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 import { validateResetPassword } from '@/src/client/validators/recovery.validator';
 import { ResetPasswordFormData } from '@/src/client/types/recovery';
@@ -20,7 +19,8 @@ export default function ResetPasswordClient() {
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
 
-    const [isLoading, setIsLoading] = useState(false);
+    const { isResettingPassword, handleResetPassword } = useAuthActions();
+
     const [formData, setFormData] = useState<ResetPasswordFormData>({
         newPassword: '',
         confirmPassword: '',
@@ -37,9 +37,7 @@ export default function ResetPasswordClient() {
 
         if (!token) {
             toast.error('Token de recuperação não encontrado.');
-
             router.replace('/forgot-password');
-
             return;
         }
 
@@ -57,40 +55,24 @@ export default function ResetPasswordClient() {
             return;
         }
 
-        setIsLoading(true);
+        const success = await handleResetPassword(token, formData);
 
-        try {
-            const result = await resetPasswordAction(
-                token,
-                formData.newPassword,
-            );
-
-            if (!result.success) {
-                throw new Error(
-                    result.error ?? 'Não foi possível redefinir a senha.',
-                );
-            }
-
-            toast.success('Senha redefinida com sucesso.');
-
+        if (success) {
             setFormData({
                 newPassword: '',
                 confirmPassword: '',
             });
-
-            router.replace('/login');
-        } catch (error) {
-            const message =
-                error instanceof Error
-                    ? error.message
-                    : 'Erro ao redefinir senha. Tente novamente.';
-
             setErrors({
                 newPassword: '',
-                confirmPassword: message,
+                confirmPassword: '',
             });
-        } finally {
-            setIsLoading(false);
+        } else {
+            setErrors((prev) => ({
+                newPassword: '',
+                confirmPassword:
+                    prev.confirmPassword ||
+                    'Erro ao redefinir senha. Tente novamente.',
+            }));
         }
     };
 
@@ -114,12 +96,18 @@ export default function ResetPasswordClient() {
                     type="password"
                     placeholder="********"
                     value={formData.newPassword}
-                    onChange={(e) =>
+                    onChange={(e) => {
                         setFormData({
                             ...formData,
                             newPassword: e.target.value,
-                        })
-                    }
+                        });
+                        if (errors.newPassword) {
+                            setErrors((prev) => ({
+                                ...prev,
+                                newPassword: '',
+                            }));
+                        }
+                    }}
                     leftIcon={<KeyIcon className="h-5 w-5" />}
                     error={errors.newPassword}
                 />
@@ -129,21 +117,27 @@ export default function ResetPasswordClient() {
                     type="password"
                     placeholder="********"
                     value={formData.confirmPassword}
-                    onChange={(e) =>
+                    onChange={(e) => {
                         setFormData({
                             ...formData,
                             confirmPassword: e.target.value,
-                        })
-                    }
+                        });
+                        if (errors.confirmPassword) {
+                            setErrors((prev) => ({
+                                ...prev,
+                                confirmPassword: '',
+                            }));
+                        }
+                    }}
                     leftIcon={<LockIcon className="h-5 w-5" />}
                     error={errors.confirmPassword}
                 />
 
                 <Button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isResettingPassword}
                     fullWidth
-                    isLoading={isLoading}
+                    isLoading={isResettingPassword}
                     loadingText="Redefinindo..."
                 >
                     Redefinir senha
@@ -153,6 +147,7 @@ export default function ResetPasswordClient() {
                     type="button"
                     onClick={() => router.push('/login')}
                     className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 text-sm text-foreground/60 transition-colors duration-200 hover:text-foreground"
+                    disabled={isResettingPassword}
                 >
                     <ArrowLeftIcon className="h-4 w-4" />
                     Voltar para o login

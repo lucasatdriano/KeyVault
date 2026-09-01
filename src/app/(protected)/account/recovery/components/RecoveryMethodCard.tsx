@@ -92,13 +92,13 @@ export default function RecoveryMethodCard({
                             </h3>
 
                             <span
-                                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${statusStyles[cardState]}`}
+                                className={`rounded-full border px-2 py-0.5 font-medium ${statusStyles[cardState]}`}
                             >
                                 {statusText[cardState]}
                             </span>
 
                             <span
-                                className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${getRiskBadgeColor(
+                                className={`rounded-full border px-2 py-0.5 font-medium ${getRiskBadgeColor(
                                     config.riskLevel,
                                 )}`}
                             >

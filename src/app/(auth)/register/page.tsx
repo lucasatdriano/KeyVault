@@ -9,16 +9,10 @@ import {
     LockIcon,
     CheckCircleIcon,
 } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { registerAction } from '@/src/server/actions/auth/register.action';
-import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
-
-import { createVaultKey, encryptVaultKey } from '@/src/shared/crypto/vault';
-import { encryptString } from '@/src/shared/crypto/cipher';
 import { RegisterFormData } from '@/src/shared/types/auth';
 
-import { DEFAULT_CATEGORIES } from '@/src/client/constants/categories';
+import { useAuthActions } from '@/src/client/hooks/auth/useAuthActions';
 import { validateRegisterForm } from '@/src/client/validators/auth.validator';
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 
@@ -29,10 +23,24 @@ import EmailVerificationModal from '@/src/client/components/layout/modals/authMo
 
 export default function RegisterPage() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
-    const [showModal, setShowModal] = useState(false);
-    const [userEmail, setUserEmail] = useState('');
-    const [verificationToken, setVerificationToken] = useState('');
+
+    const {
+        isRegistering,
+        showVerificationModal,
+        userEmail,
+        handleRegister,
+        handleVerificationModalConfirm,
+        handleResendEmail,
+        closeVerificationModal,
+    } = useAuthActions();
+
+    const [formData, setFormData] = useState<RegisterFormData>({
+        name: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+    });
+
     const [acceptTerms, setAcceptTerms] = useState(false);
     const [errors, setErrors] = useState<
         ValidationErrors<RegisterFormData & { terms: string }>
@@ -42,12 +50,6 @@ export default function RegisterPage() {
         password: '',
         confirmPassword: '',
         terms: '',
-    });
-    const [formData, setFormData] = useState<RegisterFormData>({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -74,78 +76,23 @@ export default function RegisterPage() {
             terms: '',
         });
 
-        const vaultKey = createVaultKey();
+        const success = await handleRegister(formData);
 
-        const encryptedCategories = await Promise.all(
-            DEFAULT_CATEGORIES.map(async (category) => {
-                const encrypted = await encryptString(category.name, vaultKey);
-
-                return {
-                    cipherText: encrypted.cipherText,
-                    iv: encrypted.iv,
-                };
-            }),
-        );
-
-        const encryptedVaultKey = await encryptVaultKey(
-            vaultKey,
-            formData.password,
-        );
-
-        setIsLoading(true);
-
-        try {
-            const result = await registerAction({
-                name: formData.name,
-                email: formData.email,
-                password: formData.password,
-                encryptedVaultKey,
-                categories: encryptedCategories,
+        if (success) {
+            setFormData({
+                name: '',
+                email: '',
+                password: '',
+                confirmPassword: '',
             });
-
-            if (!result.success || result.data === null) {
-                toast.error(result.error);
-                return;
-            }
-
-            const normalizedEmail = formData.email.trim().toLowerCase();
-
-            setUserEmail(normalizedEmail);
-            setVerificationToken(result.data.verificationToken);
-            setShowModal(true);
-
-            toast.success('Cadastro realizado! Verifique seu e-mail.');
-        } catch (error) {
-            console.error('Erro ao realizar cadastro:', error);
-
-            toast.error('Erro interno ao realizar cadastro.');
-        } finally {
-            setIsLoading(false);
+            setAcceptTerms(false);
         }
     };
 
-    const handleVerifyEmail = () => {
-        if (!verificationToken) {
-            toast.error('Token de verificação não encontrado.');
-            return;
-        }
-
-        setShowModal(false);
-
-        router.push(
-            `/verify-email?token=${encodeURIComponent(verificationToken)}`,
-        );
-    };
-
-    const handleResendEmail = async () => {
-        const result = await resendEmailVerificationAction(userEmail);
-
-        if (!result.success) {
-            toast.error(result.error);
-            return;
-        }
-
-        toast.success('E-mail reenviado! Verifique seu e-mail novamente.');
+    const handleVerifyAndClose = () => {
+        handleVerificationModalConfirm(() => {
+            closeVerificationModal(); // Fecha o modal do cadastro
+        });
     };
 
     return (
@@ -269,12 +216,12 @@ export default function RegisterPage() {
 
                     <Button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isRegistering}
                         fullWidth
-                        isLoading={isLoading}
+                        isLoading={isRegistering}
                         loadingText="Criando conta..."
                         leftIcon={
-                            !isLoading && (
+                            !isRegistering && (
                                 <CheckCircleIcon className="h-5 w-5" />
                             )
                         }
@@ -296,9 +243,9 @@ export default function RegisterPage() {
             </div>
 
             <EmailVerificationModal
-                isOpen={showModal}
+                isOpen={showVerificationModal}
                 email={userEmail}
-                onVerify={handleVerifyEmail}
+                onVerify={handleVerifyAndClose}
                 onResendEmail={handleResendEmail}
             />
         </>

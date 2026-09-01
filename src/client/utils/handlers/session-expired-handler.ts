@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { clearAllStores } from '@/src/client/store';
+import { clearAllStores } from '@/src/client/store/clear.store';
 
 export function useSessionExpiredHandler() {
     const router = useRouter();

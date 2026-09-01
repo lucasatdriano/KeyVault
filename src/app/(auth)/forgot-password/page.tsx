@@ -3,9 +3,8 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { MailIcon, ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { startRecoveryAction } from '@/src/server/actions/recovery/flow/start-recovery.action';
+import { useAuthActions } from '@/src/client/hooks/auth/useAuthActions';
 
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 import { validateForgotPassword } from '@/src/client/validators/recovery.validator';
@@ -17,7 +16,8 @@ import Logo from '@/src/client/components/layout/logo/Logo';
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
+    const { isStartingRecovery, handleStartRecovery } = useAuthActions();
+
     const [formData, setFormData] = useState<ForgotPasswordFormData>({
         email: '',
     });
@@ -42,35 +42,13 @@ export default function ForgotPasswordPage() {
             return;
         }
 
-        try {
-            setIsLoading(true);
+        const token = await handleStartRecovery(formData);
 
-            const result = await startRecoveryAction(formData.email);
-
-            if (!result.success || !result.data) {
-                throw new Error(
-                    result.error ?? 'Não foi possível iniciar a recuperação.',
-                );
-            }
-
-            toast.success('Recuperação iniciada.');
-
+        if (token) {
             setFormData({ email: '' });
-
             router.push(
-                `/forgot-password/recovery?token=${encodeURIComponent(
-                    result.data.token,
-                )}`,
+                `/forgot-password/recovery?token=${encodeURIComponent(token)}`,
             );
-        } catch (error) {
-            const message =
-                error instanceof Error
-                    ? error.message
-                    : 'Erro ao iniciar recuperação.';
-
-            toast.error(message);
-        } finally {
-            setIsLoading(false);
         }
     };
 
@@ -94,18 +72,25 @@ export default function ForgotPasswordPage() {
                     type="email"
                     placeholder="seu@email.com"
                     value={formData.email}
-                    onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                    }
+                    onChange={(e) => {
+                        setFormData({ ...formData, email: e.target.value });
+                        if (errors.email) {
+                            setErrors((prev) => ({
+                                ...prev,
+                                email: '',
+                            }));
+                        }
+                    }}
                     leftIcon={<MailIcon className="h-5 w-5" />}
                     error={errors.email}
+                    disabled={isStartingRecovery}
                 />
 
                 <Button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isStartingRecovery}
                     fullWidth
-                    isLoading={isLoading}
+                    isLoading={isStartingRecovery}
                     loadingText="Continuando..."
                     rightIcon={<ArrowRightIcon className="h-5 w-5" />}
                 >
@@ -116,6 +101,7 @@ export default function ForgotPasswordPage() {
                     type="button"
                     onClick={() => router.push('/login')}
                     className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 text-sm text-foreground/60 transition-colors duration-200 hover:text-foreground"
+                    disabled={isStartingRecovery}
                 >
                     <ArrowLeftIcon className="h-4 w-4" />
                     Voltar para o login
