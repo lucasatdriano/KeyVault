@@ -12,7 +12,7 @@ import {
 
 import { RecoveryType } from '@/src/shared/types/recovery';
 
-import { useRecoveryFlow } from '@/src/client/hooks/auth/useRecoveryFlow';
+import { useRecoveryFlow } from '@/src/client/hooks/recovery/useRecoveryFlow';
 
 import Button from '@/src/client/components/ui/buttons/Button';
 import Logo from '@/src/client/components/layout/logo/Logo';

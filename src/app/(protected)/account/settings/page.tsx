@@ -2,14 +2,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-
-import { deleteAccountAction } from '@/src/server/actions/auth/delete-account.action';
 
 import { useCredentials } from '@/src/client/hooks/credentials/useCredentials';
 import { useAccountProfile } from '@/src/client/hooks/user/useAccountProfile';
 import { useSettingsStore } from '@/src/client/store/settings.store';
+import { useAuthActions } from '@/src/client/hooks/auth/useAuthActions';
 
 import Header from '@/src/client/components/layout/header/Header';
 import ImportModal from '@/src/client/components/layout/modals/credentialsModals/ImportModal';
@@ -22,8 +19,6 @@ import AboutCard from '@/src/app/(protected)/account/settings/components/AboutCa
 import DangerZoneCard from '@/src/app/(protected)/account/settings/components/DangerZoneCard';
 
 export default function SettingsPage() {
-    const router = useRouter();
-
     const {
         sessionExpiration,
         isUpdatingSessionExpiration,
@@ -39,13 +34,14 @@ export default function SettingsPage() {
         updateAutoLock,
     } = useSettingsStore();
 
+    const { isDeletingAccount, handleDeleteAccount } = useAuthActions();
+
     const [showExportModal, setShowExportModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const [isExporting, setIsExporting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
-    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
     const [lastSync, setLastSync] = useState<Date | null>(null);
 
@@ -99,30 +95,14 @@ export default function SettingsPage() {
         }
     };
 
-    const handleDeleteAccount = async (): Promise<boolean> => {
-        if (isDeletingAccount) return false;
+    const handleDeleteAccountWrapper = async (): Promise<boolean> => {
+        const success = await handleDeleteAccount();
 
-        setIsDeletingAccount(true);
-
-        try {
-            const result = await deleteAccountAction();
-
-            if (!result.success) {
-                toast.error(result.error ?? 'Erro ao excluir a conta.');
-                return false;
-            }
-
-            toast.success('Conta excluída com sucesso.');
+        if (success) {
             setShowDeleteModal(false);
-            router.push('/');
-            return true;
-        } catch (error) {
-            console.error('Erro ao excluir conta:', error);
-            toast.error('Erro ao excluir a conta.');
-            return false;
-        } finally {
-            setIsDeletingAccount(false);
         }
+
+        return success;
     };
 
     return (
@@ -169,7 +149,7 @@ export default function SettingsPage() {
             <DeleteAccountModal
                 isOpen={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
-                onConfirm={handleDeleteAccount}
+                onConfirm={handleDeleteAccountWrapper}
                 isDeleting={isDeletingAccount}
             />
         </>

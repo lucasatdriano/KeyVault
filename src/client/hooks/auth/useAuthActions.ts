@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { registerAction } from '@/src/server/actions/auth/register.action';
 import { loginAction } from '@/src/server/actions/auth/login.action';
 import { logoutAction } from '@/src/server/actions/auth/logout.action';
+import { deleteAccountAction } from '@/src/server/actions/auth/delete-account.action';
 import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
 import { verifyEmailAction } from '@/src/server/actions/auth/verify-email.action';
 import { resetPasswordAction } from '@/src/server/actions/recovery/flow/reset-password.action';
@@ -35,6 +36,7 @@ export function useAuthActions() {
 
     const [isRegistering, setIsRegistering] = useState(false);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
     const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
     const [isResettingPassword, setIsResettingPassword] = useState(false);
     const [isStartingRecovery, setIsStartingRecovery] = useState(false);
@@ -150,6 +152,35 @@ export function useAuthActions() {
         } catch (error) {
             console.error('Erro ao fazer logout:', error);
             setIsLoggingOut(false);
+        }
+    };
+
+    const handleDeleteAccount = async (): Promise<boolean> => {
+        setIsDeletingAccount(true);
+
+        try {
+            const result = await deleteAccountAction();
+
+            if (!result.success) {
+                toast.error(result.error ?? 'Erro ao excluir a conta.');
+                return false;
+            }
+
+            toast.success('Conta excluída com sucesso.');
+
+            clearAllStores({
+                preserveLogoutState: true,
+            });
+
+            router.push('/');
+
+            return true;
+        } catch (error) {
+            console.error('Erro ao excluir conta:', error);
+            toast.error('Erro ao excluir a conta.');
+            return false;
+        } finally {
+            setIsDeletingAccount(false);
         }
     };
 
@@ -281,6 +312,7 @@ export function useAuthActions() {
         isRegistering,
         isLoggingIn,
         isLoggingOut,
+        isDeletingAccount,
         isVerifyingEmail,
         isResettingPassword,
         isStartingRecovery,
@@ -291,6 +323,7 @@ export function useAuthActions() {
         handleRegister,
         handleLogin,
         handleLogout,
+        handleDeleteAccount,
         handleStartRecovery,
         handleVerifyEmail,
         handleResendEmail,
