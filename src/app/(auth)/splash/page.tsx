@@ -42,7 +42,7 @@ export default function SplashScreen({
     }, [loadingDuration, onGetStarted]);
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-between relative">
+        <div className="flex-1 flex flex-col">
             <div className="flex-1 flex flex-col items-center justify-center w-full">
                 <div className="relative z-10 mb-8">
                     <Logo variant="icon" size="xl" />
