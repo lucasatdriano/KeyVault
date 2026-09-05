@@ -71,7 +71,7 @@ export default function LoginPage() {
             <Suspense fallback={null}>
                 <LoginClient />
             </Suspense>
-            <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
+            <main className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
                 <div className="flex justify-center mb-6">
                     <Logo variant="icon" size="lg" />
                 </div>
@@ -160,6 +160,25 @@ export default function LoginPage() {
                         Criar conta
                     </button>
                 </p>
+            </main>
+            <div className="relative py-6 text-center text-sm text-foreground/40">
+                <button
+                    type="button"
+                    onClick={() => router.push('/legal/terms')}
+                    className="cursor-pointer text-primary/70 transition-colors hover:text-primary hover:underline"
+                >
+                    Termos de Uso
+                </button>
+
+                <span className="mx-2">•</span>
+
+                <button
+                    type="button"
+                    onClick={() => router.push('/legal/privacy')}
+                    className="cursor-pointer text-primary/70 transition-colors hover:text-primary hover:underline"
+                >
+                    Política de Privacidade
+                </button>
             </div>
         </>
     );

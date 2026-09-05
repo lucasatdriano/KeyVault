@@ -97,7 +97,7 @@ export default function RegisterPage() {
 
     return (
         <>
-            <div className="relative z-10 my-10 w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
+            <main className="relative z-10 my-10 w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
                 <div className="mb-6 flex justify-center">
                     <Logo variant="icon" size="lg" />
                 </div>
@@ -175,7 +175,7 @@ export default function RegisterPage() {
                         error={errors.confirmPassword}
                     />
 
-                    <div className="flex items-start gap-2 pt-1">
+                    <div className="flex items-center gap-2 pt-1">
                         <input
                             type="checkbox"
                             id="terms"
@@ -190,7 +190,7 @@ export default function RegisterPage() {
                                     }));
                                 }
                             }}
-                            className="mt-1 h-4 w-4 shrink-0 cursor-pointer rounded border-white/20 bg-white/5 accent-primary"
+                            className=" h-4 w-4 shrink-0 cursor-pointer rounded border-white/20 bg-white/5 accent-primary"
                         />
 
                         <label
@@ -198,13 +198,21 @@ export default function RegisterPage() {
                             className="cursor-pointer text-sm text-foreground/70"
                         >
                             Aceito os{' '}
-                            <span className="text-primary hover:underline">
-                                termos de uso
-                            </span>{' '}
+                            <button
+                                type="button"
+                                onClick={() => router.push('/legal/terms')}
+                                className="cursor-pointer text-primary font-semibold hover:underline transition-all duration-200"
+                            >
+                                Termos de Uso
+                            </button>{' '}
                             e{' '}
-                            <span className="text-primary hover:underline">
-                                política de privacidade
-                            </span>
+                            <button
+                                type="button"
+                                onClick={() => router.push('/legal/privacy')}
+                                className="cursor-pointer text-primary font-semibold hover:underline transition-all duration-200"
+                            >
+                                Política de Privacidade
+                            </button>
                         </label>
                     </div>
 
@@ -240,7 +248,7 @@ export default function RegisterPage() {
                         Entrar
                     </button>
                 </p>
-            </div>
+            </main>
 
             <EmailVerificationModal
                 isOpen={showVerificationModal}

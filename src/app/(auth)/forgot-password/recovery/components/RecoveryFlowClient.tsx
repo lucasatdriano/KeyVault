@@ -91,7 +91,7 @@ export default function RecoveryFlowClient() {
 
     return (
         <>
-            <div className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
+            <main className="relative z-10 w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
                 <div className="mb-6 flex justify-center">
                     <Logo variant="icon" size="lg" />
                 </div>
@@ -178,7 +178,7 @@ export default function RecoveryFlowClient() {
                 >
                     Cancelar recuperação
                 </Button>
-            </div>
+            </main>
 
             <QuizAnswerModal
                 isOpen={challenge.type === RecoveryType.QUESTIONS}

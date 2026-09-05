@@ -6,6 +6,8 @@ export const PUBLIC_ROUTES = [
     '/forgot-password/recovery',
     '/forgot-password/reset-password',
     '/verify-email',
+    '/legal/terms',
+    '/legal/privacy',
 ] as const;
 
 export const AUTH_ROUTES = ['/login', '/register'] as const;

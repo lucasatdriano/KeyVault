@@ -42,7 +42,7 @@ export default function SplashScreen({
     }, [loadingDuration, onGetStarted]);
 
     return (
-        <div className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col">
             <div className="flex-1 flex flex-col items-center justify-center w-full">
                 <div className="relative z-10 mb-8">
                     <Logo variant="icon" size="xl" />
@@ -78,6 +78,6 @@ export default function SplashScreen({
             <p className="text-foreground/40 text-sm text-center py-6 relative z-10 font-light w-full">
                 Criptografia de ponta a ponta · Sem acesso aos seus dados
             </p>
-        </div>
+        </main>
     );
 }

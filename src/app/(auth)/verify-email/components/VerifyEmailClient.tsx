@@ -24,7 +24,7 @@ export function VerifyEmailClient() {
     };
 
     return (
-        <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
+        <main className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/10">
             <div className="flex justify-center mb-6">
                 <Logo variant="icon" size="lg" />
             </div>
@@ -47,6 +47,6 @@ export function VerifyEmailClient() {
             >
                 Verificar E-mail
             </Button>
-        </div>
+        </main>
     );
 }
