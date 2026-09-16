@@ -12,14 +12,14 @@ import {
 import {
     CreateRecoveryMethodData,
     UpdateRecoveryMethodData,
-    CreateRecoveryDataData,
+    CreateRecoveryDataPayload,
     CreateRecoveryQuestionData,
     CreateRecoverySessionData,
     UpdateRecoverySessionData,
     CreateRecoveryChallengeData,
     UpdateRecoveryChallengeData,
     RecoverySessionWithChallenges,
-    UpdateRecoveryDataData,
+    UpdateRecoveryDataPayload,
 } from '@/src/server/types/repository/recovery';
 
 export class RecoveryRepository {
@@ -132,16 +132,34 @@ export class RecoveryRepository {
     }
 
     async createRecoveryData(
-        data: CreateRecoveryDataData,
+        data: CreateRecoveryDataPayload,
     ): Promise<RecoveryData> {
         return this.prisma.recoveryData.create({
             data,
         });
     }
 
+    async upsertRecoveryData(
+        userId: string,
+        data: UpdateRecoveryDataPayload,
+    ): Promise<RecoveryData> {
+        return this.prisma.recoveryData.upsert({
+            where: {
+                userId,
+            },
+            create: {
+                userId,
+                salt: data.salt ?? '',
+                vaultKeyCipherText: data.vaultKeyCipherText ?? '',
+                vaultKeyIv: data.vaultKeyIv ?? '',
+            },
+            update: data,
+        });
+    }
+
     async updateRecoveryData(
         userId: string,
-        data: UpdateRecoveryDataData,
+        data: UpdateRecoveryDataPayload,
     ): Promise<RecoveryData> {
         return this.prisma.recoveryData.update({
             where: {

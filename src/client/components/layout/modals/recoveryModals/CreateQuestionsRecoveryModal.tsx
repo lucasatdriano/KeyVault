@@ -34,11 +34,13 @@ interface QuizFormModalProps {
     isLoading?: boolean;
 }
 
+const EMPTY_QUESTIONS: QuizQuestion[] = [];
+
 export default function QuizFormModal({
     isOpen,
     onClose,
     onSave,
-    initialQuestions = [],
+    initialQuestions = EMPTY_QUESTIONS,
     title = 'Criar perguntas de segurança',
     maxQuestions = 3,
     isLoading = false,

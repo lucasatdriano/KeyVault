@@ -5,22 +5,17 @@ import {
     recoverySettingsService,
 } from '@/src/server/containers/services';
 import { ActionResult } from '@/src/server/types/action';
-import { RecoveryQuestionChallengeData } from '@/src/server/types/service/recovery';
 
-export async function getRecoveryQuestionsAction(): Promise<
-    ActionResult<RecoveryQuestionChallengeData[] | null>
-> {
+export async function deleteRecoveryDataAction(): Promise<ActionResult<null>> {
     try {
         const user = await authService.requireAuth();
 
-        const questions = await recoverySettingsService.getDecryptedQuestions(
-            user.id,
-            user.email,
-        );
+        await recoverySettingsService.deleteRecoveryData(user.id);
 
         return {
             success: true,
-            data: questions,
+            message: 'Dados de recuperação removidos com sucesso.',
+            data: null,
         };
     } catch (error) {
         return {
@@ -28,7 +23,7 @@ export async function getRecoveryQuestionsAction(): Promise<
             error:
                 error instanceof Error
                     ? error.message
-                    : 'Erro ao carregar perguntas de recuperação.',
+                    : 'Erro interno ao remover dados de recuperação.',
             data: null,
         };
     }

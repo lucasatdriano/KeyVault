@@ -19,17 +19,11 @@ export interface UpdateRecoveryMethodData {
     secretHash?: string | null;
 }
 
-export interface CreateRecoveryDataData extends RecoveryDataPayload {
+export type CreateRecoveryDataPayload = RecoveryDataPayload & {
     userId: string;
-}
+};
 
-export interface UpdateRecoveryDataData {
-    encryptedDataKey?: string;
-    iv?: string;
-    salt?: string;
-    vaultKeyCipherText?: string;
-    vaultKeyIv?: string;
-}
+export type UpdateRecoveryDataPayload = Partial<RecoveryDataPayload>;
 
 export interface CreateRecoveryQuestionData {
     userId: string;

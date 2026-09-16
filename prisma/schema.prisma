@@ -82,7 +82,7 @@ model User {
   recoveryMethods     RecoveryMethod[]
   recoverySessions    RecoverySession[]
   recoveryQuestions   RecoveryQuestion[]
-  recoveryData        RecoveryData[]
+  recoveryData        RecoveryData?
 }
 
 model EmailVerification {
@@ -294,16 +294,14 @@ model RecoveryQuestion {
 
 model RecoveryData {
   id                 String   @id @default(cuid())
-  
+
   userId             String   @unique
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  encryptedDataKey   String
-  iv                 String
-  salt               String
+  vaultKeyCipherText String   @db.Text
+  vaultKeyIv         String   @db.Text
 
-  vaultKeyCipherText String
-  vaultKeyIv         String
+  salt               String   @db.Text
 
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

@@ -2,8 +2,6 @@
 
 import { RecoveryMethod } from '@/src/generated/prisma/client';
 
-import { RecoveryDataPayload } from '@/src/shared/types/recovery';
-
 import {
     authService,
     recoverySettingsService,
@@ -13,7 +11,6 @@ import { ActionResult } from '@/src/server/types/action';
 
 export async function configureRecoveryPasswordAction(
     recoveryPassword: string,
-    recoveryData: RecoveryDataPayload,
 ): Promise<ActionResult<RecoveryMethod | null>> {
     try {
         const user = await authService.requireAuth();
@@ -22,7 +19,6 @@ export async function configureRecoveryPasswordAction(
         const method = await recoverySettingsService.configureRecoveryPassword(
             user.id,
             recoveryPassword,
-            recoveryData,
             audit,
         );
 

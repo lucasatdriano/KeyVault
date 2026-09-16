@@ -1,26 +1,26 @@
 'use server';
 
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
+
 import {
     authService,
     recoverySettingsService,
 } from '@/src/server/containers/services';
 import { ActionResult } from '@/src/server/types/action';
-import { RecoveryQuestionChallengeData } from '@/src/server/types/service/recovery';
 
-export async function getRecoveryQuestionsAction(): Promise<
-    ActionResult<RecoveryQuestionChallengeData[] | null>
+export async function getRecoveryDataAction(): Promise<
+    ActionResult<RecoveryDataPayload | null>
 > {
     try {
         const user = await authService.requireAuth();
 
-        const questions = await recoverySettingsService.getDecryptedQuestions(
+        const recoveryData = await recoverySettingsService.getRecoveryData(
             user.id,
-            user.email,
         );
 
         return {
             success: true,
-            data: questions,
+            data: recoveryData,
         };
     } catch (error) {
         return {
@@ -28,7 +28,7 @@ export async function getRecoveryQuestionsAction(): Promise<
             error:
                 error instanceof Error
                     ? error.message
-                    : 'Erro ao carregar perguntas de recuperação.',
+                    : 'Erro ao buscar dados de recuperação.',
             data: null,
         };
     }

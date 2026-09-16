@@ -1,7 +1,5 @@
 'use server';
 
-import { RecoveryDataPayload } from '@/src/shared/types/recovery';
-
 import {
     authService,
     recoverySettingsService,
@@ -10,22 +8,26 @@ import { getAuditContext } from '@/src/server/utils/audit-context';
 import { ActionResult } from '@/src/server/types/action';
 
 export async function generateRecoveryKeyAction(
-    recoveryData: RecoveryDataPayload,
-): Promise<ActionResult<string | null>> {
+    recoveryKeyHash: string,
+): Promise<ActionResult<null>> {
     try {
+        if (!recoveryKeyHash?.trim()) {
+            throw new Error('Hash da chave de recuperação não encontrado.');
+        }
+
         const user = await authService.requireAuth();
         const audit = await getAuditContext();
 
-        const recoveryKey = await recoverySettingsService.generateRecoveryKey(
+        await recoverySettingsService.generateRecoveryKey(
             user.id,
-            recoveryData,
+            recoveryKeyHash,
             audit,
         );
 
         return {
             success: true,
             message: 'Chave de recuperação gerada com sucesso.',
-            data: recoveryKey,
+            data: null,
         };
     } catch (error) {
         return {

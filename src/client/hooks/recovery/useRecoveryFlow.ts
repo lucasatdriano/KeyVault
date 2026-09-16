@@ -17,22 +17,36 @@ import {
     RecoveryQuestion,
 } from '@/src/client/types/recovery';
 
+import { useRecoveryStore } from '@/src/client/store/recovery.store';
+
 export function useRecoveryFlow() {
     const router = useRouter();
 
     const [challenge, setChallenge] = useState<RecoveryChallenge | null>(null);
     const [questions, setQuestions] = useState<RecoveryQuestion[]>([]);
+
     const [isLoading, setIsLoading] = useState(true);
     const [isVerifying, setIsVerifying] = useState(false);
+
+    const recoverySecrets = useRecoveryStore((state) => state.recoverySecrets);
+    const addRecoverySecrets = useRecoveryStore(
+        (state) => state.addRecoverySecrets,
+    );
+    const clearRecoverySecrets = useRecoveryStore(
+        (state) => state.clearRecoverySecrets,
+    );
 
     const handleInvalidRecovery = useCallback(
         (message?: string) => {
             if (message) {
                 toast.error(message);
             }
+
+            clearRecoverySecrets();
+
             router.replace('/forgot-password');
         },
-        [router],
+        [router, clearRecoverySecrets],
     );
 
     const loadQuestions = useCallback(async (token: string) => {
@@ -89,20 +103,26 @@ export function useRecoveryFlow() {
 
     const handleChallengeCompleted = useCallback(
         async (
-            result: { completed: boolean; nextMethod: RecoveryType | null },
+            result: {
+                completed: boolean;
+                nextMethod: RecoveryType | null;
+            },
             token: string,
         ) => {
             if (result.completed) {
                 toast.success('Sua identidade foi verificada com sucesso.');
+
                 router.replace(
                     `/forgot-password/reset-password?token=${encodeURIComponent(
                         token,
                     )}`,
                 );
+
                 return;
             }
 
             toast.success('Método de recuperação verificado.');
+
             await loadCurrentChallenge(token);
         },
         [router, loadCurrentChallenge],
@@ -127,6 +147,10 @@ export function useRecoveryFlow() {
                     );
                 }
 
+                addRecoverySecrets(
+                    answers.map((answer) => answer.trim().toLowerCase()),
+                );
+
                 await handleChallengeCompleted(result.data, token);
             } catch (error) {
                 toast.error(
@@ -134,12 +158,13 @@ export function useRecoveryFlow() {
                         ? error.message
                         : 'Não foi possível verificar as respostas.',
                 );
+
                 await loadCurrentChallenge(token);
             } finally {
                 setIsVerifying(false);
             }
         },
-        [handleChallengeCompleted, loadCurrentChallenge],
+        [addRecoverySecrets, handleChallengeCompleted, loadCurrentChallenge],
     );
 
     const handleVerifyRecoveryPassword = useCallback(
@@ -160,6 +185,8 @@ export function useRecoveryFlow() {
                     );
                 }
 
+                addRecoverySecrets([recoveryPassword]);
+
                 await handleChallengeCompleted(result.data, token);
             } catch (error) {
                 toast.error(
@@ -167,12 +194,13 @@ export function useRecoveryFlow() {
                         ? error.message
                         : 'Não foi possível verificar a senha.',
                 );
+
                 await loadCurrentChallenge(token);
             } finally {
                 setIsVerifying(false);
             }
         },
-        [handleChallengeCompleted, loadCurrentChallenge],
+        [addRecoverySecrets, handleChallengeCompleted, loadCurrentChallenge],
     );
 
     const handleVerifyRecoveryKey = useCallback(
@@ -193,6 +221,8 @@ export function useRecoveryFlow() {
                     );
                 }
 
+                addRecoverySecrets([recoveryKey.trim()]);
+
                 await handleChallengeCompleted(result.data, token);
             } catch (error) {
                 toast.error(
@@ -200,29 +230,39 @@ export function useRecoveryFlow() {
                         ? error.message
                         : 'Não foi possível verificar a chave.',
                 );
+
                 await loadCurrentChallenge(token);
             } finally {
                 setIsVerifying(false);
             }
         },
-        [handleChallengeCompleted, loadCurrentChallenge],
+        [addRecoverySecrets, handleChallengeCompleted, loadCurrentChallenge],
     );
 
     const handleCancel = useCallback(() => {
         if (isVerifying) return;
+
+        clearRecoverySecrets();
+
         router.replace('/forgot-password');
-    }, [router, isVerifying]);
+    }, [router, isVerifying, clearRecoverySecrets]);
 
     return {
         challenge,
         questions,
+
         isLoading,
         isVerifying,
 
+        recoverySecrets,
+
         loadCurrentChallenge,
+
         handleVerifyQuestions,
         handleVerifyRecoveryPassword,
         handleVerifyRecoveryKey,
+
+        clearRecoverySecrets,
         handleCancel,
     };
 }

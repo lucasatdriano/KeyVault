@@ -8,13 +8,20 @@ import { registerAction } from '@/src/server/actions/auth/register.action';
 import { loginAction } from '@/src/server/actions/auth/login.action';
 import { logoutAction } from '@/src/server/actions/auth/logout.action';
 import { deleteAccountAction } from '@/src/server/actions/auth/delete-account.action';
-import { resendEmailVerificationAction } from '@/src/server/actions/auth/verify-email.action';
-import { verifyEmailAction } from '@/src/server/actions/auth/verify-email.action';
-import { resetPasswordAction } from '@/src/server/actions/recovery/flow/reset-password.action';
+import {
+    resendEmailVerificationAction,
+    verifyEmailAction,
+} from '@/src/server/actions/auth/verify-email.action';
+import { resetRecoveryPasswordAction } from '@/src/server/actions/recovery/flow/reset-password.action';
+import { getRecoveryDataForResetAction } from '@/src/server/actions/recovery/flow/get-recovery-data-for-reset.action';
 import { startRecoveryAction } from '@/src/server/actions/recovery/flow/start-recovery.action';
 
-import { createVaultKey, encryptVaultKey } from '@/src/shared/crypto/vault';
-import { decryptVaultKey } from '@/src/shared/crypto/vault';
+import {
+    createVaultKey,
+    encryptVaultKey,
+    decryptVaultKey,
+} from '@/src/shared/crypto/vault';
+import { decryptRecoveryVaultKeyFromSecrets } from '@/src/shared/crypto/recovery';
 import { encryptString } from '@/src/shared/crypto/cipher';
 import { RegisterFormData, LoginFormData } from '@/src/shared/types/auth';
 
@@ -50,6 +57,7 @@ export function useAuthActions() {
         const encryptedCategories = await Promise.all(
             DEFAULT_CATEGORIES.map(async (category) => {
                 const encrypted = await encryptString(category.name, vaultKey);
+
                 return {
                     cipherText: encrypted.cipherText,
                     iv: encrypted.iv,
@@ -82,13 +90,16 @@ export function useAuthActions() {
 
             setUserEmail(normalizedEmail);
             setVerificationToken(result.data.verificationToken);
+
             setShowVerificationModal(true);
 
             toast.success('Cadastro realizado! Verifique seu e-mail.');
+
             return true;
         } catch (error) {
             console.error('Erro ao realizar cadastro:', error);
             toast.error('Erro interno ao realizar cadastro.');
+
             return false;
         } finally {
             setIsRegistering(false);
@@ -118,10 +129,12 @@ export function useAuthActions() {
 
             toast.success(result.message || 'Login realizado com sucesso!');
             router.push('/dashboard');
+
             return true;
         } catch (error) {
             console.error('Erro ao fazer login:', error);
             toast.error('Erro interno ao fazer login.');
+
             return false;
         } finally {
             setIsLoggingIn(false);
@@ -141,6 +154,7 @@ export function useAuthActions() {
             if (!result.success) {
                 console.error(result.error);
                 setIsLoggingOut(false);
+
                 return;
             }
 
@@ -178,6 +192,7 @@ export function useAuthActions() {
         } catch (error) {
             console.error('Erro ao excluir conta:', error);
             toast.error('Erro ao excluir a conta.');
+
             return false;
         } finally {
             setIsDeletingAccount(false);
@@ -205,7 +220,9 @@ export function useAuthActions() {
                 error instanceof Error
                     ? error.message
                     : 'Erro ao iniciar recuperação.';
+
             toast.error(message);
+
             return null;
         } finally {
             setIsStartingRecovery(false);
@@ -230,10 +247,12 @@ export function useAuthActions() {
 
             toast.success('E-mail verificado com sucesso!');
             router.push('/login');
+
             return true;
         } catch (error) {
             console.error('Erro ao verificar e-mail:', error);
             toast.error('Erro interno ao verificar e-mail.');
+
             return false;
         } finally {
             setIsVerifyingEmail(false);
@@ -254,19 +273,60 @@ export function useAuthActions() {
     const handleResetPassword = async (
         token: string,
         formData: ResetPasswordFormData,
+        recoverySecrets: string[],
     ) => {
         if (!token) {
             toast.error('Token de recuperação não encontrado.');
             router.replace('/forgot-password');
+
+            return false;
+        }
+
+        if (recoverySecrets.length === 0) {
+            toast.error('Nenhum segredo de recuperação foi encontrado.');
+            router.replace('/forgot-password');
+
             return false;
         }
 
         setIsResettingPassword(true);
 
+        let vaultKey: Uint8Array | null = null;
+
         try {
-            const result = await resetPasswordAction(
+            const recoveryDataResult =
+                await getRecoveryDataForResetAction(token);
+
+            if (!recoveryDataResult.success || !recoveryDataResult.data) {
+                toast.error(
+                    recoveryDataResult.error ??
+                        'Não foi possível carregar os dados de recuperação.',
+                );
+
+                return false;
+            }
+
+            const { salt, vaultKeyCipherText, vaultKeyIv } =
+                recoveryDataResult.data;
+
+            vaultKey = await decryptRecoveryVaultKeyFromSecrets({
+                encryptedVaultKey: {
+                    cipherText: vaultKeyCipherText,
+                    iv: vaultKeyIv,
+                },
+                recoverySecrets,
+                salt,
+            });
+
+            const newEncryptedVault = await encryptVaultKey(
+                vaultKey,
+                formData.newPassword,
+            );
+
+            const result = await resetRecoveryPasswordAction(
                 token,
                 formData.newPassword,
+                JSON.stringify(newEncryptedVault),
             );
 
             if (!result.success) {
@@ -278,15 +338,19 @@ export function useAuthActions() {
 
             toast.success('Senha redefinida com sucesso.');
             router.replace('/login');
+
             return true;
         } catch (error) {
             const message =
                 error instanceof Error
                     ? error.message
                     : 'Erro ao redefinir senha. Tente novamente.';
+
             toast.error(message);
+
             return false;
         } finally {
+            vaultKey?.fill(0);
             setIsResettingPassword(false);
         }
     };
@@ -316,7 +380,9 @@ export function useAuthActions() {
         isVerifyingEmail,
         isResettingPassword,
         isStartingRecovery,
+
         showVerificationModal,
+
         userEmail,
         verificationToken,
 
@@ -328,6 +394,7 @@ export function useAuthActions() {
         handleVerifyEmail,
         handleResendEmail,
         handleResetPassword,
+
         handleVerificationModalConfirm,
         closeVerificationModal,
     };

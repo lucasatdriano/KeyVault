@@ -2,28 +2,43 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { getRecoveryQuestionsAction } from '@/src/server/actions/recovery/settings/get-recovery-questions.action';
 import { getRecoveryMethodsAction } from '@/src/server/actions/recovery/settings/get-recovery-methods.action';
-import { enableRecoveryMethodAction } from '@/src/server/actions/recovery/settings/enable-recovery-method.action';
-import { disableRecoveryMethodAction } from '@/src/server/actions/recovery/settings/disable-recovery-method.action';
+import { getRecoveryDataAction } from '@/src/server/actions/recovery/settings/get-recovery-data.action';
 import { configureRecoveryQuestionsAction } from '@/src/server/actions/recovery/settings/configure-recovery-questions.action';
 import { configureRecoveryPasswordAction } from '@/src/server/actions/recovery/settings/configure-recovery-password.action';
 import { generateRecoveryKeyAction } from '@/src/server/actions/recovery/settings/generate-recovery-key.action';
+import { updateRecoveryDataAction } from '@/src/server/actions/recovery/settings/update-recovery-data.action';
+import { disableRecoveryMethodAction } from '@/src/server/actions/recovery/settings/disable-recovery-method.action';
+import { deleteRecoveryDataAction } from '@/src/server/actions/recovery/settings/delete-recovery-data.action';
 
+import {
+    createRecoveryData,
+    decryptRecoveryVaultKeyFromSecrets,
+} from '@/src/shared/crypto/recovery';
+import {
+    generateRecoveryKey,
+    generateSha256,
+} from '@/src/shared/crypto/random';
 import { RecoveryDataPayload, RecoveryType } from '@/src/shared/types/recovery';
-import { createRecoveryData } from '@/src/shared/crypto/recovery';
 
 import { useVaultStore } from '@/src/client/store/vault.store';
-import { useAuth } from '@/src/client/hooks/auth/useAuth';
-import { QuizQuestion, RecoveryMethod } from '@/src/client/types/recovery';
+import {
+    QuizQuestion,
+    RecoveryMethod,
+    RecoveryQuestion,
+} from '@/src/client/types/recovery';
 
 export function useRecovery() {
-    const { user } = useAuth();
     const [methods, setMethods] = useState<RecoveryMethod[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [recoverySecrets, setRecoverySecrets] = useState<
+        Partial<Record<RecoveryType, string>>
+    >({});
+
     const vaultKey = useVaultStore((state) => state.vaultKey);
-    const userEmail = user?.email;
 
     const loadMethods = useCallback(async () => {
         try {
@@ -56,6 +71,14 @@ export function useRecovery() {
         [methods],
     );
 
+    const activeNonEmailMethods = useMemo(
+        () =>
+            activeMethods.filter(
+                (method) => method.type !== RecoveryType.EMAIL,
+            ),
+        [activeMethods],
+    );
+
     const getMethod = useCallback(
         (type: RecoveryType) => {
             return methods.find((method) => method.type === type);
@@ -69,94 +92,295 @@ export function useRecovery() {
         recoveryKeyMethod?.enabled && recoveryKeyMethod?.secretHash,
     );
 
-    const createRecoveryDataPayload =
-        useCallback(async (): Promise<RecoveryDataPayload> => {
+    const setRecoverySecret = useCallback(
+        (type: RecoveryType, secret: string) => {
+            const normalizedSecret = secret.trim();
+
+            if (!normalizedSecret) {
+                throw new Error('Segredo de recuperação inválido.');
+            }
+
+            setRecoverySecrets((current) => ({
+                ...current,
+                [type]: normalizedSecret,
+            }));
+        },
+        [],
+    );
+
+    const clearRecoverySecret = useCallback((type: RecoveryType) => {
+        setRecoverySecrets((current) => {
+            const updated = { ...current };
+
+            delete updated[type];
+
+            return updated;
+        });
+    }, []);
+
+    const clearRecoverySecrets = useCallback(() => {
+        setRecoverySecrets({});
+    }, []);
+
+    const getActiveRecoverySecrets = useCallback(
+        (
+            secretsOverride?: Partial<Record<RecoveryType, string>>,
+            methodsOverride?: RecoveryMethod[],
+        ): string[] => {
+            const currentMethods = methodsOverride ?? activeMethods;
+            const currentSecrets = secretsOverride ?? recoverySecrets;
+
+            const secrets: string[] = [];
+
+            for (const method of currentMethods) {
+                if (method.type === RecoveryType.EMAIL) {
+                    continue;
+                }
+
+                const secret = currentSecrets[method.type];
+
+                if (!secret) {
+                    throw new Error(
+                        `O segredo do método ${method.type} não está disponível.`,
+                    );
+                }
+
+                secrets.push(secret);
+            }
+
+            return secrets;
+        },
+        [activeMethods, recoverySecrets],
+    );
+
+    const getQuestionsForReauth = useCallback(async (): Promise<
+        RecoveryQuestion[]
+    > => {
+        const result = await getRecoveryQuestionsAction();
+
+        if (!result.success || !result.data) {
+            throw new Error(
+                result.error ??
+                    'Não foi possível carregar suas perguntas de recuperação.',
+            );
+        }
+
+        return result.data;
+    }, []);
+
+    const getMissingActiveRecoveryMethods = useCallback(
+        (
+            secretsOverride?: Partial<Record<RecoveryType, string>>,
+            methodsOverride?: RecoveryMethod[],
+        ): RecoveryMethod[] => {
+            const currentMethods = methodsOverride ?? activeNonEmailMethods;
+            const currentSecrets = secretsOverride ?? recoverySecrets;
+
+            return currentMethods.filter(
+                (method) => !currentSecrets[method.type],
+            );
+        },
+        [activeNonEmailMethods, recoverySecrets],
+    );
+
+    const verifyExistingRecoverySecrets = useCallback(
+        async (
+            secretsToVerify: Partial<Record<RecoveryType, string>>,
+        ): Promise<boolean> => {
+            try {
+                const secrets = getActiveRecoverySecrets(
+                    secretsToVerify,
+                    activeNonEmailMethods,
+                );
+
+                if (secrets.length === 0) {
+                    return true;
+                }
+
+                const result = await getRecoveryDataAction();
+
+                if (!result.success || !result.data) {
+                    throw new Error(
+                        result.error ??
+                            'Não foi possível carregar os dados de recuperação.',
+                    );
+                }
+
+                const { salt, vaultKeyCipherText, vaultKeyIv } = result.data;
+
+                const vaultKeyFromSecrets =
+                    await decryptRecoveryVaultKeyFromSecrets({
+                        encryptedVaultKey: {
+                            cipherText: vaultKeyCipherText,
+                            iv: vaultKeyIv,
+                        },
+                        recoverySecrets: secrets,
+                        salt,
+                    });
+
+                vaultKeyFromSecrets.fill(0);
+
+                return true;
+            } catch {
+                return false;
+            }
+        },
+        [getActiveRecoverySecrets, activeNonEmailMethods],
+    );
+
+    const hasAllActiveRecoverySecrets = useCallback(
+        (
+            secretsOverride?: Partial<Record<RecoveryType, string>>,
+            methodsOverride?: RecoveryMethod[],
+        ) => {
+            return (
+                getMissingActiveRecoveryMethods(
+                    secretsOverride,
+                    methodsOverride,
+                ).length === 0
+            );
+        },
+        [getMissingActiveRecoveryMethods],
+    );
+
+    const createRecoveryDataPayload = useCallback(
+        async (
+            secretsOverride?: Partial<Record<RecoveryType, string>>,
+            methodsOverride?: RecoveryMethod[],
+        ): Promise<RecoveryDataPayload> => {
             if (!vaultKey) {
                 throw new Error('Chave do cofre não encontrada.');
             }
 
-            if (!userEmail) {
-                throw new Error('E-mail do usuário não encontrado.');
+            const secrets = getActiveRecoverySecrets(
+                secretsOverride,
+                methodsOverride,
+            );
+
+            if (secrets.length === 0) {
+                throw new Error(
+                    'É necessário possuir pelo menos um método de recuperação.',
+                );
             }
 
             return createRecoveryData({
                 vaultKey,
-                email: userEmail,
+                recoverySecrets: secrets,
             });
-        }, [vaultKey, userEmail]);
-
-    const handleEnableMethod = useCallback(
-        async (type: RecoveryType) => {
-            try {
-                setIsSubmitting(true);
-
-                const result = await enableRecoveryMethodAction(type);
-
-                if (!result.success) {
-                    toast.error(result.error ?? 'Erro ao ativar método.');
-
-                    return false;
-                }
-
-                toast.success('Método de recuperação ativado com sucesso.');
-
-                await loadMethods();
-
-                return true;
-            } catch {
-                toast.error('Erro ao ativar método de recuperação.');
-
-                return false;
-            } finally {
-                setIsSubmitting(false);
-            }
         },
-        [loadMethods],
+        [vaultKey, getActiveRecoverySecrets],
     );
 
-    const handleDisableMethod = useCallback(
-        async (type: RecoveryType) => {
+    const persistRecoveryData = useCallback(
+        async (recoveryData: RecoveryDataPayload) => {
+            const result = await updateRecoveryDataAction(recoveryData);
+
+            if (!result.success) {
+                throw new Error(
+                    result.error ??
+                        'Erro ao atualizar os dados de recuperação.',
+                );
+            }
+
+            return result.data;
+        },
+        [],
+    );
+
+    const handleUpdateRecoveryData = useCallback(
+        async (
+            secretsOverride?: Partial<Record<RecoveryType, string>>,
+            methodsOverride?: RecoveryMethod[],
+        ) => {
             try {
-                setIsSubmitting(true);
+                const recoveryData = await createRecoveryDataPayload(
+                    secretsOverride,
+                    methodsOverride,
+                );
 
-                const result = await disableRecoveryMethodAction(type);
-
-                if (!result.success) {
-                    toast.error(result.error ?? 'Erro ao desativar método.');
-
-                    return false;
-                }
-
-                toast.success('Método de recuperação desativado.');
-
-                await loadMethods();
+                await persistRecoveryData(recoveryData);
 
                 return true;
-            } catch {
-                toast.error('Erro ao desativar método de recuperação.');
+            } catch (error) {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : 'Erro ao atualizar dados de recuperação.',
+                );
 
                 return false;
-            } finally {
-                setIsSubmitting(false);
             }
         },
-        [loadMethods],
+        [createRecoveryDataPayload, persistRecoveryData],
     );
 
     const handleConfigureQuestions = useCallback(
-        async (questions: QuizQuestion[]) => {
+        async (
+            questions: QuizQuestion[],
+            existingSecrets: Partial<Record<RecoveryType, string>> = {},
+        ) => {
             try {
                 setIsSubmitting(true);
 
-                const recoveryData = await createRecoveryDataPayload();
+                if (!vaultKey) {
+                    throw new Error('Chave do cofre não encontrada.');
+                }
 
-                const result = await configureRecoveryQuestionsAction(
-                    questions.map((question) => ({
-                        question: question.question.trim(),
-                        answer: question.answer,
-                    })),
-                    recoveryData,
+                if (questions.length === 0) {
+                    throw new Error(
+                        'É necessário informar pelo menos uma pergunta.',
+                    );
+                }
+
+                const normalizedQuestions = questions.map((question) => {
+                    const normalizedQuestion = question.question.trim();
+
+                    const normalizedAnswer = question.answer
+                        .trim()
+                        .toLowerCase();
+
+                    if (!normalizedQuestion) {
+                        throw new Error(
+                            'Todas as perguntas precisam possuir uma pergunta válida.',
+                        );
+                    }
+
+                    if (!normalizedAnswer) {
+                        throw new Error(
+                            'Todas as perguntas precisam possuir uma resposta.',
+                        );
+                    }
+
+                    return {
+                        question: normalizedQuestion,
+                        answer: normalizedAnswer,
+                    };
+                });
+
+                const answers = normalizedQuestions.map(
+                    (question) => question.answer,
                 );
+
+                const questionsSecret = answers
+                    .map((answer) => `${answer.length}:${answer}`)
+                    .join('|');
+
+                const updatedSecrets = {
+                    ...recoverySecrets,
+                    ...existingSecrets,
+                    [RecoveryType.QUESTIONS]: questionsSecret,
+                };
+
+                const updatedMethods = methods
+                    .map((method) =>
+                        method.type === RecoveryType.QUESTIONS
+                            ? { ...method, enabled: true }
+                            : method,
+                    )
+                    .filter((method) => method.enabled);
+
+                const result =
+                    await configureRecoveryQuestionsAction(normalizedQuestions);
 
                 if (!result.success) {
                     toast.error(
@@ -166,11 +390,22 @@ export function useRecovery() {
                     return false;
                 }
 
+                setRecoverySecrets(updatedSecrets);
+
+                const success = await handleUpdateRecoveryData(
+                    updatedSecrets,
+                    updatedMethods,
+                );
+
+                if (!success) {
+                    return false;
+                }
+
+                await loadMethods();
+
                 toast.success(
                     'Perguntas de segurança configuradas com sucesso.',
                 );
-
-                await loadMethods();
 
                 return true;
             } catch (error) {
@@ -185,20 +420,47 @@ export function useRecovery() {
                 setIsSubmitting(false);
             }
         },
-        [createRecoveryDataPayload, loadMethods],
+        [
+            vaultKey,
+            recoverySecrets,
+            methods,
+            handleUpdateRecoveryData,
+            loadMethods,
+        ],
     );
 
     const handleConfigureRecoveryPassword = useCallback(
-        async (recoveryPassword: string) => {
+        async (
+            recoveryPassword: string,
+            existingSecrets: Partial<Record<RecoveryType, string>> = {},
+        ) => {
             try {
                 setIsSubmitting(true);
 
-                const recoveryData = await createRecoveryDataPayload();
+                const normalizedPassword = recoveryPassword.trim();
 
-                const result = await configureRecoveryPasswordAction(
-                    recoveryPassword,
-                    recoveryData,
-                );
+                if (!normalizedPassword) {
+                    throw new Error('A senha de recuperação é obrigatória.');
+                }
+
+                const updatedSecrets = {
+                    ...recoverySecrets,
+                    ...existingSecrets,
+                    [RecoveryType.RECOVERY_PASSWORD]: normalizedPassword,
+                };
+
+                const updatedMethods = methods
+                    .map((method) =>
+                        method.type === RecoveryType.RECOVERY_PASSWORD
+                            ? { ...method, enabled: true }
+                            : method,
+                    )
+                    .filter((method) => method.enabled);
+
+                getActiveRecoverySecrets(updatedSecrets, updatedMethods);
+
+                const result =
+                    await configureRecoveryPasswordAction(normalizedPassword);
 
                 if (!result.success) {
                     toast.error(
@@ -209,9 +471,20 @@ export function useRecovery() {
                     return false;
                 }
 
-                toast.success('Senha de recuperação configurada com sucesso.');
+                setRecoverySecrets(updatedSecrets);
+
+                const success = await handleUpdateRecoveryData(
+                    updatedSecrets,
+                    updatedMethods,
+                );
+
+                if (!success) {
+                    return false;
+                }
 
                 await loadMethods();
+
+                toast.success('Senha de recuperação configurada com sucesso.');
 
                 return true;
             } catch (error) {
@@ -226,22 +499,168 @@ export function useRecovery() {
                 setIsSubmitting(false);
             }
         },
-        [createRecoveryDataPayload, loadMethods],
+        [
+            recoverySecrets,
+            methods,
+            getActiveRecoverySecrets,
+            handleUpdateRecoveryData,
+            loadMethods,
+        ],
     );
 
-    const handleGenerateRecoveryKey = useCallback(async (): Promise<string> => {
-        const recoveryData = await createRecoveryDataPayload();
+    const handleGenerateRecoveryKey = useCallback(
+        async (
+            existingSecrets: Partial<Record<RecoveryType, string>> = {},
+        ): Promise<string> => {
+            try {
+                setIsSubmitting(true);
 
-        const result = await generateRecoveryKeyAction(recoveryData);
+                const recoveryKey = generateRecoveryKey();
 
-        if (!result.success || !result.data) {
-            throw new Error(
-                result.error ?? 'Erro ao gerar chave de recuperação.',
-            );
-        }
+                const recoveryKeyHash = await generateSha256(recoveryKey);
 
-        return result.data;
-    }, [createRecoveryDataPayload]);
+                const updatedSecrets = {
+                    ...recoverySecrets,
+                    ...existingSecrets,
+                    [RecoveryType.RECOVERY_KEY]: recoveryKey,
+                };
+
+                const updatedMethods = methods
+                    .map((method) =>
+                        method.type === RecoveryType.RECOVERY_KEY
+                            ? { ...method, enabled: true }
+                            : method,
+                    )
+                    .filter((method) => method.enabled);
+
+                getActiveRecoverySecrets(updatedSecrets, updatedMethods);
+
+                const result = await generateRecoveryKeyAction(recoveryKeyHash);
+
+                if (!result.success) {
+                    throw new Error(
+                        result.error ?? 'Erro ao gerar chave de recuperação.',
+                    );
+                }
+
+                setRecoverySecrets(updatedSecrets);
+
+                const success = await handleUpdateRecoveryData(
+                    updatedSecrets,
+                    updatedMethods,
+                );
+
+                if (!success) {
+                    throw new Error(
+                        'A chave foi criada, mas os dados de recuperação não puderam ser atualizados.',
+                    );
+                }
+
+                return recoveryKey;
+            } catch (error) {
+                throw new Error(
+                    error instanceof Error
+                        ? error.message
+                        : 'Erro ao gerar chave de recuperação.',
+                );
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
+        [
+            recoverySecrets,
+            methods,
+            getActiveRecoverySecrets,
+            handleUpdateRecoveryData,
+        ],
+    );
+
+    const handleDisableMethod = useCallback(
+        async (
+            type: RecoveryType,
+            existingSecrets: Partial<Record<RecoveryType, string>> = {},
+        ) => {
+            try {
+                setIsSubmitting(true);
+
+                const method = methods.find((item) => item.type === type);
+
+                if (!method) {
+                    throw new Error('Método de recuperação não encontrado.');
+                }
+
+                const updatedSecrets = {
+                    ...recoverySecrets,
+                    ...existingSecrets,
+                };
+
+                delete updatedSecrets[type];
+
+                const remainingMethods = activeNonEmailMethods.filter(
+                    (item) => item.type !== type,
+                );
+
+                if (remainingMethods.length > 0) {
+                    getActiveRecoverySecrets(updatedSecrets, remainingMethods);
+                }
+
+                const result = await disableRecoveryMethodAction(type);
+
+                if (!result.success) {
+                    toast.error(result.error ?? 'Erro ao desativar método.');
+
+                    return false;
+                }
+
+                setRecoverySecrets(updatedSecrets);
+
+                if (remainingMethods.length > 0) {
+                    const success = await handleUpdateRecoveryData(
+                        updatedSecrets,
+                        remainingMethods,
+                    );
+
+                    if (!success) {
+                        return false;
+                    }
+                } else {
+                    const deleteResult = await deleteRecoveryDataAction();
+
+                    if (!deleteResult.success) {
+                        toast.error(
+                            deleteResult.error ??
+                                'Erro ao remover os dados de recuperação.',
+                        );
+                        return false;
+                    }
+                }
+
+                await loadMethods();
+
+                toast.success('Método de recuperação desativado.');
+
+                return true;
+            } catch (error) {
+                toast.error(
+                    error instanceof Error
+                        ? error.message
+                        : 'Erro ao desativar método de recuperação.',
+                );
+
+                return false;
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
+        [
+            methods,
+            activeNonEmailMethods,
+            recoverySecrets,
+            getActiveRecoverySecrets,
+            handleUpdateRecoveryData,
+            loadMethods,
+        ],
+    );
 
     return {
         methods,
@@ -252,13 +671,26 @@ export function useRecovery() {
 
         hasRecoveryKey,
 
+        recoverySecrets,
+
         loadMethods,
         getMethod,
 
-        handleEnableMethod,
+        setRecoverySecret,
+        clearRecoverySecret,
+        clearRecoverySecrets,
+
+        getQuestionsForReauth,
+        getMissingActiveRecoveryMethods,
+        verifyExistingRecoverySecrets,
+        hasAllActiveRecoverySecrets,
+
         handleDisableMethod,
         handleConfigureQuestions,
         handleConfigureRecoveryPassword,
         handleGenerateRecoveryKey,
+
+        createRecoveryDataPayload,
+        handleUpdateRecoveryData,
     };
 }

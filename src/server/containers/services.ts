@@ -45,7 +45,6 @@ export const recoveryFlowService = new RecoveryFlowService(
 
 export const recoverySettingsService = new RecoverySettingsService(
     recoveryRepository,
-    userRepository,
     auditService,
 );
 

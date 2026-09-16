@@ -7,141 +7,167 @@ import {
 } from '@/src/shared/crypto/random';
 import { decrypt, encrypt, importAESKey } from '@/src/shared/crypto/aes';
 import { base64ToBytes, bytesToBase64 } from '@/src/shared/crypto/encoding';
-import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 import { deriveArgon2Key } from '@/src/shared/crypto/argon2';
-import {
-    DecryptRecoveryDataKeyParams,
-    EncryptedRecoveryVaultKey,
-    EncryptRecoveryDataKeyParams,
-} from '@/src/shared/types/crypto/recovery';
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
+import { EncryptedRecoveryVaultKey } from '@/src/shared/types/crypto/recovery';
 
 export function createRecoveryDataKey(): Uint8Array {
     return generateRandomKey();
 }
 
+function normalizeSecret(secret: string): string {
+    const normalized = secret.trim();
+
+    if (!normalized) {
+        throw new Error('Segredo de recuperação inválido.');
+    }
+
+    return normalized;
+}
+
+export function combineRecoverySecrets(secrets: string[]): Uint8Array {
+    if (secrets.length === 0) {
+        throw new Error(
+            'É necessário possuir pelo menos um método de recuperação.',
+        );
+    }
+
+    const normalizedSecrets = secrets.map(normalizeSecret);
+
+    const encoder = new TextEncoder();
+
+    const combined = normalizedSecrets
+        .map((secret) => `${secret.length}:${secret}`)
+        .join('|');
+
+    return encoder.encode(combined);
+}
+
+export async function deriveRecoveryDataKey(
+    secrets: string[],
+    salt: Uint8Array,
+): Promise<Uint8Array> {
+    if (secrets.length === 0) {
+        throw new Error('Nenhum segredo de recuperação foi informado.');
+    }
+
+    if (!salt?.length) {
+        throw new Error('Salt de recuperação inválido.');
+    }
+
+    const combinedSecrets = combineRecoverySecrets(secrets);
+
+    try {
+        return await deriveArgon2Key({
+            password: bytesToBase64(combinedSecrets),
+            salt,
+            params: DEFAULT_ARGON2_PARAMS,
+            hashLength: DEFAULT_KEY_LENGTH,
+        });
+    } finally {
+        combinedSecrets.fill(0);
+    }
+}
+
 export async function createRecoveryData({
     vaultKey,
-    email,
+    recoverySecrets,
+    salt,
 }: {
     vaultKey: Uint8Array;
-    email: string;
+    recoverySecrets: string[];
+    salt?: Uint8Array;
 }): Promise<RecoveryDataPayload> {
-    if (!vaultKey) {
+    if (!vaultKey?.length) {
         throw new Error('Chave do cofre não encontrada.');
     }
 
-    if (!email) {
-        throw new Error('E-mail do usuário não encontrado.');
+    if (!recoverySecrets?.length) {
+        throw new Error('É necessário informar os segredos de recuperação.');
     }
 
-    const recoveryDataKey = createRecoveryDataKey();
+    const recoverySalt = salt ?? generateSalt();
+
+    if (!recoverySalt.length) {
+        throw new Error('Salt de recuperação inválido.');
+    }
+
+    const recoveryDataKey = await deriveRecoveryDataKey(
+        recoverySecrets,
+        recoverySalt,
+    );
 
     try {
-        const encryptedRecoveryDataKey = await encryptRecoveryDataKey({
-            recoveryDataKey,
-            email: email,
-        });
-
-        const encryptedRecoveryVaultKey = await encryptRecoveryVaultKey(
+        const encryptedVaultKey = await encryptRecoveryVaultKey(
             vaultKey,
             recoveryDataKey,
         );
 
         return {
-            encryptedDataKey: encryptedRecoveryDataKey.encryptedDataKey,
-            iv: encryptedRecoveryDataKey.iv,
-            salt: encryptedRecoveryDataKey.salt,
-            vaultKeyCipherText: encryptedRecoveryVaultKey.cipherText,
-            vaultKeyIv: encryptedRecoveryVaultKey.iv,
+            salt: bytesToBase64(recoverySalt),
+            vaultKeyCipherText: encryptedVaultKey.cipherText,
+            vaultKeyIv: encryptedVaultKey.iv,
         };
     } finally {
         recoveryDataKey.fill(0);
     }
 }
 
-export async function encryptRecoveryDataKey({
-    recoveryDataKey,
-    email,
-}: EncryptRecoveryDataKeyParams) {
-    const normalizedEmail = email.trim().toLowerCase();
-
-    if (!normalizedEmail) {
-        throw new Error('O e-mail é obrigatório.');
-    }
-
-    if (recoveryDataKey.length !== DEFAULT_KEY_LENGTH) {
-        throw new Error('RecoveryDataKey inválida.');
+export async function createRecoveryDataKeyFromSecrets(
+    recoverySecrets: string[],
+): Promise<{
+    salt: Uint8Array;
+    recoveryDataKey: Uint8Array;
+}> {
+    if (!recoverySecrets?.length) {
+        throw new Error('É necessário informar os segredos de recuperação.');
     }
 
     const salt = generateSalt();
 
-    const wrappingKeyBytes = await deriveArgon2Key({
-        password: normalizedEmail,
+    const recoveryDataKey = await deriveRecoveryDataKey(recoverySecrets, salt);
+
+    return {
         salt,
-        params: DEFAULT_ARGON2_PARAMS,
-        hashLength: DEFAULT_KEY_LENGTH,
-    });
-
-    try {
-        const wrappingKey = await importAESKey({
-            keyData: wrappingKeyBytes,
-        });
-
-        const iv = generateIV();
-
-        const encrypted = await encrypt({
-            key: wrappingKey,
-            data: recoveryDataKey,
-            iv,
-        });
-
-        return {
-            encryptedDataKey: bytesToBase64(encrypted),
-            iv: bytesToBase64(iv),
-            salt: bytesToBase64(salt),
-        };
-    } finally {
-        wrappingKeyBytes.fill(0);
-    }
+        recoveryDataKey,
+    };
 }
 
-export async function decryptRecoveryDataKey({
-    encryptedDataKey,
-    iv,
+export async function decryptRecoveryVaultKeyFromSecrets({
+    encryptedVaultKey,
+    recoverySecrets,
     salt,
-    email,
-}: DecryptRecoveryDataKeyParams): Promise<Uint8Array> {
-    const normalizedEmail = email.trim().toLowerCase();
+}: {
+    encryptedVaultKey: EncryptedRecoveryVaultKey;
+    recoverySecrets: string[];
+    salt: string;
+}): Promise<Uint8Array> {
+    if (!recoverySecrets?.length) {
+        throw new Error('Nenhum segredo de recuperação foi informado.');
+    }
 
-    if (!normalizedEmail) {
-        throw new Error('O e-mail é obrigatório.');
+    if (!salt) {
+        throw new Error('Salt de recuperação não encontrado.');
     }
 
     const saltBytes = base64ToBytes(salt);
 
-    const wrappingKeyBytes = await deriveArgon2Key({
-        password: normalizedEmail,
-        salt: saltBytes,
-        params: DEFAULT_ARGON2_PARAMS,
-        hashLength: DEFAULT_KEY_LENGTH,
-    });
-
     try {
-        const wrappingKey = await importAESKey({
-            keyData: wrappingKeyBytes,
-        });
-
-        return await decrypt({
-            key: wrappingKey,
-            ciphertext: base64ToBytes(encryptedDataKey),
-            iv: base64ToBytes(iv),
-        });
-    } catch {
-        throw new Error(
-            'Não foi possível descriptografar os dados de recuperação.',
+        const recoveryDataKey = await deriveRecoveryDataKey(
+            recoverySecrets,
+            saltBytes,
         );
+
+        try {
+            return await decryptRecoveryVaultKey(
+                encryptedVaultKey,
+                recoveryDataKey,
+            );
+        } finally {
+            recoveryDataKey.fill(0);
+        }
     } finally {
-        wrappingKeyBytes.fill(0);
+        saltBytes.fill(0);
     }
 }
 
@@ -149,6 +175,17 @@ export async function encryptRecoveryVaultKey(
     vaultKey: Uint8Array,
     recoveryDataKey: Uint8Array,
 ): Promise<EncryptedRecoveryVaultKey> {
+    if (!vaultKey?.length) {
+        throw new Error('Vault Key inválida.');
+    }
+
+    if (
+        !recoveryDataKey?.length ||
+        recoveryDataKey.length !== DEFAULT_KEY_LENGTH
+    ) {
+        throw new Error('RecoveryDataKey inválida.');
+    }
+
     const key = await importAESKey({
         keyData: recoveryDataKey,
     });
@@ -171,15 +208,43 @@ export async function decryptRecoveryVaultKey(
     encryptedVaultKey: EncryptedRecoveryVaultKey,
     recoveryDataKey: Uint8Array,
 ): Promise<Uint8Array> {
+    if (
+        !recoveryDataKey?.length ||
+        recoveryDataKey.length !== DEFAULT_KEY_LENGTH
+    ) {
+        throw new Error('RecoveryDataKey inválida.');
+    }
+
     const key = await importAESKey({
         keyData: recoveryDataKey,
     });
 
-    const vaultKey = await decrypt({
+    return decrypt({
         key,
         ciphertext: base64ToBytes(encryptedVaultKey.cipherText),
         iv: base64ToBytes(encryptedVaultKey.iv),
     });
+}
 
-    return vaultKey;
+export async function deriveQuestionEncryptionKey(
+    email: string,
+): Promise<Uint8Array> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+        throw new Error('E-mail inválido.');
+    }
+
+    const keyMaterial = `keyvault:recovery:questions:${normalizedEmail}`;
+
+    const encoder = new TextEncoder();
+
+    const salt = encoder.encode('keyvault:recovery:questions:v1');
+
+    return deriveArgon2Key({
+        password: keyMaterial,
+        salt,
+        params: DEFAULT_ARGON2_PARAMS,
+        hashLength: 32,
+    });
 }

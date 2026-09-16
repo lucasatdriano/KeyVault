@@ -1,24 +1,20 @@
 'use server';
 
+import { RecoveryDataPayload } from '@/src/shared/types/recovery';
+
 import { recoveryFlowService } from '@/src/server/containers/services';
 import { ActionResult } from '@/src/server/types/action';
 
-export async function resetRecoveryPasswordAction(
+export async function getRecoveryDataForResetAction(
     token: string,
-    newPassword: string,
-    newEncryptedVault: string,
-): Promise<ActionResult<null>> {
+): Promise<ActionResult<RecoveryDataPayload | null>> {
     try {
-        await recoveryFlowService.resetPassword(
-            token,
-            newPassword,
-            newEncryptedVault,
-        );
+        const recoveryData =
+            await recoveryFlowService.getRecoveryDataForReset(token);
 
         return {
             success: true,
-            message: 'Senha alterada com sucesso.',
-            data: null,
+            data: recoveryData,
         };
     } catch (error) {
         return {
@@ -26,7 +22,7 @@ export async function resetRecoveryPasswordAction(
             error:
                 error instanceof Error
                     ? error.message
-                    : 'Erro interno ao finalizar a recuperação.',
+                    : 'Erro ao buscar dados de recuperação.',
             data: null,
         };
     }

@@ -1,9 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { InfoIcon, RefreshCwIcon } from 'lucide-react';
 
 import { formatShortDateTime } from '@/src/client/utils/formatters/date';
-import Link from 'next/link';
 
 interface AboutCardProps {
     lastSync: Date | null;
@@ -25,7 +25,7 @@ export default function AboutCard({ lastSync }: AboutCardProps) {
                     <span className="text-sm text-foreground/60">Versão</span>
 
                     <span className="text-sm font-medium text-foreground">
-                        1.0.0
+                        1.1.0
                     </span>
                 </div>
 

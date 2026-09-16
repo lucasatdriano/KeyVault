@@ -6,12 +6,8 @@ import {
 } from '@/src/shared/constants/recovery/recovery.constants';
 import { DEFAULT_ARGON2_PARAMS } from '@/src/shared/constants/crypto/argon2.constants';
 import { generateRandomHex, generateSha256 } from '@/src/shared/crypto/random';
-import { encryptVaultKey } from '@/src/shared/crypto/vault';
+import { deriveArgon2Key } from '@/src/shared/crypto/argon2';
 import { decryptString } from '@/src/shared/crypto/cipher';
-import {
-    decryptRecoveryDataKey,
-    decryptRecoveryVaultKey,
-} from '@/src/shared/crypto/recovery';
 
 import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
 import { AuthRepository } from '@/src/server/database/repositories/auth.repository';
@@ -35,6 +31,10 @@ export class RecoveryFlowService {
 
     async startRecovery(email: string) {
         const normalizedEmail = email.trim().toLowerCase();
+
+        if (!normalizedEmail) {
+            throw new Error('E-mail inválido.');
+        }
 
         const user = await this.authRepository.findUserByEmail(normalizedEmail);
 
@@ -63,7 +63,6 @@ export class RecoveryFlowService {
         const expiresAt = new Date(Date.now() + this.SESSION_DURATION);
 
         const token = generateRandomHex(32);
-
         const tokenHash = await generateSha256(token);
 
         const session = await this.recoveryRepository.createSession({
@@ -93,6 +92,35 @@ export class RecoveryFlowService {
             currentStep: session.currentStep,
             nextMethod: methods[0],
             expiresAt,
+        };
+    }
+
+    async getRecoveryDataForReset(token: string) {
+        const session =
+            await this.recoverySessionService.getCompletedSessionByToken(token);
+
+        const recoveryData = await this.recoveryRepository.findRecoveryData(
+            session.userId,
+        );
+
+        if (!recoveryData) {
+            throw new Error('Dados de recuperação não encontrados.');
+        }
+
+        if (
+            !recoveryData.vaultKeyCipherText ||
+            !recoveryData.vaultKeyIv ||
+            !recoveryData.salt
+        ) {
+            throw new Error(
+                'A chave do cofre não está disponível para recuperação.',
+            );
+        }
+
+        return {
+            salt: recoveryData.salt,
+            vaultKeyCipherText: recoveryData.vaultKeyCipherText,
+            vaultKeyIv: recoveryData.vaultKeyIv,
         };
     }
 
@@ -130,7 +158,7 @@ export class RecoveryFlowService {
     ) {
         return this.verifySecretChallenge(
             token,
-            recoveryPassword,
+            recoveryPassword.trim(),
             RecoveryType.RECOVERY_PASSWORD,
             'Senha de recuperação',
         );
@@ -147,8 +175,10 @@ export class RecoveryFlowService {
             session.userId,
         );
 
-        if (questions.length === 0) {
-            throw new Error('Nenhuma pergunta de recuperação foi encontrada.');
+        if (questions.length < 2) {
+            throw new Error(
+                'As perguntas de recuperação não estão configuradas corretamente.',
+            );
         }
 
         const user = await this.userRepository.findById(session.userId);
@@ -157,56 +187,38 @@ export class RecoveryFlowService {
             throw new Error('Usuário não encontrado.');
         }
 
-        const recoveryData = await this.recoveryRepository.findRecoveryData(
-            session.userId,
+        const questionEncryptionKey = await this.deriveQuestionEncryptionKey(
+            user.email,
         );
-
-        if (!recoveryData) {
-            throw new Error('Dados de recuperação não encontrados.');
-        }
-
-        const recoveryDataKey = await decryptRecoveryDataKey({
-            encryptedDataKey: recoveryData.encryptedDataKey,
-            iv: recoveryData.iv,
-            salt: recoveryData.salt,
-            email: user.email,
-        });
 
         try {
             const decryptedQuestions = await Promise.all(
                 questions.map(async (question) => ({
                     id: question.id,
-
                     question: await decryptString(
                         {
                             cipherText: question.questionCipherText,
                             iv: question.questionIv,
                         },
-                        recoveryDataKey,
+                        questionEncryptionKey,
                     ),
                 })),
             );
 
             return {
                 currentStep: session.currentStep,
-
                 completedSteps: session.completedSteps,
-
                 totalSteps: session.challenges.length,
-
                 attempts: challenge.attempts,
-
                 maxAttempts: challenge.maxAttempts,
-
                 remainingAttempts: Math.max(
                     challenge.maxAttempts - challenge.attempts,
                     0,
                 ),
-
                 questions: decryptedQuestions,
             };
         } finally {
-            recoveryDataKey.fill(0);
+            questionEncryptionKey.fill(0);
         }
     }
 
@@ -221,8 +233,10 @@ export class RecoveryFlowService {
             session.userId,
         );
 
-        if (questions.length === 0) {
-            throw new Error('Nenhuma pergunta de recuperação foi encontrada.');
+        if (questions.length < 2) {
+            throw new Error(
+                'As perguntas de recuperação não estão configuradas corretamente.',
+            );
         }
 
         if (answers.length !== questions.length) {
@@ -230,15 +244,14 @@ export class RecoveryFlowService {
         }
 
         for (let index = 0; index < questions.length; index++) {
-            const answer = answers[index]?.trim();
+            const answer = answers[index]?.trim().toLowerCase();
 
             if (!answer) {
                 throw new Error('Todas as perguntas precisam ser respondidas.');
             }
 
             const isValid = await verifyPassword({
-                password: answer.toLowerCase(),
-
+                password: answer,
                 hash: questions[index].answerHash,
             });
 
@@ -257,11 +270,23 @@ export class RecoveryFlowService {
         );
     }
 
-    async resetPassword(token: string, newPassword: string) {
+    async resetPassword(
+        token: string,
+        newPassword: string,
+        newEncryptedVault: string,
+    ) {
         validateNewPasswordData(newPassword);
+
+        if (!newEncryptedVault?.trim()) {
+            throw new Error('Vault Key criptografada não encontrada.');
+        }
 
         const session =
             await this.recoverySessionService.getCompletedSessionByToken(token);
+
+        if (session.completedSteps !== session.challenges.length) {
+            throw new Error('A recuperação ainda não foi concluída.');
+        }
 
         const user = await this.authRepository.findUserById(session.userId);
 
@@ -269,65 +294,16 @@ export class RecoveryFlowService {
             throw new Error('Usuário não encontrado.');
         }
 
-        const recoveryData = await this.recoveryRepository.findRecoveryData(
-            user.id,
-        );
-
-        if (!recoveryData) {
-            throw new Error('Dados de recuperação não encontrados.');
-        }
-
-        if (!recoveryData.vaultKeyCipherText || !recoveryData.vaultKeyIv) {
-            throw new Error(
-                'A chave do cofre não está disponível para recuperação.',
-            );
-        }
-
-        const recoveryDataKey = await decryptRecoveryDataKey({
-            encryptedDataKey: recoveryData.encryptedDataKey,
-            iv: recoveryData.iv,
-            salt: recoveryData.salt,
-            email: user.email,
+        const newPasswordHash = await hashPassword({
+            password: newPassword,
+            params: DEFAULT_ARGON2_PARAMS,
         });
 
-        try {
-            const vaultKey = await decryptRecoveryVaultKey(
-                {
-                    cipherText: recoveryData.vaultKeyCipherText,
-                    iv: recoveryData.vaultKeyIv,
-                },
-                recoveryDataKey,
-            );
+        await this.authRepository.updatePassword(user.id, newPasswordHash);
 
-            try {
-                const newEncryptedVault = await encryptVaultKey(
-                    vaultKey,
-                    newPassword,
-                    DEFAULT_ARGON2_PARAMS,
-                );
+        await this.authRepository.updateVaultKey(user.id, newEncryptedVault);
 
-                const newPasswordHash = await hashPassword({
-                    password: newPassword,
-                    params: DEFAULT_ARGON2_PARAMS,
-                });
-
-                await this.authRepository.updatePassword(
-                    user.id,
-                    newPasswordHash,
-                );
-
-                await this.authRepository.updateVaultKey(
-                    user.id,
-                    JSON.stringify(newEncryptedVault),
-                );
-
-                await this.recoverySessionService.completeRecovery(session.id);
-            } finally {
-                vaultKey.fill(0);
-            }
-        } finally {
-            recoveryDataKey.fill(0);
-        }
+        await this.recoverySessionService.completeRecovery(session.id);
 
         return {
             success: true,
@@ -394,5 +370,28 @@ export class RecoveryFlowService {
         throw new Error(
             `${message} Você ainda possui ${result.remainingAttempts} tentativa(s).`,
         );
+    }
+
+    private async deriveQuestionEncryptionKey(
+        email: string,
+    ): Promise<Uint8Array> {
+        const normalizedEmail = email.trim().toLowerCase();
+
+        if (!normalizedEmail) {
+            throw new Error('E-mail inválido.');
+        }
+
+        const keyMaterial = `keyvault:recovery:questions:${normalizedEmail}`;
+
+        const encoder = new TextEncoder();
+
+        const salt = encoder.encode('keyvault:recovery:questions:v1');
+
+        return deriveArgon2Key({
+            password: keyMaterial,
+            salt,
+            params: DEFAULT_ARGON2_PARAMS,
+            hashLength: 32,
+        });
     }
 }

@@ -6,6 +6,7 @@ import { KeyIcon, LockIcon, ArrowLeftIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useAuthActions } from '@/src/client/hooks/auth/useAuthActions';
+import { useRecoveryStore } from '@/src/client/store/recovery.store';
 import { hasValidationErrors, ValidationErrors } from '@/src/client/validators';
 import { validateResetPassword } from '@/src/client/validators/recovery.validator';
 import { ResetPasswordFormData } from '@/src/client/types/recovery';
@@ -17,14 +18,22 @@ import Logo from '@/src/client/components/layout/logo/Logo';
 export default function ResetPasswordClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
+
     const token = searchParams.get('token');
 
     const { isResettingPassword, handleResetPassword } = useAuthActions();
+
+    const recoverySecrets = useRecoveryStore((state) => state.recoverySecrets);
+
+    const clearRecoverySecrets = useRecoveryStore(
+        (state) => state.clearRecoverySecrets,
+    );
 
     const [formData, setFormData] = useState<ResetPasswordFormData>({
         newPassword: '',
         confirmPassword: '',
     });
+
     const [errors, setErrors] = useState<
         ValidationErrors<ResetPasswordFormData>
     >({
@@ -37,7 +46,17 @@ export default function ResetPasswordClient() {
 
         if (!token) {
             toast.error('Token de recuperação não encontrado.');
+
             router.replace('/forgot-password');
+
+            return;
+        }
+
+        if (recoverySecrets.length === 0) {
+            toast.error('Os dados da recuperação não foram encontrados.');
+
+            router.replace('/forgot-password');
+
             return;
         }
 
@@ -55,13 +74,20 @@ export default function ResetPasswordClient() {
             return;
         }
 
-        const success = await handleResetPassword(token, formData);
+        const success = await handleResetPassword(
+            token,
+            formData,
+            recoverySecrets,
+        );
 
         if (success) {
+            clearRecoverySecrets();
+
             setFormData({
                 newPassword: '',
                 confirmPassword: '',
             });
+
             setErrors({
                 newPassword: '',
                 confirmPassword: '',
@@ -101,6 +127,7 @@ export default function ResetPasswordClient() {
                             ...formData,
                             newPassword: e.target.value,
                         });
+
                         if (errors.newPassword) {
                             setErrors((prev) => ({
                                 ...prev,
@@ -122,6 +149,7 @@ export default function ResetPasswordClient() {
                             ...formData,
                             confirmPassword: e.target.value,
                         });
+
                         if (errors.confirmPassword) {
                             setErrors((prev) => ({
                                 ...prev,
