@@ -8,7 +8,10 @@ import { RecoveryDataPayload } from '@/src/shared/types/recovery';
 
 import { RecoveryRepository } from '@/src/server/database/repositories/recovery.repository';
 import { AuditService } from '@/src/server/services/audit.service';
-import { hashPassword } from '@/src/server/crypto/passwordHasher';
+import {
+    hashPassword,
+    verifyPassword,
+} from '@/src/server/crypto/passwordHasher';
 import { validateUserId } from '@/src/server/validators/user/user.validator';
 import { AuditContext } from '@/src/server/types/service/audit';
 import { RecoveryQuestionData } from '@/src/server/types/service/recovery';
@@ -35,31 +38,6 @@ export class RecoverySettingsService {
         validateUserId(userId);
 
         return this.recoveryRepository.findMethodsByUserId(userId);
-    }
-
-    async getRecoveryData(userId: string) {
-        validateUserId(userId);
-
-        const recoveryData =
-            await this.recoveryRepository.findRecoveryData(userId);
-
-        if (!recoveryData) {
-            throw new Error('Dados de recuperação não encontrados.');
-        }
-
-        if (
-            !recoveryData.vaultKeyCipherText ||
-            !recoveryData.vaultKeyIv ||
-            !recoveryData.salt
-        ) {
-            throw new Error('Os dados de recuperação estão incompletos.');
-        }
-
-        return {
-            salt: recoveryData.salt,
-            vaultKeyCipherText: recoveryData.vaultKeyCipherText,
-            vaultKeyIv: recoveryData.vaultKeyIv,
-        };
     }
 
     async disableMethod(
@@ -370,5 +348,79 @@ export class RecoverySettingsService {
         }
 
         await this.recoveryRepository.deleteRecoveryData(userId);
+    }
+
+    async verifyRecoveryPassword(
+        userId: string,
+        recoveryPassword: string,
+    ): Promise<boolean> {
+        validateUserId(userId);
+
+        const method = await this.recoveryRepository.findMethod(
+            userId,
+            RecoveryType.RECOVERY_PASSWORD,
+        );
+
+        if (!method?.enabled || !method.secretHash) {
+            throw new Error('Senha de recuperação indisponível.');
+        }
+
+        return verifyPassword({
+            password: recoveryPassword.trim(),
+            hash: method.secretHash,
+        });
+    }
+
+    async verifyRecoveryKey(
+        userId: string,
+        recoveryKey: string,
+    ): Promise<boolean> {
+        validateUserId(userId);
+
+        const method = await this.recoveryRepository.findMethod(
+            userId,
+            RecoveryType.RECOVERY_KEY,
+        );
+
+        if (!method?.enabled || !method.secretHash) {
+            throw new Error('Chave de recuperação indisponível.');
+        }
+
+        return verifyPassword({
+            password: recoveryKey.trim(),
+            hash: method.secretHash,
+        });
+    }
+
+    async verifyQuestionsAnswers(
+        userId: string,
+        answers: string[],
+    ): Promise<boolean> {
+        validateUserId(userId);
+
+        const questions = await this.recoveryRepository.findQuestions(userId);
+
+        if (questions.length < 2 || answers.length !== questions.length) {
+            return false;
+        }
+
+        for (let index = 0; index < questions.length; index++) {
+            const answer = answers[index]?.trim().toLowerCase();
+
+            if (!answer) {
+                return false;
+            }
+
+            const isValid = await verifyPassword({
+                password: answer,
+                hash: questions[index].answerHash,
+            });
+
+            if (!isValid) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

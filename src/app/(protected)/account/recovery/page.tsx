@@ -31,6 +31,7 @@ type PendingAction =
 export default function RecoveryPage() {
     const {
         activeMethods,
+        activeNonEmailMethods,
         isLoading,
         isSubmitting,
         hasRecoveryKey,
@@ -39,7 +40,7 @@ export default function RecoveryPage() {
         getMethod,
 
         getMissingActiveRecoveryMethods,
-        verifyExistingRecoverySecrets,
+        verifyRecoverySecret,
         getQuestionsForReauth,
 
         handleDisableMethod,
@@ -146,7 +147,14 @@ export default function RecoveryPage() {
             return;
         }
 
-        const missing = getMissingActiveRecoveryMethods();
+        const remainingMethods = activeNonEmailMethods.filter(
+            (method) => method.type !== target,
+        );
+
+        const missing = getMissingActiveRecoveryMethods(
+            undefined,
+            remainingMethods,
+        );
 
         if (missing.length === 0) {
             handleDisableMethod(target);
@@ -159,7 +167,22 @@ export default function RecoveryPage() {
         setReauthQueue(missing.map((method) => method.type));
     };
 
-    const handleReauthSubmit = async (type: RecoveryType, secret: string) => {
+    const handleReauthSubmit = async (
+        type: RecoveryType,
+        rawValue: string | string[],
+    ) => {
+        setIsVerifyingReauth(true);
+
+        const secret = await verifyRecoverySecret(type, rawValue);
+
+        setIsVerifyingReauth(false);
+
+        if (!secret) {
+            toast.error('Dado incorreto. Tente novamente.');
+
+            return;
+        }
+
         const updatedSecrets = {
             ...reauthSecrets,
             [type]: secret,
@@ -170,25 +193,6 @@ export default function RecoveryPage() {
         if (remaining.length > 0) {
             setReauthSecrets(updatedSecrets);
             setReauthQueue(remaining);
-
-            return;
-        }
-
-        setIsVerifyingReauth(true);
-
-        const isValid = await verifyExistingRecoverySecrets(updatedSecrets);
-
-        setIsVerifyingReauth(false);
-
-        if (!isValid) {
-            toast.error(
-                'Um ou mais dados informados estão incorretos. Tente novamente.',
-            );
-
-            const missing = getMissingActiveRecoveryMethods();
-
-            setReauthSecrets({});
-            setReauthQueue(missing.map((method) => method.type));
 
             return;
         }
@@ -292,12 +296,7 @@ export default function RecoveryPage() {
                 isOpen={currentReauthType === RecoveryType.QUESTIONS}
                 onClose={cancelReauth}
                 onVerify={async (answers) => {
-                    const secret = answers
-                        .map((answer) => answer.trim().toLowerCase())
-                        .map((answer) => `${answer.length}:${answer}`)
-                        .join('|');
-
-                    await handleReauthSubmit(RecoveryType.QUESTIONS, secret);
+                    await handleReauthSubmit(RecoveryType.QUESTIONS, answers);
                 }}
                 questions={reauthQuestions}
                 title="Confirme suas perguntas de segurança"
@@ -310,7 +309,7 @@ export default function RecoveryPage() {
                 onVerify={async (recoveryPassword) => {
                     await handleReauthSubmit(
                         RecoveryType.RECOVERY_PASSWORD,
-                        recoveryPassword.trim(),
+                        recoveryPassword,
                     );
                 }}
                 isLoading={isVerifyingReauth || isSubmitting}
@@ -322,7 +321,7 @@ export default function RecoveryPage() {
                 onVerify={async (recoveryKey) => {
                     await handleReauthSubmit(
                         RecoveryType.RECOVERY_KEY,
-                        recoveryKey.trim().toUpperCase(),
+                        recoveryKey,
                     );
                 }}
                 isLoading={isVerifyingReauth || isSubmitting}

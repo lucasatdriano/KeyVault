@@ -4,7 +4,6 @@ import { toast } from 'sonner';
 
 import { getRecoveryQuestionsAction } from '@/src/server/actions/recovery/settings/get-recovery-questions.action';
 import { getRecoveryMethodsAction } from '@/src/server/actions/recovery/settings/get-recovery-methods.action';
-import { getRecoveryDataAction } from '@/src/server/actions/recovery/settings/get-recovery-data.action';
 import { configureRecoveryQuestionsAction } from '@/src/server/actions/recovery/settings/configure-recovery-questions.action';
 import { configureRecoveryPasswordAction } from '@/src/server/actions/recovery/settings/configure-recovery-password.action';
 import { generateRecoveryKeyAction } from '@/src/server/actions/recovery/settings/generate-recovery-key.action';
@@ -12,10 +11,7 @@ import { updateRecoveryDataAction } from '@/src/server/actions/recovery/settings
 import { disableRecoveryMethodAction } from '@/src/server/actions/recovery/settings/disable-recovery-method.action';
 import { deleteRecoveryDataAction } from '@/src/server/actions/recovery/settings/delete-recovery-data.action';
 
-import {
-    createRecoveryData,
-    decryptRecoveryVaultKeyFromSecrets,
-} from '@/src/shared/crypto/recovery';
+import { createRecoveryData } from '@/src/shared/crypto/recovery';
 import {
     generateRecoveryKey,
     generateSha256,
@@ -28,6 +24,9 @@ import {
     RecoveryMethod,
     RecoveryQuestion,
 } from '@/src/client/types/recovery';
+import { verifyQuestionsAction } from '@/src/server/actions/recovery/settings/verify-recovery-question.action';
+import { verifyRecoveryKeyAction } from '@/src/server/actions/recovery/settings/verify-recovery-key.action';
+import { verifyRecoveryPasswordAction } from '@/src/server/actions/recovery/settings/verify-recovery-password.action';
 
 export function useRecovery() {
     const [methods, setMethods] = useState<RecoveryMethod[]>([]);
@@ -39,6 +38,13 @@ export function useRecovery() {
     >({});
 
     const vaultKey = useVaultStore((state) => state.vaultKey);
+
+    function buildQuestionsSecret(answers: string[]): string {
+        return answers
+            .map((answer) => answer.trim().toLowerCase())
+            .map((answer) => `${answer.length}:${answer}`)
+            .join('|');
+    }
 
     const loadMethods = useCallback(async () => {
         try {
@@ -183,51 +189,55 @@ export function useRecovery() {
         [activeNonEmailMethods, recoverySecrets],
     );
 
-    const verifyExistingRecoverySecrets = useCallback(
+    const verifyRecoverySecret = useCallback(
         async (
-            secretsToVerify: Partial<Record<RecoveryType, string>>,
-        ): Promise<boolean> => {
+            type: RecoveryType,
+            rawValue: string | string[],
+        ): Promise<string | null> => {
             try {
-                const secrets = getActiveRecoverySecrets(
-                    secretsToVerify,
-                    activeNonEmailMethods,
-                );
+                if (type === RecoveryType.QUESTIONS) {
+                    const answers = rawValue as string[];
 
-                if (secrets.length === 0) {
-                    return true;
+                    const result = await verifyQuestionsAction(answers);
+
+                    if (!result.success || !result.data) {
+                        return null;
+                    }
+
+                    return buildQuestionsSecret(answers);
                 }
 
-                const result = await getRecoveryDataAction();
+                if (type === RecoveryType.RECOVERY_PASSWORD) {
+                    const password = (rawValue as string).trim();
 
-                if (!result.success || !result.data) {
-                    throw new Error(
-                        result.error ??
-                            'Não foi possível carregar os dados de recuperação.',
-                    );
+                    const result = await verifyRecoveryPasswordAction(password);
+
+                    if (!result.success || !result.data) {
+                        return null;
+                    }
+
+                    return password;
                 }
 
-                const { salt, vaultKeyCipherText, vaultKeyIv } = result.data;
+                if (type === RecoveryType.RECOVERY_KEY) {
+                    const key = (rawValue as string).trim().toUpperCase();
 
-                const vaultKeyFromSecrets =
-                    await decryptRecoveryVaultKeyFromSecrets({
-                        encryptedVaultKey: {
-                            cipherText: vaultKeyCipherText,
-                            iv: vaultKeyIv,
-                        },
-                        recoverySecrets: secrets,
-                        salt,
-                    });
+                    const result = await verifyRecoveryKeyAction(key);
 
-                vaultKeyFromSecrets.fill(0);
+                    if (!result.success || !result.data) {
+                        return null;
+                    }
 
-                return true;
+                    return key;
+                }
+
+                return null;
             } catch {
-                return false;
+                return null;
             }
         },
-        [getActiveRecoverySecrets, activeNonEmailMethods],
+        [],
     );
-
     const hasAllActiveRecoverySecrets = useCallback(
         (
             secretsOverride?: Partial<Record<RecoveryType, string>>,
@@ -361,9 +371,7 @@ export function useRecovery() {
                     (question) => question.answer,
                 );
 
-                const questionsSecret = answers
-                    .map((answer) => `${answer.length}:${answer}`)
-                    .join('|');
+                const questionsSecret = buildQuestionsSecret(answers);
 
                 const updatedSecrets = {
                     ...recoverySecrets,
@@ -665,6 +673,7 @@ export function useRecovery() {
     return {
         methods,
         activeMethods,
+        activeNonEmailMethods,
 
         isLoading,
         isSubmitting,
@@ -682,7 +691,7 @@ export function useRecovery() {
 
         getQuestionsForReauth,
         getMissingActiveRecoveryMethods,
-        verifyExistingRecoverySecrets,
+        verifyRecoverySecret,
         hasAllActiveRecoverySecrets,
 
         handleDisableMethod,

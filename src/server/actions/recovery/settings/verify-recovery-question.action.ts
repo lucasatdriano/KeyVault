@@ -1,26 +1,25 @@
 'use server';
 
-import { RecoveryDataPayload } from '@/src/shared/types/recovery';
-
 import {
     authService,
     recoverySettingsService,
 } from '@/src/server/containers/services';
 import { ActionResult } from '@/src/server/types/action';
 
-export async function getRecoveryDataAction(): Promise<
-    ActionResult<RecoveryDataPayload | null>
-> {
+export async function verifyQuestionsAction(
+    answers: string[],
+): Promise<ActionResult<boolean | null>> {
     try {
         const user = await authService.requireAuth();
 
-        const recoveryData = await recoverySettingsService.getRecoveryData(
+        const isValid = await recoverySettingsService.verifyQuestionsAnswers(
             user.id,
+            answers,
         );
 
         return {
             success: true,
-            data: recoveryData,
+            data: isValid,
         };
     } catch (error) {
         return {
@@ -28,7 +27,7 @@ export async function getRecoveryDataAction(): Promise<
             error:
                 error instanceof Error
                     ? error.message
-                    : 'Erro ao buscar dados de recuperação.',
+                    : 'Erro ao verificar as respostas.',
             data: null,
         };
     }

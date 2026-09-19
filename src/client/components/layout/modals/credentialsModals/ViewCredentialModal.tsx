@@ -262,14 +262,16 @@ export default function ViewCredentialModal({
                         value={formData.email || formData.username}
                         onChange={(e) => {
                             const value = e.target.value;
+                            const isEmail = value.includes('@');
 
-                            if (value.includes('@')) {
-                                handleChange('email', value);
-                                handleChange('username', '');
-                            } else {
-                                handleChange('username', value);
-                                handleChange('email', '');
-                            }
+                            setFormData(
+                                (prev) =>
+                                    prev && {
+                                        ...prev,
+                                        email: isEmail ? value : '',
+                                        username: isEmail ? '' : value,
+                                    },
+                            );
                         }}
                         leftIcon={<MailIcon className="h-5 w-5" />}
                         error={errors.username || errors.email}
